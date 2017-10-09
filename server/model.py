@@ -3,13 +3,14 @@ class Card(object):
 		'''
 		Creates a new card with the specified suit and value.
 		'''
-		raise NotImplementedError
+		self.suit = suit
+		self.value = value
 
 	def __eq__(self, other):
 		'''
 		Returns whether self and other are the same card.
 		'''
-		raise NotImplementedError
+		return self.suit == other.suit and self.value == other.value
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
@@ -22,10 +23,10 @@ def create_deck(n):
 
 	suit = ['d', 'h', 's', 'c']
 	number = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-	one_deck = ['b_joker', 'l_joker']
+	one_deck = [Card('joker', 'big'), Card('joker', 'small')]
 	for n in range(len(suit)):
 		for m in range(len(number)):
-			one_deck.append((suit[n], number[m]))
+			one_deck.append(Card(suit[n], number[m]))
 	total_decks = n * one_deck
 	return total_decks
 

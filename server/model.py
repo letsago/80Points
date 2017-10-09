@@ -54,38 +54,44 @@ class RoundState(object):
 		'''
 		raise NotImplementedError
 
+	def get_player_view(self, player):
+		'''
+		Returns a view of the state from the perspective of the given player.
+		'''
+		raise NotImplementedError
+
 class RoundListener(object):
-	def timed_action(self, delay):
+	def timed_action(self, r, delay):
 		'''
 		A timed action should be performed after the specified delay.
 		'''
 		pass
 
-	def card_dealt(self, player, card):
+	def card_dealt(self, r, player, card):
 		'''
 		The card was dealt to the player.
 		'''
 		pass
 
-	def player_declared(self, player, cards):
+	def player_declared(self, r, player, cards):
 		'''
 		A player declared the specified cards.
 		'''
 		pass
 
-	def player_given_bottom(self, player, cards):
+	def player_given_bottom(self, r, player, cards):
 		'''
 		The player was given the cards from the bottom.
 		'''
 		pass
 
-	def player_set_bottom(self, player, cards):
+	def player_set_bottom(self, r, player, cards):
 		'''
 		The player set the bottom.
 		'''
 		pass
 
-	def player_played(self, player, cards):
+	def player_played(self, r, player, cards):
 		'''
 		A player played the specified cards.
 		'''

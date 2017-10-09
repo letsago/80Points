@@ -19,17 +19,15 @@ def create_deck(n):
 	'''
 	Return a list of cards for the specified number of decks.
 	'''
-	
+
 	suit = ['d', 'h', 's', 'c']
 	number = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 	one_deck = ['b_joker', 'l_joker']
 	for n in range(len(suit)):
-		for m in range(len(number):
-			       one_deck.append((suit(n), number(m)))
+		for m in range(len(number)):
+			one_deck.append((suit[n], number[m]))
 	total_decks = n * one_deck
-	return total_decks				  
-	
-	raise NotImplementedError
+	return total_decks
 
 class RoundState(object):
 	def __init__(self, num_players):

@@ -1,18 +1,36 @@
 <!doctype html>
 
+<!--Ttemplate for card component -->
+<script type="text/x-template" id="card-template">
+	<div :class="classObj"">
+		<span class="rank">{{ rankDisplay }}</span>
+		<span class="suit">
+			<!-- We use the raw html to display the normal suits properly. -->
+			<div v-html="suitDisplay"></div>
+		</span>
+	</div>
+</script>
+
 <html lang="en">
 <head>
- 	<meta charset="utf-8">
+	<meta charset="utf-8">
 
- 	<title>80 Points</title>
+	<title>80 Points</title>
 	<meta name="description" content="80 Points">
 	<link rel="stylesheet" href="css/styles.css?v=1.0">
+	<link rel="stylesheet" href="css/cards.css?v=1.0">
 </head>
 
 <body>
 	<h2>80 Points</h2>
 	<div id="app">
-		{{ message }}
+		<div class="playingCards fourColours">
+			<ul class="table">
+				<li v-for="card in cards">
+					<card :suit="card.suit" :value="card.value"></card>
+				</li>
+			</ul>
+		</div>
 	</div>
 	<script src="https://unpkg.com/vue"></script>
 	<script src="js/app.js"></script>

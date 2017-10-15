@@ -1,19 +1,25 @@
 // A card component
 Vue.component('card', {
-	props: ['suit', 'value'],
+	props: ['suit', 'rank', 'trumpSuit', 'trumpRank'],
 	template: '#card-template',
 	computed: {
-		rankClass: function () {
-			if (this.value == 'big' || this.value == 'small') {
-				return this.value;
+		isTrump: function() {
+			if (this.suit == 'joker') {
+				return true;	
 			}
-			return 'rank-' + this.value.toLowerCase();
+			return (this.suit == this.trumpSuit || this.rank == this.trumpRank);
+		},
+		rankClass: function () {
+			if (this.rank == 'big' || this.rank == 'small') {
+				return this.rank;
+			}
+			return 'rank-' + this.rank.toLowerCase();
 		},
 		rankDisplay: function () {
-			if (this.value == 'big' || this.value == 'small') {
+			if (this.rank == 'big' || this.rank == 'small') {
 				return '-';
 			}
-			return this.value;
+			return this.rank;
 		},
 		suitClass: function() {
 			const classes = {
@@ -34,6 +40,7 @@ Vue.component('card', {
 		classObj: function() {
 			let c = {
 				card: true,
+				trump: this.isTrump,
 			};
 			c[this.rankClass] = true;
 			c[this.suitClass] = true;
@@ -50,9 +57,14 @@ var app = new Vue({
 			{suit: 'h', value: 'A'},
 			{suit: 'd', value: '2'},
 			{suit: 's', value: '3'},
+			{suit: 'c', value: '10'},
 			{suit: 'c', value: 'K'},
 			{suit: 'joker', value: 'big'},
 			{suit: 'joker', value: 'small'},
 		],
+		trumpSuit: 'c',
+		trumpRank: '2',
+		suits: ['Clubs', 'Diamonds', 'Hearts', 'Spades'],
+		ranks: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'],
 	}
 })

@@ -1,3 +1,5 @@
+import itertools
+
 class Card(object):
 	def __init__(self, suit, value):
 		'''
@@ -23,10 +25,8 @@ def create_deck(n):
 
 	suit = ['d', 'h', 's', 'c']
 	number = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-	one_deck = [Card('joker', 'big'), Card('joker', 'small')]
-	for n in range(len(suit)):
-		for m in range(len(number)):
-			one_deck.append(Card(suit[n], number[m]))
+	one_deck = [Card(x[0], x[1]) for x in itertools.product(suit, number)]
+	one_deck.extend([Card('joker', 'big'), Card('joker', 'small')])
 	total_decks = n * one_deck
 	return total_decks
 

@@ -15,8 +15,7 @@ class Card(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
-
-def create_deck(n):
+def create_deck(num_decks):
 	'''
 	Return a list of cards for the specified number of decks.
 	'''
@@ -27,7 +26,7 @@ def create_deck(n):
 	for n in range(len(suit)):
 		for m in range(len(number)):
 			one_deck.append(Card(suit[n], number[m]))
-	total_decks = n * one_deck
+	total_decks = num_decks * one_deck
 	return total_decks
 
 class RoundState(object):

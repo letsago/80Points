@@ -1,3 +1,5 @@
+import random
+
 class Card(object):
 	def __init__(self, suit, value):
 		'''
@@ -5,6 +7,9 @@ class Card(object):
 		'''
 		self.suit = suit
 		self.value = value
+
+	def __str__(self):
+		return str(self.value) + str(self.suit)
 
 	def __eq__(self, other):
 		'''
@@ -29,36 +34,90 @@ def create_deck(num_decks):
 	total_decks = num_decks * one_deck
 	return total_decks
 
+STATUS_DEALING = 0
+STATUS_BOTTOM = 1
+STATUS_PLAYING = 2
+
+BOTTOM_SIZE = {
+	4: 8,
+	5: 8,
+	6: 6,
+}
+
+class Declaration(object):
+	def __init__(self, player, cards):
+		self.player = player
+		self.cards = cards
+
 class RoundState(object):
 	def __init__(self, num_players):
 		'''
 		Creates a new RoundState for num_players players.
 		'''
-		raise NotImplementedError
+		self.num_players = num_players
+		self.deck = create_deck(num_players // 2)
+		random.shuffle(self.deck)
+		self.status = STATUS_DEALING
+		self.turn = 0
 
-	def deal_card_to_player(self, player, card):
-		'''
-		Add the card to the player's hand.
-		'''
-		raise NotImplementedError
+		# list of cards in each player's hand
+		self.player_hands = [[] for i in xrange(num_players)]
 
-	def get_player_hand(self, player):
-		'''
-		Returns a list of cards in the player's hand.
-		'''
-		raise NotImplementedError
+		# list of cards that each player has placed on the board for the current play
+		self.board = [[] for i in xrange(num_players)]
 
-	def get_board(self):
+		# current declared cards
+		# for now, we only keep track of the most recent set of cards that have been declared
+		# however, this is insufficient to allow defending a previous declaration, so eventually
+		#  we will need to keep a history of declarations from different players
+		self.declaration = None
+
+		# some cards should form the bottom
+		self.bottom = [self.pop_card_from_deck() for i in xrange(BOTTOM_SIZE[num_players])]
+
+	def pop_card_from_deck(self):
+		card = self.deck[-1]
+		self.deck = self.deck[:-1]
+		return card
+
+	def deal_card_to_player(self, player):
 		'''
-		Returns the cards that have been played by each player in the current play.
+		Add a card to the player's hand.
 		'''
-		raise NotImplementedError
+		card = self.pop_card_from_deck()
+		self.player_hands[player].append(card)
+		return card
+
+	def increment_turn(self):
+		self.turn = (self.turn + 1) % self.num_players
+
+	def give_bottom_to_player(self, player):
+		bottom_cards = self.bottom
+		self.bottom = []
+		self.player_hands[player].extend(bottom_cards)
+		return bottom_cards
+
+	def remove_cards_from_hand(self, player, cards):
+		'''
+		Removes the specified cards from the player's hand.
+		'''
+		for card in cards:
+			self.player_hands[player].remove(card)
 
 	def get_player_view(self, player):
 		'''
 		Returns a view of the state from the perspective of the given player.
 		'''
-		raise NotImplementedError
+		view = {
+			'hand': [str(card) for card in self.player_hands[player]],
+			'player_hands': [len(hand) for hand in self.player_hands],
+			'turn': self.turn,
+			'status': self.status
+		}
+		view['board'] = []
+		for cards in self.board:
+			view['board'].append([str(card) for card in cards])
+		return view
 
 class RoundListener(object):
 	def timed_action(self, r, delay):
@@ -104,25 +163,54 @@ class Round(object):
 
 		Each Round represents one round of tractor.
 		'''
-		raise NotImplementedError
+		self.state = RoundState(num_players)
+		self.listeners = list(listeners)
 
 	def add_listener(self, listener):
 		'''
 		Begin passing events on this Round to the provided RoundListener.
 		'''
-		raise NotImplementedError
+		self.listeners.append(listener)
+
+	def _fire(self, f):
+		for listener in self.listeners:
+			f(listener)
 
 	def tick(self):
 		'''
 		Execute the next timed action (e.g. dealing cards).
 		'''
-		raise NotImplementedError
+		if self.state.status == STATUS_DEALING:
+			if len(self.state.deck) > 0:
+				self.state.deal_card_to_player(self.state.turn)
+				self.state.increment_turn()
+
+				# notify about the next timed action, which is either to deal the
+				# next card or to advance to STATUS_BOTTOM
+				if len(self.state.deck) > 0:
+					self._fire(lambda listener: listener.timed_action(self, 1))
+				else:
+					self._fire(lambda listener: listener.timed_action(self, 10))
+			else:
+				# advance to STATUS_BOTTOM by adding the bottom to the player who declared
+				# TODO: handle case where no player declared within the time limit
+				# TODO: the 10 second time limit above should be shorter if a player has declared
+				#  and longer if no player has declared yet
+				bottom_player = self.state.declaration.player
+				bottom_cards = self.state.give_bottom_to_player(bottom_player)
+				self.state.status = STATUS_BOTTOM
+				self._fire(lambda listener: listener.player_given_bottom(self, bottom_player, bottom_cards))
 
 	def declare(self, player, cards):
 		'''
 		Declare the cards.
 		'''
-		raise NotImplementedError
+		if self.state.status == STATUS_DEALING:
+			# for now we assume that the player made a correct declaration that overturns
+			#  the previous one
+			# TODO: actually check the declared cards
+			self.state.declaration = Declaration(player, cards)
+			self._fire(lambda listener: listener.player_declared(self, player, cards))
 
 	def play(self, player, cards):
 		'''
@@ -134,10 +222,18 @@ class Round(object):
 		'''
 		Set the bottom.
 		'''
-		raise NotImplementedError
+		if self.state.status != STATUS_BOTTOM:
+			return
+		elif self.state.declaration.player != player:
+			return
+		elif len(cards) != BOTTOM_SIZE[self.state.num_players]:
+			return
+		# TODO: check to make sure cards is subset of player's cards
+		self.state.remove_cards_from_hand(player, cards)
+		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))
 
 	def get_state(self):
 		'''
 		Returns the current RoundState of this Round.
 		'''
-		raise NotImplementedError
+		return self.state

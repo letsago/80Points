@@ -21,6 +21,10 @@ class Card(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+	@property
+	def dict(self):
+		return {'suit': self.suit, 'value': self.value}
+
 def create_deck(num_decks):
 	'''
 	Return a list of cards for the specified number of decks.
@@ -60,10 +64,10 @@ class RoundState(object):
 		self.turn = 0
 
 		# list of cards in each player's hand
-		self.player_hands = [[] for i in xrange(num_players)]
+		self.player_hands = [[] for i in range(num_players)]
 
 		# list of cards that each player has placed on the board for the current play
-		self.board = [[] for i in xrange(num_players)]
+		self.board = [[] for i in range(num_players)]
 
 		# current declared cards
 		# for now, we only keep track of the most recent set of cards that have been declared
@@ -72,7 +76,7 @@ class RoundState(object):
 		self.declaration = None
 
 		# some cards should form the bottom
-		self.bottom = [self.pop_card_from_deck() for i in xrange(BOTTOM_SIZE[num_players])]
+		self.bottom = [self.pop_card_from_deck() for i in range(BOTTOM_SIZE[num_players])]
 
 	def pop_card_from_deck(self):
 		card = self.deck[-1]
@@ -108,7 +112,7 @@ class RoundState(object):
 		Returns a view of the state from the perspective of the given player.
 		'''
 		view = {
-			'hand': [str(card) for card in self.player_hands[player]],
+			'hand': [card.dict for card in self.player_hands[player]],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
 			'status': self.status
@@ -164,6 +168,7 @@ class Round(object):
 		'''
 		self.state = RoundState(num_players)
 		self.listeners = list(listeners)
+		self._fire(lambda listener: listener.timed_action(self, 1))
 
 	def add_listener(self, listener):
 		'''
@@ -181,7 +186,8 @@ class Round(object):
 		'''
 		if self.state.status == STATUS_DEALING:
 			if len(self.state.deck) > 0:
-				self.state.deal_card_to_player(self.state.turn)
+				card = self.state.deal_card_to_player(self.state.turn)
+				self._fire(lambda listener: listener.card_dealt(self, self.state.turn, card))
 				self.state.increment_turn()
 
 				# notify about the next timed action, which is either to deal the

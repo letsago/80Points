@@ -84,3 +84,7 @@ socket.emit('join', 'player');
 socket.on('lobby', function (data) {
 	app.players = data;
 });
+
+socket.on('state', function(data) {
+	app.cards = data.hand;
+});

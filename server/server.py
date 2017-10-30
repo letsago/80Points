@@ -55,7 +55,7 @@ class ForwardToUser(model.RoundListener):
 			'player': player,
 		}
 		if player == self.player:
-			data['card'] = card
+			data['card'] = card.dict
 		self.sio.emit('card_dealt', data, room=self.sid)
 		self._send_state(r)
 
@@ -118,7 +118,7 @@ def join(sid, name):
 	# if we have enough users, we can start the game
 	if len(state.users) >= NUM_PLAYERS:
 		listeners = [TimedActionListener()]
-		for i in xrange(len(state.users)):
+		for i in range(len(state.users)):
 			listeners.append(ForwardToUser(sio, i, state.users[i].sid))
 		state.round = model.Round(len(state.users), listeners)
 

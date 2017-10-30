@@ -24,6 +24,8 @@
 <body>
 	<h2>80 Points</h2>
 	<div id="app">
+		<h3>Lobby:<h3>
+		<p v-for="player in players">{{ player }}</p>
 		<h3>Trump Suit:</h3>
 		<div v-for="suit in suits">
 			<input type="radio" :id="suit" :value="suit.charAt(0).toLowerCase()" v-model="trumpSuit">
@@ -44,6 +46,8 @@
 			</ul>
 		</div>
 	</div>
+
+	<script src="js/socket.io.js"></script>
 	<script src="https://unpkg.com/vue"></script>
 	<script src="js/app.js"></script>
 </body>

@@ -2,7 +2,7 @@ var socket = io();
 
 // A card component
 Vue.component('card', {
-	props: ['suit', 'rank', 'trumpSuit', 'trumpRank'],
+	props: ['suit', 'rank', 'selected', 'trumpSuit', 'trumpRank'],
 	template: '#card-template',
 	computed: {
 		isTrump: function() {
@@ -42,11 +42,17 @@ Vue.component('card', {
 		classObj: function() {
 			let c = {
 				card: true,
-				trump: this.isTrump,
+				trump: this.isTrump && !this.selected,
+				selected: this.selected,
 			};
 			c[this.rankClass] = true;
 			c[this.suitClass] = true;
 			return c;
+		},
+	},
+	methods: {
+		toggleSelected: function() {
+			this.selected = !this.selected;
 		},
 	},
 })

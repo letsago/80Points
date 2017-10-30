@@ -16,3 +16,9 @@ h1, h2, h3 {
     -webkit-box-shadow: .2em .2em .5em #ff02c7;
     box-shadow: .2em .2em .5em #ff02c7;
 }
+
+.playingCards .card.selected {
+    -moz-box-shadow: .2em .2em .5em #000080;
+    -webkit-box-shadow: .2em .2em .5em #000080;
+    box-shadow: .2em .2em .5em #000080;
+}

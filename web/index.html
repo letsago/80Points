@@ -2,7 +2,7 @@
 
 <!--Template for card component -->
 <script type="text/x-template" id="card-template">
-	<div :class="classObj"">
+	<div :class="classObj" v-on:click="toggleSelected">
 		<span class="rank">{{ rankDisplay }}</span>
 		<span class="suit">
 			<!-- We use the raw html to display the normal suits properly. -->

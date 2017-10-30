@@ -52,7 +52,7 @@ Vue.component('card', {
 	},
 	methods: {
 		toggleSelected: function() {
-			this.selected = !this.selected;
+			this.$emit('update-selected', !this.selected);
 		},
 	},
 })
@@ -62,13 +62,13 @@ var app = new Vue({
 	el: '#app',
 	data: {
 		cards: [
-			{suit: 'h', value: 'A'},
-			{suit: 'd', value: '2'},
-			{suit: 's', value: '3'},
-			{suit: 'c', value: '10'},
-			{suit: 'c', value: 'K'},
-			{suit: 'joker', value: 'big'},
-			{suit: 'joker', value: 'small'},
+			{suit: 'h', value: 'A', selected: false},
+			{suit: 'd', value: '2', selected: false},
+			{suit: 's', value: '3', selected: false},
+			{suit: 'c', value: '10', selected: false},
+			{suit: 'c', value: 'K', selected: false},
+			{suit: 'joker', value: 'big', selected: false},
+			{suit: 'joker', value: 'small', selected: false},
 		],
 		trumpSuit: 'c',
 		trumpRank: '2',

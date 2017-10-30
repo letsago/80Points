@@ -72,6 +72,7 @@ var app = new Vue({
 		],
 		trumpSuit: 'c',
 		trumpRank: '2',
+		turn: -1,
 		suits: ['Clubs', 'Diamonds', 'Hearts', 'Spades'],
 		ranks: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'],
 		players: [],
@@ -87,4 +88,5 @@ socket.on('lobby', function (data) {
 
 socket.on('state', function(data) {
 	app.cards = data.hand;
+	app.turn = data.turn;
 });

@@ -210,10 +210,14 @@ class Round(object):
 		'''
 		Declare the cards.
 		'''
+		player_hand = self.state.player_hands[player]
 		if self.state.status == STATUS_DEALING:
-			# for now we assume that the player made a correct declaration that overturns
-			#  the previous one
-			# TODO: actually check the declared cards
+			check_list = player_hand[:]
+			for x in cards:
+				if x in check_list:
+					check_list.remove(x)
+				else:
+					raise Error("User Error")
 			self.state.declaration = Declaration(player, cards)
 			self._fire(lambda listener: listener.player_declared(self, player, cards))
 
@@ -242,3 +246,6 @@ class Round(object):
 		Returns the current RoundState of this Round.
 		'''
 		return self.state
+	
+class Error(Exception):
+	pass

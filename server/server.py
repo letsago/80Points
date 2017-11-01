@@ -6,6 +6,7 @@ from flask import Flask, send_from_directory
 import model
 
 NUM_PLAYERS = 4
+SPEED = 5
 
 class User(object):
 	def __init__(self, sid, name):
@@ -34,7 +35,7 @@ class TimedActionListener(model.RoundListener):
 			self.pending_tick = None
 		if self.pending_tick is not None:
 			self.pending_tick.cancel()
-		self.pending_tick = eventlet.spawn_after(delay, run_action)
+		self.pending_tick = eventlet.spawn_after(float(delay) / SPEED, run_action)
 
 class ForwardToUser(model.RoundListener):
 	'''

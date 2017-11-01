@@ -206,8 +206,8 @@ class Round(object):
 				# next card or to advance to STATUS_BOTTOM
 				if len(self.state.deck) > 0:
 					self._fire(lambda listener: listener.timed_action(self, 1))
-				else:
-					self._fire(lambda listener: listener.timed_action(self, 10))
+				elif self.state.declaration is not None:
+					self._fire(lambda listener: listener.timed_action(self, 5))
 			else:
 				# advance to STATUS_BOTTOM by adding the bottom to the player who declared
 				# TODO: handle case where no player declared within the time limit
@@ -231,6 +231,9 @@ class Round(object):
 
 		self.state.declaration = Declaration(player, cards)
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
+
+		if len(self.state.deck) == 0:
+			self._fire(lambda listener: listener.timed_action(self, 5))
 
 	def play(self, player, cards):
 		'''

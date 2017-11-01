@@ -37,6 +37,18 @@ def create_deck(num_decks):
 	total_decks = num_decks * one_deck
 	return total_decks
 
+def is_cards_contained_in(cards, hand):
+	'''
+	Returns whether cards is contained in hand.
+	'''
+	check_list = hand[:]
+	for x in cards:
+		if x in check_list:
+			check_list.remove(x)
+		else:
+			return False
+	return True
+
 STATUS_DEALING = 0
 STATUS_BOTTOM = 1
 STATUS_PLAYING = 2
@@ -210,16 +222,15 @@ class Round(object):
 		'''
 		Declare the cards.
 		'''
+		if self.state.status != STATUS_DEALING:
+			raise RoundException("the trump suit has already been decided")
+
 		player_hand = self.state.player_hands[player]
-		if self.state.status == STATUS_DEALING:
-			check_list = player_hand[:]
-			for x in cards:
-				if x in check_list:
-					check_list.remove(x)
-				else:
-					raise Error("User Error")
-			self.state.declaration = Declaration(player, cards)
-			self._fire(lambda listener: listener.player_declared(self, player, cards))
+		if not is_cards_contained_in(cards, player_hand):
+			raise RoundException("invalid cards")
+
+		self.state.declaration = Declaration(player, cards)
+		self._fire(lambda listener: listener.player_declared(self, player, cards))
 
 	def play(self, player, cards):
 		'''
@@ -232,12 +243,16 @@ class Round(object):
 		Set the bottom.
 		'''
 		if self.state.status != STATUS_BOTTOM:
-			return
+			raise RoundException("the bottom has already been set")
 		elif self.state.declaration.player != player:
-			return
+			raise RoundException("you did not have the bottom")
 		elif len(cards) != BOTTOM_SIZE[self.state.num_players]:
-			return
-		# TODO: check to make sure cards is subset of player's cards
+			raise RoundException("the bottom must be {} cards".format(BOTTOM_SIZE[self.state_num_players]))
+
+		player_hand = self.state.player_hands[player]
+		if not is_cards_contained_in(cards, player_hand):
+			raise RoundException("invalid cards")
+
 		self.state.remove_cards_from_hand(player, cards)
 		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))
 
@@ -246,6 +261,6 @@ class Round(object):
 		Returns the current RoundState of this Round.
 		'''
 		return self.state
-	
-class Error(Exception):
+
+class RoundException(Exception):
 	pass

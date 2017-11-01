@@ -87,6 +87,12 @@ socket.on('lobby', function (data) {
 });
 
 socket.on('state', function(data) {
-	app.cards = data.hand;
+	app.cards = data.hand.map(function(el) {
+		return {
+			suit: el.suit,
+			value: el.value,
+			selected: false,
+		};
+	});
 	app.turn = data.turn;
 });

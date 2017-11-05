@@ -1,6 +1,8 @@
+import functools
 import itertools
 import random
 
+@functools.total_ordering
 class Card(object):
 	def __init__(self, suit, value):
 		'''
@@ -12,11 +14,35 @@ class Card(object):
 	def __str__(self):
 		return str(self.value) + str(self.suit)
 
+	def __repr__(self):
+		return str(self.value) + str(self.suit)
+
 	def __eq__(self, other):
 		'''
 		Returns whether self and other are the same card.
 		'''
 		return self.suit == other.suit and self.value == other.value
+
+	def __lt__(self, other):
+		'''
+		Returns whether self is less than other.
+		'''
+		# handles sorting Joker cards
+		if self.suit == 'joker' and other.suit == 'joker':
+			if self.value == 'big':
+				return False
+			if other.value == 'big':
+				return True
+		if self.suit == 'joker':
+			return False
+		if other.suit == 'joker':
+			return True
+
+		# handles sorting all other cards
+
+		return self.suit < other.suit
+
+
 
 	def __ne__(self, other):
 		return not self.__eq__(other)

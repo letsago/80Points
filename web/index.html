@@ -33,18 +33,19 @@
 				{{ player }}
 			</template>
 		</p>
-		<h3>Trump Suit:</h3>
-		<div v-for="suit in suits">
-			<input type="radio" :id="suit" :value="suit.charAt(0).toLowerCase()" v-model="trumpSuit">
-			<label :for="suit">{{ suit }}</label>			
-		</div>
-		<h3>Trump Rank:</h3>
-		<div v-for="rank in ranks">
-			<input type="radio" :id="rank" :value="rank" v-model="trumpRank">
-			<label :for="rank">{{ rank }}</label>			
-		</div>
+		<template v-if="status == 'dealing'">
+			<h3>Declare a Suit:</h3>
+			<div v-for="(suitName, suit) in suits">
+				<button
+					v-on:click="declareSuit(suit)"
+					:disabled="!(suit in declarableSuits)"
+					>
+					{{ suitName }}
+				</button>
+			</div>
+		</template>
 		<div class="playingCards fourColours">
-			<ul class="table">
+			<ul class="hand">
 				<li v-for="card in cards">
 					<card :suit="card.suit" :rank="card.value"
 						:selected="card.selected" v-on:update-selected="val => card.selected = val"
@@ -52,6 +53,16 @@
 					</card>
 				</li>
 			</ul>
+		</div>
+		<h3>Trump Suit:</h3>
+		<div v-for="(suitName, suit) in suits">
+			<input type="radio" :id="suit" :value="suit.charAt(0).toLowerCase()" v-model="trumpSuit">
+			<label :for="suit">{{ suitName }}</label>
+		</div>
+		<h3>Trump Rank:</h3>
+		<div v-for="rank in ranks">
+			<input type="radio" :id="rank" :value="rank" v-model="trumpRank">
+			<label :for="rank">{{ rank }}</label>
 		</div>
 	</div>
 

@@ -74,6 +74,8 @@ class RoundState(object):
 		random.shuffle(self.deck)
 		self.status = STATUS_DEALING
 		self.turn = 0
+		self.trump_value = '2'
+		self.trump_suit = None
 
 		# list of cards in each player's hand
 		self.player_hands = [[] for i in range(num_players)]
@@ -127,11 +129,20 @@ class RoundState(object):
 			'hand': [card.dict for card in self.player_hands[player]],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
-			'status': self.status
+			'status': self.status,
+			'trump_value': self.trump_value,
+			'trump_suit': self.trump_suit,
 		}
+
 		view['board'] = []
 		for cards in self.board:
 			view['board'].append([str(card) for card in cards])
+
+		if self.declaration is None:
+			view['declaration'] = None
+		else:
+			view['declaration'] = [card.dict for card in self.declaration.cards]
+
 		return view
 
 class RoundListener(object):
@@ -230,6 +241,7 @@ class Round(object):
 			raise RoundException("invalid cards")
 
 		self.state.declaration = Declaration(player, cards)
+		self.state.trump_suit = cards[0].suit
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
 
 		if len(self.state.deck) == 0:

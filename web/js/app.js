@@ -7,7 +7,7 @@ Vue.component('card', {
 	computed: {
 		isTrump: function() {
 			if (this.suit == 'joker') {
-				return true;	
+				return true;
 			}
 			return (this.suit == this.trumpSuit || this.rank == this.trumpRank);
 		},
@@ -61,6 +61,7 @@ Vue.component('card', {
 var app = new Vue({
 	el: '#app',
 	data: {
+		status: 'disconnected',
 		cards: [
 			{suit: 'h', value: 'A', selected: false},
 			{suit: 'd', value: '2', selected: false},
@@ -73,9 +74,15 @@ var app = new Vue({
 		trumpSuit: 'c',
 		trumpRank: '2',
 		turn: -1,
-		suits: ['Clubs', 'Diamonds', 'Hearts', 'Spades'],
+		suits: {
+			'c': 'Clubs',
+			'd': 'Diamonds',
+			'h': 'Hearts',
+			's': 'Spades',
+		},
 		ranks: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'],
 		players: [],
+		declarableSuits: {},
 	}
 })
 
@@ -87,6 +94,11 @@ socket.on('lobby', function (data) {
 });
 
 socket.on('state', function(data) {
+	app.status = data.status;
+	app.trumpSuit = data.trump_suit;
+	app.trumpRank = data.trump_value;
+	app.turn = data.turn;
+
 	app.cards = data.hand.map(function(el) {
 		return {
 			suit: el.suit,
@@ -94,5 +106,31 @@ socket.on('state', function(data) {
 			selected: false,
 		};
 	});
-	app.turn = data.turn;
+
+	// set declarable suits
+	if (data.status == 'dealing') {
+		var numCardsNeeded = 1;
+		if (data.declaration) {
+			numCardsNeeded = data.declaration.length + 1;
+		}
+		var numTrumpInSuits = {};
+		data.hand.forEach(function(el) {
+			if (el.value == data.trump_value) {
+				if (el.suit in numTrumpInSuits) {
+					numTrumpInSuits[el.suit]++;
+				} else {
+					numTrumpInSuits[el.suit] = 1;
+				}
+			}
+		});
+		declarableSuits = {};
+		for(var suit in numTrumpInSuits) {
+			if (numTrumpInSuits[suit] >= numCardsNeeded) {
+				declarableSuits[suit] = true;
+			}
+		}
+		app.declarableSuits = declarableSuits;
+	} else {
+		app.declarableSuits = {};
+	}
 });

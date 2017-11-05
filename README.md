@@ -1,5 +1,7 @@
 # 80 Points
 
+A trick-based game where teams of players earn points to advance their levels.
+
 ## Setup 
 
 ```bash

@@ -49,9 +49,9 @@ def is_cards_contained_in(cards, hand):
 			return False
 	return True
 
-STATUS_DEALING = 0
-STATUS_BOTTOM = 1
-STATUS_PLAYING = 2
+STATUS_DEALING = 'dealing'
+STATUS_BOTTOM = 'bottom'
+STATUS_PLAYING = 'playing'
 
 BOTTOM_SIZE = {
 	4: 8,

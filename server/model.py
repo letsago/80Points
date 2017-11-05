@@ -2,6 +2,8 @@ import functools
 import itertools
 import random
 
+ORDERED_LIST = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+
 @functools.total_ordering
 class Card(object):
 	def __init__(self, suit, value):
@@ -39,10 +41,13 @@ class Card(object):
 			return True
 
 		# handles sorting all other cards
+		if self.suit < other.suit:
+			return True
+		if self.suit > other.suit:
+			return False
 
-		return self.suit < other.suit
-
-
+		# handles sorting of values in same suit
+		return ORDERED_LIST.index(self.value) < ORDERED_LIST.index(other.value)
 
 	def __ne__(self, other):
 		return not self.__eq__(other)

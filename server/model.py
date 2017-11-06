@@ -71,6 +71,9 @@ class Card(object):
 	def dict(self):
 		return {'suit': self.suit, 'value': self.value}
 
+def card_from_dict(d):
+	return Card(d['suit'], d['value'])
+
 def create_deck(num_decks):
 	'''
 	Return a list of cards for the specified number of decks.

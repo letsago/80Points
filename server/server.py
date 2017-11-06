@@ -12,11 +12,18 @@ class User(object):
 	def __init__(self, sid, name):
 		self.sid = sid
 		self.name = name
+		self.round = None
 
 class ServerState(object):
 	def __init__(self):
 		self.users = []
 		self.round = None
+
+	def get_user_by_sid(self, sid):
+		for user in self.users:
+			if user.sid == sid:
+				return user
+		return None
 
 class TimedActionListener(model.RoundListener):
 	def __init__(self):
@@ -63,7 +70,7 @@ class ForwardToUser(model.RoundListener):
 	def player_declared(self, r, player, cards):
 		data = {
 			'player': player,
-			'cards': cards,
+			'cards': [card.dict for card in cards],
 		}
 		self.sio.emit('player_declared', data, room=self.sid)
 		self._send_state(r)
@@ -73,7 +80,7 @@ class ForwardToUser(model.RoundListener):
 			'player': player,
 		}
 		if player == self.player:
-			data['cards'] = cards
+			data['cards'] = [card.dict for card in cards]
 		self.sio.emit('player_given_bottom', data, room=self.sid)
 		self._send_state(r)
 
@@ -82,14 +89,14 @@ class ForwardToUser(model.RoundListener):
 			'player': player,
 		}
 		if player == self.player:
-			data['cards'] = cards
+			data['cards'] = [card.dict for card in cards]
 		self.sio.emit('player_set_bottom', data, room=self.sid)
 		self._send_state(r)
 
 	def player_played(self, r, player, cards):
 		data = {
 			'player': player,
-			'cards': cards,
+			'cards': [card.dict for card in cards],
 		}
 		self.sio.emit('player_played', data, room=self.sid)
 		self._send_state(r)
@@ -122,6 +129,22 @@ def join(sid, name):
 		for i in range(len(state.users)):
 			listeners.append(ForwardToUser(sio, i, state.users[i].sid))
 		state.round = model.Round(len(state.users), listeners)
+		for i in range(len(state.users)):
+			state.users[i].round = (state.round, i)
+
+def process_user_round(func):
+	def func_wrapper(sid, *args):
+		user = state.get_user_by_sid(sid)
+		r, player = user.round
+		func(r, player, *args)
+	return func_wrapper
+
+@sio.on('round_declare')
+@process_user_round
+def round_declare(r, player, cards):
+	print 'declaring {} for {}'.format(cards, player)
+	cards = [model.card_from_dict(card) for card in cards]
+	r.declare(player, cards)
 
 if __name__ == '__main__':
 	app = socketio.Middleware(sio, app)

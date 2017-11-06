@@ -82,8 +82,21 @@ var app = new Vue({
 		},
 		ranks: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'],
 		players: [],
+		declaration: null,
 		declarableSuits: {},
-	}
+	},
+	methods: {
+		declareSuit: function (suit) {
+			// find all cards matching trumpRank in this suit, and declare them together
+			var cards = [];
+			app.cards.forEach(function(card) {
+				if (card.suit == suit && card.value == app.trumpRank) {
+					cards.push(card);
+				}
+			});
+			socket.emit('round_declare', cards);
+		},
+	},
 })
 
 
@@ -94,10 +107,12 @@ socket.on('lobby', function (data) {
 });
 
 socket.on('state', function(data) {
+	console.log(app.status);
 	app.status = data.status;
 	app.trumpSuit = data.trump_suit;
 	app.trumpRank = data.trump_value;
 	app.turn = data.turn;
+	app.declaration = data.declaration;
 
 	app.cards = data.hand.map(function(el) {
 		return {

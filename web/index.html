@@ -44,6 +44,19 @@
 				</button>
 			</div>
 		</template>
+		<template v-if="declaration">
+			<h3>Declared:</h3>
+			<div class="playingCards fourColours">
+				<ul class="hand">
+					<li v-for="card in declaration">
+						<card :suit="card.suit" :rank="card.value"
+							:trump-suit="trumpSuit" :trump-rank="trumpRank">
+						</card>
+					</li>
+				</ul>
+			</div>
+		</template>
+		<h3>Hand</h3>
 		<div class="playingCards fourColours">
 			<ul class="hand">
 				<li v-for="card in cards">

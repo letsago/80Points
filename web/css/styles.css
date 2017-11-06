@@ -18,7 +18,5 @@ h1, h2, h3 {
 }
 
 .playingCards .card.selected {
-    -moz-box-shadow: .2em .2em .5em #000080;
-    -webkit-box-shadow: .2em .2em .5em #000080;
-    box-shadow: .2em .2em .5em #000080;
+    top: -1em;
 }

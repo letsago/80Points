@@ -52,6 +52,21 @@ class Card(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+	def isTrump(self, trump_suit, trump_value):
+		'''
+		Checks if card is Trump
+		'''
+		# handles Jokers
+		if self.suit == 'joker':
+			return True
+
+		# handles Trump value
+		if self.value == trump_value:
+			return True
+
+		# handles Trump suit
+		return self.suit == trump_suit
+
 	@property
 	def dict(self):
 		return {'suit': self.suit, 'value': self.value}

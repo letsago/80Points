@@ -1,8 +1,8 @@
 import unittest
 from model import Card
 
-class TestModel(unittest.TestCase):
-	def testCardSorted(self):
+class TestCard(unittest.TestCase):
+	def testSorted(self):
 		tests = [
 			([Card('joker', 'big'), Card('s', 'A'), Card('h', '3')],
 		     [Card('h', '3'), Card('s', 'A'), Card('joker', 'big')]),
@@ -17,8 +17,19 @@ class TestModel(unittest.TestCase):
 		]
 		        
 		for test in tests:
-			self.assertEqual(sorted(test[0]), test[1])
-		
+			test_list, want = test
+			self.assertEqual(sorted(test_list), want)
+	
+	def testIsTrump(self):
+		tests = [
+			('h','2', Card('s','3'), False),
+			('h','2', Card('h','3'), True),
+			('h','2', Card('s','2'), True),
+		]
+
+		for test in tests:
+			suit, value, card, want = test
+			self.assertEqual(card.isTrump(suit, value), want)
 
 if __name__ == '__main__':
 	unittest.main()

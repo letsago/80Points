@@ -142,9 +142,23 @@ def process_user_round(func):
 @sio.on('round_declare')
 @process_user_round
 def round_declare(r, player, cards):
-	print('declaring {} for {}'.format(cards, player))
 	cards = [model.card_from_dict(card) for card in cards]
+	print('declaring {} for {}'.format(cards, player))
 	r.declare(player, cards)
+
+@sio.on('round_set_bottom')
+@process_user_round
+def round_set_bottom(r, player, cards):
+	cards = [model.card_from_dict(card) for card in cards]
+	print 'setting bottom to {}'.format(cards)
+	r.set_bottom(player, cards)
+
+@sio.on('round_play')
+@process_user_round
+def round_play(r, player, cards):
+	cards = [model.card_from_dict(card) for card in cards]
+	print 'player {} playing {}'.format(player, cards)
+	r.play(player, cards)
 
 if __name__ == '__main__':
 	app = socketio.Middleware(sio, app)

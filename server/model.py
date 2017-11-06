@@ -129,6 +129,13 @@ class Declaration(object):
 		self.player = player
 		self.cards = cards
 
+	@property
+	def dict(self):
+		return {
+			'player': self.player,
+			'cards': [card.dict for card in self.cards],
+		}
+
 class RoundState(object):
 	def __init__(self, num_players):
 		'''
@@ -186,11 +193,19 @@ class RoundState(object):
 		for card in cards:
 			self.player_hands[player].remove(card)
 
+	def is_board_full(self):
+		return all([len(cards) > 0 for cards in self.board])
+
+	def clear_board(self):
+		for i in range(len(self.board)):
+			self.board[i] = []
+
 	def get_player_view(self, player):
 		'''
 		Returns a view of the state from the perspective of the given player.
 		'''
 		view = {
+			'player': player,
 			'hand': [card.dict for card in trumpSorted(self.player_hands[player], self.trump_suit, self.trump_value)],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
@@ -206,7 +221,7 @@ class RoundState(object):
 		if self.declaration is None:
 			view['declaration'] = None
 		else:
-			view['declaration'] = [card.dict for card in self.declaration.cards]
+			view['declaration'] = self.declaration.dict
 
 		return view
 
@@ -284,7 +299,7 @@ class Round(object):
 					self._fire(lambda listener: listener.timed_action(self, 1))
 				elif self.state.declaration is not None:
 					self._fire(lambda listener: listener.timed_action(self, 5))
-			else:
+			elif self.state.declaration is not None:
 				# advance to STATUS_BOTTOM by adding the bottom to the player who declared
 				# TODO: handle case where no player declared within the time limit
 				# TODO: the 10 second time limit above should be shorter if a player has declared
@@ -316,7 +331,31 @@ class Round(object):
 		'''
 		Play the cards.
 		'''
-		raise NotImplementedError
+		if self.state.status != STATUS_PLAYING:
+			raise RoundException("the round is not in progress")
+		elif self.state.turn != player:
+			raise RoundException("it's not your turn")
+
+		player_hand = self.state.player_hands[player]
+		if not is_cards_contained_in(cards, player_hand):
+			raise RoundException("invalid cards")
+
+		# if starting new play, clear previous one
+		if self.state.is_board_full():
+			self.state.clear_board()
+
+		self.state.board[player] = cards
+		self.state.remove_cards_from_hand(player, cards)
+
+		# if all players have played, then we need to figure out who won to update the turn
+		# otherwise, we can just increment it
+		if self.state.is_board_full():
+			# TODO...
+			self.state.increment_turn()
+		else:
+			self.state.increment_turn()
+
+		self._fire(lambda listener: listener.player_played(self, player, cards))
 
 	def set_bottom(self, player, cards):
 		'''
@@ -327,13 +366,14 @@ class Round(object):
 		elif self.state.declaration.player != player:
 			raise RoundException("you did not have the bottom")
 		elif len(cards) != BOTTOM_SIZE[self.state.num_players]:
-			raise RoundException("the bottom must be {} cards".format(BOTTOM_SIZE[self.state_num_players]))
+			raise RoundException("the bottom must be {} cards".format(BOTTOM_SIZE[self.state.num_players]))
 
 		player_hand = self.state.player_hands[player]
 		if not is_cards_contained_in(cards, player_hand):
 			raise RoundException("invalid cards")
 
 		self.state.remove_cards_from_hand(player, cards)
+		self.state.status = STATUS_PLAYING
 		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))
 
 	def get_state(self):

@@ -20,3 +20,12 @@ h1, h2, h3 {
 .playingCards .card.selected {
     top: -1em;
 }
+
+.playerInfo {
+	width: 50%;
+	float: left;
+}
+
+.playerHand {
+	clear: left;
+}

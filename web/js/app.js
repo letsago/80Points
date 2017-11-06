@@ -125,6 +125,27 @@ var app = new Vue({
 	},
 })
 
+function mergeCards(oldCards, newCards) {
+	let merged = [];
+	newCards.forEach(function(card) {
+		// If we see the new card in the old hand, we push the old element onto the merged
+		// hand to preserve selected status.
+		for (let i = 0; i < oldCards.length; i++) {
+			if (oldCards[i].suit == card.suit && oldCards[i].value == card.value) {
+				merged.push(oldCards[i]);
+				oldCards.splice(i, 1);
+				return;
+			}
+		}
+		merged.push({
+			suit: card.suit,
+			value: card.value,
+			// Needs default value for selected.
+			selected: false,
+		});
+	});
+	return merged;
+}
 
 socket.emit('join', 'player');
 
@@ -141,13 +162,7 @@ socket.on('state', function(data) {
 	app.declaration = data.declaration;
 	app.board = data.board;
 
-	app.cards = data.hand.map(function(el) {
-		return {
-			suit: el.suit,
-			value: el.value,
-			selected: false,
-		};
-	});
+	app.cards = mergeCards(app.cards, data.hand);
 
 	// set declarable suits
 	// TODO: make this computed?

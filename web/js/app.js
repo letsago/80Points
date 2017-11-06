@@ -89,8 +89,9 @@ var app = new Vue({
 		declareSuit: function (suit) {
 			// find all cards matching trumpRank in this suit, and declare them together
 			var cards = [];
-			app.cards.forEach(function(card) {
-				if (card.suit == suit && card.value == app.trumpRank) {
+			var trumpRank = this.trumpRank;
+			this.cards.forEach(function(card) {
+				if (card.suit == suit && card.value == trumpRank) {
 					cards.push(card);
 				}
 			});

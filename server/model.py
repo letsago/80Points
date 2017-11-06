@@ -113,6 +113,13 @@ class Declaration(object):
 		self.player = player
 		self.cards = cards
 
+	@property
+	def dict(self):
+		return {
+			'player': self.player,
+			'cards': [card.dict for card in self.cards],
+		}
+
 class RoundState(object):
 	def __init__(self, num_players):
 		'''
@@ -182,6 +189,7 @@ class RoundState(object):
 		Returns a view of the state from the perspective of the given player.
 		'''
 		view = {
+			'player': player,
 			'hand': [card.dict for card in self.player_hands[player]],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
@@ -197,7 +205,7 @@ class RoundState(object):
 		if self.declaration is None:
 			view['declaration'] = None
 		else:
-			view['declaration'] = [card.dict for card in self.declaration.cards]
+			view['declaration'] = self.declaration.dict
 
 		return view
 
@@ -340,7 +348,7 @@ class Round(object):
 		elif self.state.declaration.player != player:
 			raise RoundException("you did not have the bottom")
 		elif len(cards) != BOTTOM_SIZE[self.state.num_players]:
-			raise RoundException("the bottom must be {} cards".format(BOTTOM_SIZE[self.state_num_players]))
+			raise RoundException("the bottom must be {} cards".format(BOTTOM_SIZE[self.state.num_players]))
 
 		player_hand = self.state.player_hands[player]
 		if not is_cards_contained_in(cards, player_hand):

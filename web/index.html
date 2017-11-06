@@ -48,7 +48,7 @@
 			<h3>Declared:</h3>
 			<div class="playingCards fourColours">
 				<ul class="hand">
-					<li v-for="card in declaration">
+					<li v-for="card in declaration.cards">
 						<card :suit="card.suit" :rank="card.value"
 							:trump-suit="trumpSuit" :trump-rank="trumpRank">
 						</card>
@@ -57,6 +57,9 @@
 			</div>
 		</template>
 		<h3>Hand</h3>
+		<template v-if="canSetBottom">
+			<button v-on:click="setBottom">Set Bottom</button>
+		</template>
 		<div class="playingCards fourColours">
 			<ul class="hand">
 				<li v-for="card in cards">

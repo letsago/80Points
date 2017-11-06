@@ -146,6 +146,13 @@ def round_declare(r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
 	r.declare(player, cards)
 
+@sio.on('round_set_bottom')
+@process_user_round
+def round_set_bottom(r, player, cards):
+	print 'setting bottom to {}'.format(cards)
+	cards = [model.card_from_dict(card) for card in cards]
+	r.set_bottom(player, cards)
+
 if __name__ == '__main__':
 	app = socketio.Middleware(sio, app)
 	eventlet.wsgi.server(eventlet.listen(('', 8000)), app)

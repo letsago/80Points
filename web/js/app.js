@@ -62,6 +62,7 @@ var app = new Vue({
 	el: '#app',
 	data: {
 		status: 'disconnected',
+		player: -1,
 		cards: [
 			{suit: 'h', value: 'A', selected: false},
 			{suit: 'd', value: '2', selected: false},
@@ -85,6 +86,11 @@ var app = new Vue({
 		declaration: null,
 		declarableSuits: {},
 	},
+	computed: {
+		canSetBottom: function () {
+			return this.status == 'bottom' && this.player == this.declaration.player;
+		},
+	},
 	methods: {
 		declareSuit: function (suit) {
 			// find all cards matching trumpRank in this suit, and declare them together
@@ -97,6 +103,15 @@ var app = new Vue({
 			});
 			socket.emit('round_declare', cards);
 		},
+		setBottom: function () {
+			var cards = [];
+			this.cards.forEach(function(card) {
+				if (card.selected) {
+					cards.push(card);
+				}
+			});
+			socket.emit('round_set_bottom', cards);
+		},
 	},
 })
 
@@ -108,8 +123,8 @@ socket.on('lobby', function (data) {
 });
 
 socket.on('state', function(data) {
-	console.log(app.status);
 	app.status = data.status;
+	app.player = data.player;
 	app.trumpSuit = data.trump_suit;
 	app.trumpRank = data.trump_value;
 	app.turn = data.turn;
@@ -127,7 +142,7 @@ socket.on('state', function(data) {
 	if (data.status == 'dealing') {
 		var numCardsNeeded = 1;
 		if (data.declaration) {
-			numCardsNeeded = data.declaration.length + 1;
+			numCardsNeeded = data.declaration.cards.length + 1;
 		}
 		var numTrumpInSuits = {};
 		data.hand.forEach(function(el) {

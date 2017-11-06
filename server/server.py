@@ -150,14 +150,14 @@ def round_declare(r, player, cards):
 @process_user_round
 def round_set_bottom(r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
-	print 'setting bottom to {}'.format(cards)
+	print('setting bottom to {}'.format(cards))
 	r.set_bottom(player, cards)
 
 @sio.on('round_play')
 @process_user_round
 def round_play(r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
-	print 'player {} playing {}'.format(player, cards)
+	print('player {} playing {}'.format(player, cards))
 	r.play(player, cards)
 
 if __name__ == '__main__':

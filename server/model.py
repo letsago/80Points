@@ -268,7 +268,7 @@ class Round(object):
 					self._fire(lambda listener: listener.timed_action(self, 1))
 				elif self.state.declaration is not None:
 					self._fire(lambda listener: listener.timed_action(self, 5))
-			else:
+			elif self.state.declaration is not None:
 				# advance to STATUS_BOTTOM by adding the bottom to the player who declared
 				# TODO: handle case where no player declared within the time limit
 				# TODO: the 10 second time limit above should be shorter if a player has declared

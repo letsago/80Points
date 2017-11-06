@@ -60,6 +60,9 @@
 		<template v-if="canSetBottom">
 			<button v-on:click="setBottom">Set Bottom</button>
 		</template>
+		<template v-if="canPlay">
+			<button v-on:click="play">Play</button>
+		</template>
 		<div class="playingCards fourColours">
 			<ul class="hand">
 				<li v-for="card in cards">

@@ -339,6 +339,8 @@ class Round(object):
 		else:
 			self.state.increment_turn()
 
+		self._fire(lambda listener: listener.player_played(self, player, cards))
+
 	def set_bottom(self, player, cards):
 		'''
 		Set the bottom.

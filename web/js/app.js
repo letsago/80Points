@@ -90,8 +90,20 @@ var app = new Vue({
 		canSetBottom: function () {
 			return this.status == 'bottom' && this.player == this.declaration.player;
 		},
+		canPlay: function () {
+			return this.status == 'playing' && this.player == this.turn;
+		},
 	},
 	methods: {
+		getSelectedCards: function () {
+			var cards = [];
+			this.cards.forEach(function(card) {
+				if (card.selected) {
+					cards.push(card);
+				}
+			});
+			return cards;
+		},
 		declareSuit: function (suit) {
 			// find all cards matching trumpRank in this suit, and declare them together
 			var cards = [];
@@ -104,13 +116,10 @@ var app = new Vue({
 			socket.emit('round_declare', cards);
 		},
 		setBottom: function () {
-			var cards = [];
-			this.cards.forEach(function(card) {
-				if (card.selected) {
-					cards.push(card);
-				}
-			});
-			socket.emit('round_set_bottom', cards);
+			socket.emit('round_set_bottom', this.getSelectedCards());
+		},
+		play: function () {
+			socket.emit('round_play', this.getSelectedCards());
 		},
 	},
 })

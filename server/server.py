@@ -143,7 +143,7 @@ def process_user_round(func):
 @process_user_round
 def round_declare(r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
-	print 'declaring {} for {}'.format(cards, player)
+	print('declaring {} for {}'.format(cards, player))
 	r.declare(player, cards)
 
 @sio.on('round_set_bottom')

@@ -2,7 +2,7 @@ import functools
 import itertools
 import random
 
-ORDERED_LIST = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+CARD_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
 def keyTrump(card, trump_suit, trump_value):
 	if card.suit == 'joker' and card.value == 'big':
@@ -13,7 +13,7 @@ def keyTrump(card, trump_suit, trump_value):
 		return 14
 	if card.value == trump_value:
 		return 13
-	return ORDERED_LIST.index(card.value)
+	return CARD_VALUES.index(card.value)
 
 def trumpSorted(cards, trump_suit, trump_value):
 	trumps = [card for card in cards if card.isTrump(trump_suit, trump_value)]
@@ -63,7 +63,7 @@ class Card(object):
 			return False
 
 		# handles sorting of values in same suit
-		return ORDERED_LIST.index(self.value) < ORDERED_LIST.index(other.value)
+		return CARD_VALUES.index(self.value) < CARD_VALUES.index(other.value)
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
@@ -96,8 +96,7 @@ def create_deck(num_decks):
 	'''
 
 	suit = ['d', 'h', 's', 'c']
-	number = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-	one_deck = [Card(x[0], x[1]) for x in itertools.product(suit, number)]
+	one_deck = [Card(x[0], x[1]) for x in itertools.product(suit, CARD_VALUES)]
 	one_deck.extend([Card('joker', 'big'), Card('joker', 'small')])
 	total_decks = num_decks * one_deck
 	return total_decks
@@ -212,6 +211,7 @@ class RoundState(object):
 			'status': self.status,
 			'trump_value': self.trump_value,
 			'trump_suit': self.trump_suit,
+			'bottom_size': BOTTOM_SIZE[self.num_players],
 		}
 
 		view['board'] = []

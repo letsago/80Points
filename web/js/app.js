@@ -2,7 +2,7 @@ var socket = io();
 
 // A card component
 Vue.component('card', {
-	props: ['suit', 'rank', 'selected', 'trumpSuit', 'trumpRank'],
+	props: ['suit', 'rank', 'selected', 'selectable', 'trumpSuit', 'trumpRank'],
 	template: '#card-template',
 	computed: {
 		isTrump: function() {
@@ -52,6 +52,10 @@ Vue.component('card', {
 	},
 	methods: {
 		toggleSelected: function() {
+			// Don't allow selecting when the card is not selectable, but do allow for it to be de-selected.
+			if (!this.selected && !this.selectable) {
+				return;	
+			}
 			this.$emit('update-selected', !this.selected);
 		},
 	},
@@ -63,18 +67,11 @@ var app = new Vue({
 	data: {
 		status: 'disconnected',
 		player: -1,
-		cards: [
-			{suit: 'h', value: 'A', selected: false},
-			{suit: 'd', value: '2', selected: false},
-			{suit: 's', value: '3', selected: false},
-			{suit: 'c', value: '10', selected: false},
-			{suit: 'c', value: 'K', selected: false},
-			{suit: 'joker', value: 'big', selected: false},
-			{suit: 'joker', value: 'small', selected: false},
-		],
+		cards: [],
 		trumpSuit: 'c',
 		trumpRank: '2',
 		turn: -1,
+		bottomSize: -1,
 		suits: {
 			'c': 'Clubs',
 			'd': 'Diamonds',
@@ -88,39 +85,34 @@ var app = new Vue({
 		board: [],
 	},
 	computed: {
+		selectedCards: function() {
+			return this.cards.filter(card => {
+				return card.selected;
+			});
+		},
 		canSetBottom: function () {
 			return this.status == 'bottom' && this.player == this.declaration.player;
 		},
 		canPlay: function () {
 			return this.status == 'playing' && this.player == this.turn;
 		},
+		canSelectNewCards: function() {
+			return !(this.canSetBottom && this.selectedCards.length >= this.bottomSize);
+		},
 	},
 	methods: {
-		getSelectedCards: function () {
-			var cards = [];
-			this.cards.forEach(function(card) {
-				if (card.selected) {
-					cards.push(card);
-				}
-			});
-			return cards;
-		},
 		declareSuit: function (suit) {
 			// find all cards matching trumpRank in this suit, and declare them together
-			var cards = [];
-			var trumpRank = this.trumpRank;
-			this.cards.forEach(function(card) {
-				if (card.suit == suit && card.value == trumpRank) {
-					cards.push(card);
-				}
+			let cards = this.cards.filter(card => {
+				return (card.suit == suit && card.value == this.trumpRank);
 			});
 			socket.emit('round_declare', cards);
 		},
 		setBottom: function () {
-			socket.emit('round_set_bottom', this.getSelectedCards());
+			socket.emit('round_set_bottom', this.selectedCards);
 		},
 		play: function () {
-			socket.emit('round_play', this.getSelectedCards());
+			socket.emit('round_play', this.selectedCards);
 		},
 	},
 })
@@ -161,6 +153,7 @@ socket.on('state', function(data) {
 	app.turn = data.turn;
 	app.declaration = data.declaration;
 	app.board = data.board;
+	app.bottomSize = data.bottom_size;
 
 	app.cards = mergeCards(app.cards, data.hand);
 

@@ -4,6 +4,22 @@ import random
 
 ORDERED_LIST = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
+def keyTrump(card, trump_suit, trump_value):
+	if card.suit == 'joker' and card.value == 'big':
+		return 16
+	if card.suit == 'joker' and card.value == 'small':
+		return 15
+	if card.suit == trump_suit and card.value == trump_value:
+		return 14
+	if card.value == trump_value:
+		return 13
+	return ORDERED_LIST.index(card.value)
+
+def trumpSorted(cards, trump_suit, trump_value):
+	trumps = [card for card in cards if card.isTrump(trump_suit, trump_value)]
+	nonTrumps = sorted([card for card in cards if not card.isTrump(trump_suit, trump_value)])
+	return nonTrumps + sorted(trumps, key=lambda x: keyTrump(x, trump_suit, trump_value))
+
 @functools.total_ordering
 class Card(object):
 	def __init__(self, suit, value):
@@ -175,7 +191,7 @@ class RoundState(object):
 		Returns a view of the state from the perspective of the given player.
 		'''
 		view = {
-			'hand': [card.dict for card in self.player_hands[player]],
+			'hand': [card.dict for card in trumpSorted(self.player_hands[player], self.trump_suit, self.trump_value)],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
 			'status': self.status,

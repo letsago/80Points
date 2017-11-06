@@ -85,6 +85,7 @@ var app = new Vue({
 		players: [],
 		declaration: null,
 		declarableSuits: {},
+		board: [],
 	},
 	computed: {
 		canSetBottom: function () {
@@ -138,6 +139,7 @@ socket.on('state', function(data) {
 	app.trumpRank = data.trump_value;
 	app.turn = data.turn;
 	app.declaration = data.declaration;
+	app.board = data.board;
 
 	app.cards = data.hand.map(function(el) {
 		return {
@@ -148,6 +150,7 @@ socket.on('state', function(data) {
 	});
 
 	// set declarable suits
+	// TODO: make this computed?
 	if (data.status == 'dealing') {
 		var numCardsNeeded = 1;
 		if (data.declaration) {

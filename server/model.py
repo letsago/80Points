@@ -200,7 +200,7 @@ class RoundState(object):
 
 		view['board'] = []
 		for cards in self.board:
-			view['board'].append([str(card) for card in cards])
+			view['board'].append([card.dict for card in cards])
 
 		if self.declaration is None:
 			view['declaration'] = None

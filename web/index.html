@@ -22,8 +22,15 @@
 </head>
 
 <body>
-	<h2>80 Points</h2>
 	<div id="app">
+		<div class="gameInfo">
+			<div>
+				<b>Trump Suit: </b>{{ suits[trumpSuit] }}
+			</div>
+			<div>
+				<b>Trump Rank: </b>{{ trumpRank }}
+			</div>
+		</div>
 		<div class="playerInfo" v-for="(player, index) in players">
 			<p>
 				<template v-if="turn == index">
@@ -45,17 +52,43 @@
 		</div>
 		<template v-if="status == 'dealing'">
 			<div>
-				<h3>Declare a Suit:</h3>
-				<div v-for="(suitName, suit) in suits">
-					<button
-						v-on:click="declareSuit(suit)"
-						:disabled="!(suit in declarableSuits)"
-						>
-						{{ suitName }}
-					</button>
-				</div>
+				<span>
+					<span class="heading">Declare a Suit:</span>
+					<span v-for="(suitName, suit) in suits">
+						<button
+							v-on:click="declareSuit(suit)"
+							:disabled="!(suit in declarableSuits)"
+							>
+							{{ suitName }}
+						</button>&nbsp;
+					</span>
+				</span>
 			</div>
 		</template>
+		<template v-if="cards.length > 0">
+			<div class="playerHand">
+				<span>
+					<span class="heading">Hand</span>&nbsp;
+					<template v-if="canSetBottom">
+						<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
+					</template>
+					<template v-if="canPlay">
+						<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>
+					</template>
+				</span>
+			</div>
+		</template>
+		<div class="playingCards fourColours">
+			<ul class="hand">
+				<li v-for="card in cards">
+					<card :suit="card.suit" :rank="card.value"
+						:selected="card.selected" v-on:update-selected="val => card.selected = val"
+						:selectable="canSelectNewCards"
+						:trump-suit="trumpSuit" :trump-rank="trumpRank">
+					</card>
+				</li>
+			</ul>
+		</div>
 		<template v-if="declaration">
 			<div>
 				<h3>Declared:</h3>
@@ -70,36 +103,6 @@
 				</div>
 			</div>
 		</template>
-		<div class="playerHand">
-			<h3>Hand</h3>
-			<template v-if="canSetBottom">
-				<button v-on:click="setBottom">Set Bottom</button>
-			</template>
-			<template v-if="canPlay">
-				<button v-on:click="play">Play</button>
-			</template>
-		</div>
-		<div class="playingCards fourColours">
-			<ul class="hand">
-				<li v-for="card in cards">
-					<card :suit="card.suit" :rank="card.value"
-						:selected="card.selected" v-on:update-selected="val => card.selected = val"
-						:selectable="canSelectNewCards"
-						:trump-suit="trumpSuit" :trump-rank="trumpRank">
-					</card>
-				</li>
-			</ul>
-		</div>
-		<h3>Trump Suit:</h3>
-		<div v-for="(suitName, suit) in suits">
-			<input type="radio" :id="suit" :value="suit.charAt(0).toLowerCase()" v-model="trumpSuit">
-			<label :for="suit">{{ suitName }}</label>
-		</div>
-		<h3>Trump Rank:</h3>
-		<div v-for="rank in ranks">
-			<input type="radio" :id="rank" :value="rank" v-model="trumpRank">
-			<label :for="rank">{{ rank }}</label>
-		</div>
 	</div>
 
 	<script src="js/socket.io.js"></script>

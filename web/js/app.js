@@ -68,7 +68,7 @@ var app = new Vue({
 		status: 'disconnected',
 		player: -1,
 		cards: [],
-		trumpSuit: 'c',
+		trumpSuit: '',
 		trumpRank: '2',
 		turn: -1,
 		bottomSize: -1,

@@ -31,13 +31,27 @@
 				<b>Trump Rank: </b>{{ trumpRank }}
 			</div>
 		</div>
+		<div class="joinGame">
+			<template v-if="!joined && players.length < 4">
+				<span>
+					<span class="heading">Join as: </span>&nbsp;
+					<input v-model="playerName" placeholder="player name">
+					<button v-on:click="joinAs(playerName)">Join</button>
+				</span>	
+			</template>		
+			<template v-else>
+				<span>
+					You are: <span class="heading">{{ playerName }}</span>
+				</span>
+			</template>
+		</div>
 		<div class="playerInfo" v-for="(player, index) in players">
-			<p>
-				<template v-if="turn == index">
-					<em>{{ player }}</em>
+			<p :class="turn == index ? 'em' : ''">
+				<template v-if="joined">
+					{{ player }}
 				</template>
 				<template v-else>
-					{{ player }}
+					<a href="#" v-on:click="joinAs(player)">{{ player }}</a>
 				</template>
 			</p>
 			<div class="playingCards fourColours">

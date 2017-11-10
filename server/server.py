@@ -9,10 +9,12 @@ NUM_PLAYERS = 4
 SPEED = 5
 
 class User(object):
-	def __init__(self, sid, name):
+	def __init__(self, sid, name, player):
 		self.sid = sid
 		self.name = name
+		self.player = player
 		self.round = None
+		self.listener = None
 
 class ServerState(object):
 	def __init__(self):
@@ -49,10 +51,17 @@ class ForwardToUser(model.RoundListener):
 	Forwards updates on the Round to a user via sio messages.
 	'''
 
-	def __init__(self, sio, player, sid):
+	def __init__(self, sio, user):
 		self.sio = sio
-		self.player = player
-		self.sid = sid
+		self.user = user
+
+	@property
+	def player(self):
+		return self.user.player
+
+	@property
+	def sid(self):
+		return self.user.sid
 
 	def _send_state(self, r):
 		view = r.get_state().get_player_view(self.player)
@@ -112,13 +121,25 @@ def index(path):
 		path = 'index.html'
 	return send_from_directory('../web/', path)
 
+@sio.on('players')
+def players(sid):
+	sio.emit('lobby', [user.name for user in state.users], room=sid)
+
 @sio.on('join')
 def join(sid, name):
+	# If we join the game as an existing user in the game, we
+	# change the user's socket ID to the new one.
+	for user in state.users:
+		if user.name == name:
+			user.sid = sid
+			if user.listener is not None and user.round is not None:
+				user.listener._send_state(user.round)
+			return
 	if state.round is not None:
 		sio.emit('bye', 'The game has already started!')
 		return
 
-	state.users.append(User(sid, name))
+	state.users.append(User(sid, name, len(state.users)))
 	user_names = [user.name for user in state.users]
 	for user in state.users:
 		sio.emit('lobby', user_names, room=user.sid)
@@ -126,17 +147,18 @@ def join(sid, name):
 	# if we have enough users, we can start the game
 	if len(state.users) >= NUM_PLAYERS:
 		listeners = [TimedActionListener()]
-		for i in range(len(state.users)):
-			listeners.append(ForwardToUser(sio, i, state.users[i].sid))
+		for user in state.users:
+			listener = ForwardToUser(sio, user)
+			user.listener = listener
+			listeners.append(listener)
 		state.round = model.Round(len(state.users), listeners)
-		for i in range(len(state.users)):
-			state.users[i].round = (state.round, i)
+		for user in state.users:
+			user.round = state.round
 
 def process_user_round(func):
 	def func_wrapper(sid, *args):
 		user = state.get_user_by_sid(sid)
-		r, player = user.round
-		func(r, player, *args)
+		func(user.round, user.player, *args)
 	return func_wrapper
 
 @sio.on('round_declare')

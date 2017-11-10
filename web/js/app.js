@@ -65,6 +65,8 @@ Vue.component('card', {
 var app = new Vue({
 	el: '#app',
 	data: {
+		joined: false,
+		playerName: '',
 		status: 'disconnected',
 		player: -1,
 		cards: [],
@@ -108,6 +110,11 @@ var app = new Vue({
 			});
 			socket.emit('round_declare', cards);
 		},
+		joinAs: function(playerName) {
+			socket.emit('join', playerName);
+			this.joined = true;
+			this.playerName = playerName;
+		},
 		setBottom: function () {
 			socket.emit('round_set_bottom', this.selectedCards);
 		},
@@ -139,10 +146,16 @@ function mergeCards(oldCards, newCards) {
 	return merged;
 }
 
-socket.emit('join', 'player');
+socket.on('connect', () => {
+	socket.emit('players');
+});
 
 socket.on('lobby', function (data) {
 	app.players = data;
+	if (!app.joined && app.playerName == '' && app.players.length < 4) {
+		let num = app.players.length + 1;
+		app.playerName = 'player' + num.toString();
+	}
 });
 
 socket.on('state', function(data) {

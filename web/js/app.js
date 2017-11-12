@@ -54,7 +54,7 @@ Vue.component('card', {
 		toggleSelected: function() {
 			// Don't allow selecting when the card is not selectable, but do allow for it to be de-selected.
 			if (!this.selected && !this.selectable) {
-				return;	
+				return;
 			}
 			this.$emit('update-selected', !this.selected);
 		},
@@ -103,6 +103,11 @@ var app = new Vue({
 		},
 	},
 	methods: {
+		clearSelectedCards: function() {
+			app.cards.forEach(function(el) {
+				el.selected = false;
+			});
+		},
 		declareSuit: function (suit) {
 			// find all cards matching trumpRank in this suit, and declare them together
 			let cards = this.cards.filter(card => {
@@ -117,9 +122,11 @@ var app = new Vue({
 		},
 		setBottom: function () {
 			socket.emit('round_set_bottom', this.selectedCards);
+			clearSelectedCards();
 		},
 		play: function () {
 			socket.emit('round_play', this.selectedCards);
+			clearSelectedCards();
 		},
 	},
 })

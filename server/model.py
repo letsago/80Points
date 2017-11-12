@@ -4,7 +4,7 @@ import random
 
 CARD_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
-def keyTrump(card, trump_suit, trump_value):
+def key_trump(card, trump_suit, trump_value):
 	if card.suit == 'joker' and card.value == 'big':
 		return 16
 	if card.suit == 'joker' and card.value == 'small':
@@ -15,10 +15,10 @@ def keyTrump(card, trump_suit, trump_value):
 		return 13
 	return CARD_VALUES.index(card.value)
 
-def trumpSorted(cards, trump_suit, trump_value):
-	trumps = [card for card in cards if card.isTrump(trump_suit, trump_value)]
-	nonTrumps = sorted([card for card in cards if not card.isTrump(trump_suit, trump_value)])
-	return nonTrumps + sorted(trumps, key=lambda x: keyTrump(x, trump_suit, trump_value))
+def trump_sorted(cards, trump_suit, trump_value):
+	trumps = [card for card in cards if card.is_trump(trump_suit, trump_value)]
+	non_trumps = sorted([card for card in cards if not card.is_trump(trump_suit, trump_value)])
+	return non_trumps + sorted(trumps, key=lambda x: key_trump(x, trump_suit, trump_value))
 
 @functools.total_ordering
 class Card(object):
@@ -68,7 +68,7 @@ class Card(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
-	def isTrump(self, trump_suit, trump_value):
+	def is_trump(self, trump_suit, trump_value):
 		'''
 		Checks if card is Trump
 		'''
@@ -205,7 +205,7 @@ class RoundState(object):
 		'''
 		view = {
 			'player': player,
-			'hand': [card.dict for card in trumpSorted(self.player_hands[player], self.trump_suit, self.trump_value)],
+			'hand': [card.dict for card in trump_sorted(self.player_hands[player], self.trump_suit, self.trump_value)],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
 			'status': self.status,

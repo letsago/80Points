@@ -84,7 +84,7 @@ class Flush(object):
 		'''
 		if len(self.tractors) != len(other.tractors):
 			return False
-		for i, tractor in self.tractors:
+		for i, tractor in enumerate(self.tractors):
 			if tractor != other.tractors[i]:
 				return False
 		return True
@@ -93,7 +93,7 @@ class Flush(object):
 		'''
 		Returns whether self is less than other.
 		'''
-		for i, tractor in self.tractors:
+		for i, tractor in enumerate(self.tractors):
 			if tractor == other.tractors[i]:
 				continue 
 			return tractor < other.tractors[i]

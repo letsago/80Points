@@ -15,7 +15,6 @@ def Double(suit, value):
 
 class TestTractor(unittest.TestCase):
 	def testCardsToTractors(self):
-		ace = Card('s', 'A')
 		tests = [
 			(Double('s', '2') + Double('s', '3'),
 			 [Tractor(2, 2, Card('s', '2'), SUIT_LOWEST)]),
@@ -35,6 +34,24 @@ class TestTractor(unittest.TestCase):
 			test_cards, want = test
 			self.assertEqual(cards_to_tractors(test_cards, 's', 's'), want)
 	
+	def testCompareFlush(self):
+		trick_suit = 's'
+		trump_suit = 'h'
+
+		tests = [
+			(Double('s', '2'),
+			 Double('s', '5')),
+			(Double('d', '5'),
+			 Double('s', '2')),
+			(Double('s', '5'),
+			 Double('h', '2')),
+		]
+
+		for test in tests:
+			lesser_cards, greater_cards = test
+			lesser_flush = Flush(lesser_cards, trick_suit, trump_suit)
+			greater_flush = Flush(greater_cards, trick_suit, trump_suit)
+			self.assertLess(lesser_flush, greater_flush)
 
 if __name__ == '__main__':
 	unittest.main()

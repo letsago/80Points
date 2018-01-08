@@ -116,6 +116,7 @@ def is_cards_contained_in(cards, hand):
 STATUS_DEALING = 'dealing'
 STATUS_BOTTOM = 'bottom'
 STATUS_PLAYING = 'playing'
+STATUS_ENDED = 'ended'
 
 BOTTOM_SIZE = {
 	4: 8,
@@ -262,6 +263,15 @@ class RoundListener(object):
 		'''
 		pass
 
+	def ended(self, r, player_scores, next_player):
+		'''
+		The round ended.
+
+		player_scores is a list of integers indicating how many levels each player gained.
+		next_player is the player who should start the next round.
+		'''
+		pass
+
 class Round(object):
 	def __init__(self, num_players, listeners=[]):
 		'''
@@ -351,7 +361,11 @@ class Round(object):
 		# otherwise, we can just increment it
 		if self.state.is_board_full():
 			# TODO...
-			self.state.increment_turn()
+
+			if len(self.state.player_hands[0]) > 0:
+				self.state.increment_turn()
+			else:
+				self._end()
 		else:
 			self.state.increment_turn()
 
@@ -381,6 +395,18 @@ class Round(object):
 		Returns the current RoundState of this Round.
 		'''
 		return self.state
+
+	def _end(self):
+		'''
+		Called after the last trick is finished.
+
+		We should accumulate points and then notify listeners about the result
+		of this round.
+		'''
+		self.state.status = STATUS_ENDED
+		player_scores = [0] * self.state.num_players
+		player_scores[0] = 1
+		self._fire(lambda listener: listener.end(self, player_scores, 0))
 
 class RoundException(Exception):
 	pass

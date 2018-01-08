@@ -1,118 +1,126 @@
-import socketio
+import argparse
 import eventlet
 import eventlet.wsgi
 from flask import Flask, send_from_directory
+import random
+import socketio
+import uuid
 
 import model
+import server_utils
 
-NUM_PLAYERS = 4
-SPEED = 5
+parser = argparse.ArgumentParser()
+parser.add_argument('--speed', default=5)
+parser.add_argument('--debug', action='store_true')
+
+args = parser.parse_args()
 
 class User(object):
-	def __init__(self, sid, name, player):
+	def __init__(self, sid, name):
 		self.sid = sid
 		self.name = name
-		self.player = player
-		self.round = None
+		self.game_player = None
+
+class GamePlayer(object):
+	def __init__(self, user, game, idx):
+		self.user = user
+		self.game = game
+		self.idx = idx
+		self.ready = False
 		self.listener = None
 
-class ServerState(object):
-	def __init__(self):
-		self.users = []
+STATUS_LOBBY = 'lobby'
+STATUS_ROUND = 'round'
+STATUS_SCORE = 'score'
+
+class Game(model.RoundListener):
+	def __init__(self, id, name, num_players):
+		self.id = id
+		self.name = name
+		self.status = STATUS_LOBBY
+		self.players = [None] * num_players
 		self.round = None
 
-	def get_user_by_sid(self, sid):
-		for user in self.users:
-			if user.sid == sid:
-				return user
-		return None
+	def get_player_from_user(self, user):
+		for i, player in enumerate(self.players):
+			if player.user == user:
+				return (i, player)
+		return (None, None)
 
-class TimedActionListener(model.RoundListener):
-	def __init__(self):
-		self.pending_tick = None
+	def join(self, user):
+		if self.status != STATUS_LOBBY:
+			raise GameException('this game already started')
+		for i in range(len(self.players)):
+			if self.players[i] is None:
+				player = GamePlayer(user, self, i)
+				self.players[i] = player
+				user.game_player = player
+				return
+		raise GameException('this game is full')
 
-	def timed_action(self, r, delay):
-		'''
-		Run tick on the round after the given delay.
+	def join_as(self, user, idx):
+		self.players[idx].user = user
+		if self.players[idx].listener is not None:
+			self.players[idx].listener.send_state(self.round)
 
-		If there is already a queued tick, we should cancel that tick and reschedule
-		it. This may happen if another action was performed on the Round before the
-		timed action.
-		'''
-		def run_action():
-			r.tick()
-			self.pending_tick = None
-		if self.pending_tick is not None:
-			self.pending_tick.cancel()
-		self.pending_tick = eventlet.spawn_after(float(delay) / SPEED, run_action)
+	def is_full(self):
+		for player in self.players:
+			if player is None:
+				return False
+		return True
 
-class ForwardToUser(model.RoundListener):
-	'''
-	Forwards updates on the Round to a user via sio messages.
-	'''
+	def set_ready(self, user):
+		if self.status != STATUS_SCORE:
+			raise GameException('the game is not in scoring')
+		idx, player = self.get_player_from_user(user)
+		if player is None:
+			raise GameException('you are not in this game')
+		player.ready = True
 
-	def __init__(self, sio, user):
-		self.sio = sio
-		self.user = user
+	def start_round(self, sio):
+		if self.status == STATUS_ROUND:
+			raise GameException('this game already started')
+		self.listeners = []
+		for player in self.players:
+			player.listener = server_utils.ForwardToGamePlayer(sio, player)
+			self.listeners.append(player.listener)
+		self.round = model.Round(len(self.players), [self, server_utils.TimedActionListener(args.speed)] + self.listeners)
+
+	def ended(self, r, player_scores, next_player):
+		for player in self.players:
+			player.ready = False
+			player.listener = None
+		self.round = None
+		self.status = STATUS_SCORE
 
 	@property
-	def player(self):
-		return self.user.player
+	def list_dict(self):
+		num_players = sum([1 for player in self.players if player is not None])
+		return {
+			'id': self.id,
+			'name': self.name,
+			'occupied': num_players,
+			'total': len(self.players),
+		}
 
 	@property
-	def sid(self):
-		return self.user.sid
+	def lobby_dict(self):
+		names = []
+		for player in self.players:
+			if player is None:
+				names.append('Empty')
+			else:
+				names.append(player.user.name)
+		return names
 
-	def _send_state(self, r):
-		view = r.get_state().get_player_view(self.player)
-		self.sio.emit('state', view, room=self.sid)
-
-	def card_dealt(self, r, player, card):
-		data = {
-			'player': player,
-		}
-		if player == self.player:
-			data['card'] = card.dict
-		self.sio.emit('card_dealt', data, room=self.sid)
-		self._send_state(r)
-
-	def player_declared(self, r, player, cards):
-		data = {
-			'player': player,
-			'cards': [card.dict for card in cards],
-		}
-		self.sio.emit('player_declared', data, room=self.sid)
-		self._send_state(r)
-
-	def player_given_bottom(self, r, player, cards):
-		data = {
-			'player': player,
-		}
-		if player == self.player:
-			data['cards'] = [card.dict for card in cards]
-		self.sio.emit('player_given_bottom', data, room=self.sid)
-		self._send_state(r)
-
-	def player_set_bottom(self, r, player, cards):
-		data = {
-			'player': player,
-		}
-		if player == self.player:
-			data['cards'] = [card.dict for card in cards]
-		self.sio.emit('player_set_bottom', data, room=self.sid)
-		self._send_state(r)
-
-	def player_played(self, r, player, cards):
-		data = {
-			'player': player,
-			'cards': [card.dict for card in cards],
-		}
-		self.sio.emit('player_played', data, room=self.sid)
-		self._send_state(r)
+class GameException(Exception):
+	pass
 
 sio = socketio.Server()
 app = Flask(__name__)
-state = ServerState()
+
+users = {}
+games = {}
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -121,45 +129,106 @@ def index(path):
 		path = 'index.html'
 	return send_from_directory('../web/', path)
 
-@sio.on('players')
-def players(sid):
-	sio.emit('lobby', [user.name for user in state.users], room=sid)
+@sio.on('connect')
+def on_connect(sid, environ):
+	if args.debug:
+		register(sid, 'player{}'.format(random.randint(10000, 99999)))
+		if len(games) > 0:
+			join(sid, games.keys()[0])
+		else:
+			create(sid, 'debug game', 4)
 
-@sio.on('join')
-def join(sid, name):
-	# If we join the game as an existing user in the game, we
-	# change the user's socket ID to the new one.
-	for user in state.users:
-		if user.name == name:
-			user.sid = sid
-			if user.listener is not None and user.round is not None:
-				user.listener._send_state(user.round)
+@sio.on('register')
+def register(sid, name):
+	if sid in users:
+		sio.emit('error', 'you are already registered', room=sid)
+		return
+	users[sid] = User(sid, name)
+	sio.emit('register', name, sid)
+
+@sio.on('game_list')
+def game_list(sid):
+	l = []
+	for game in games.values():
+		if game.status == STATUS_LOBBY:
+			l.append(game.list_dict)
+	sio.emit('game_list', l, room=sid)
+
+def process_user(func):
+	def func_wrapper(sid, *args):
+		if sid not in users:
+			sio.emit('error', 'you did not register', room=sid)
 			return
-	if state.round is not None:
-		sio.emit('bye', 'The game has already started!')
+		func(users[sid], *args)
+	return func_wrapper
+
+@sio.on('create')
+@process_user
+def create(user, name, num_players):
+	game_id = str(uuid.uuid4())
+	game = Game(game_id, name, num_players)
+	games[game_id] = game
+	game.join(user)
+	sio.emit('lobby', game.lobby_dict, room=user.sid)
+
+def do_join(user, game_id, idx=None):
+	if game_id not in games:
+		sio.emit('error', 'no such game')
+		return
+	game = games[game_id]
+	try:
+		if idx is None:
+			game.join(user)
+		else:
+			game.join_as(user, idx)
+	except GameException as e:
+		sio.emit('error', e.message)
 		return
 
-	state.users.append(User(sid, name, len(state.users)))
-	user_names = [user.name for user in state.users]
-	for user in state.users:
-		sio.emit('lobby', user_names, room=user.sid)
+	for player in game.players:
+		if player is not None:
+			sio.emit('lobby', game.lobby_dict, room=player.user.sid)
 
-	# if we have enough users, we can start the game
-	if len(state.users) >= NUM_PLAYERS:
-		listeners = [TimedActionListener()]
-		for user in state.users:
-			listener = ForwardToUser(sio, user)
-			user.listener = listener
-			listeners.append(listener)
-		state.round = model.Round(len(state.users), listeners)
-		for user in state.users:
-			user.round = state.round
+	if game.is_full():
+		game.start_round(sio)
+
+@sio.on('join')
+@process_user
+def join(user, game_id):
+	do_join(user, game_id)
+
+@sio.on('join_as')
+@process_user
+def join_as(user, game_id, idx):
+	do_join(user, game_id, idx=idx)
+
+def process_game_player(func):
+	def func_wrapper(user, *args):
+		if user.game_player is None:
+			sio.emit('error', 'you are not currently in a game', room=sid)
+			return
+		func(user.game_player, *args)
+	return func_wrapper
+
+@sio.on('lobby')
+@process_user
+@process_game_player
+def lobby(game_player):
+	sio.emit('lobby', game_player.game.lobby_dict, room=sid)
+
+def process_round(func):
+	def func_wrapper(game_player, *args):
+		if game_player.game.round is None:
+			sio.emit('error', 'the round has not started yet', room=sid)
+			return
+		try:
+			func(game_player.game.round, game_player.idx, *args)
+		except model.RoundException as e:
+			sio.emit('error', e.message, room=sid)
+	return func_wrapper
 
 def process_user_round(func):
-	def func_wrapper(sid, *args):
-		user = state.get_user_by_sid(sid)
-		func(user.round, user.player, *args)
-	return func_wrapper
+	return process_user(process_game_player(process_round(func)))
 
 @sio.on('round_declare')
 @process_user_round

@@ -23,92 +23,58 @@
 
 <body>
 	<div id="app">
-		<div class="gameInfo">
-			<div>
-				<b>Trump Suit: </b>{{ suits[trumpSuit] }}
-			</div>
-			<div>
-				<b>Trump Rank: </b>{{ trumpRank }}
-			</div>
+		<div id="modeRegister" v-if="mode == 'register'">
+			<span class="heading">Login: </span>&nbsp;
+			<input v-model="playerName" placeholder="player name">
+			<button v-on:click="register(playerName)">Login</button>
 		</div>
-		<div class="joinGame">
-			<template v-if="!joined && players.length < 4">
-				<span>
-					<span class="heading">Join as: </span>&nbsp;
-					<input v-model="playerName" placeholder="player name">
-					<button v-on:click="joinAs(playerName)">Join</button>
-				</span>	
-			</template>		
-			<template v-else>
-				<span>
-					You are: <span class="heading">{{ playerName }}</span>
-				</span>
-			</template>
-		</div>
-		<div class="playerInfo" v-for="(player, index) in players">
-			<p :class="turn == index ? 'em' : ''">
-				<template v-if="joined">
-					{{ player }}
-				</template>
-				<template v-else>
-					<a href="#" v-on:click="joinAs(player)">{{ player }}</a>
-				</template>
-			</p>
-			<div class="playingCards fourColours">
-				<ul class="hand">
-					<li v-for="card in board[index]">
-						<card :suit="card.suit" :rank="card.value"
-							:trump-suit="trumpSuit" :trump-rank="trumpRank">
-						</card>
-					</li>
-				</ul>
-			</div>
-		</div>
-		<template v-if="status == 'dealing'">
+		<div id="modeList" v-if="mode == 'list'">
 			<div>
-				<span>
-					<span class="heading">Declare a Suit:</span>
-					<span v-for="(suitName, suit) in suits">
-						<button
-							v-on:click="declareSuit(suit)"
-							:disabled="!(suit in declarableSuits)"
-							>
-							{{ suitName }}
-						</button>&nbsp;
-					</span>
-				</span>
+				<span class="heading">Create game: </span>&nbsp;
+				<input v-model="createGameOptions.name" placeholder="game name">
+				<select v-model="createGameOptions.numPlayers">
+					<option>4</option>
+					<option>5</option>
+					<option>6</option>
+				</select>
+				<button v-on:click="createGame(createGameOptions.name, createGameOptions.numPlayers)">Create</button>
 			</div>
-		</template>
-		<template v-if="cards.length > 0">
-			<div class="playerHand">
-				<span>
-					<span class="heading">Hand</span>&nbsp;
-					<template v-if="canSetBottom">
-						<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
-					</template>
-					<template v-if="canPlay">
-						<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>
-					</template>
-				</span>
+			<div>
+				<button v-on:click="refreshGameList()">Refresh Game List</button>
 			</div>
-		</template>
-		<div class="playingCards fourColours">
-			<ul class="hand">
-				<li v-for="card in cards">
-					<card :suit="card.suit" :rank="card.value"
-						:selected="card.selected" v-on:update-selected="val => card.selected = val"
-						:selectable="canSelectNewCards"
-						:trump-suit="trumpSuit" :trump-rank="trumpRank">
-					</card>
+			<ul>
+				<li v-for="game in gameList" >
+					<a href="#" v-on:click="joinGame(game.id)">
+						{{ game.name }} ({{ game.occupied }}/{{ game.total }})
+					</a>
 				</li>
 			</ul>
 		</div>
-		<template v-if="declaration">
-			<div>
-				<h3>Declared:</h3>
+		<div id="modeGame" v-if="mode == 'game'">
+			<div class="gameInfo">
+				<div>
+					<b>Trump Suit: </b>{{ suits[trumpSuit] }}
+				</div>
+				<div>
+					<b>Trump Rank: </b>{{ trumpRank }}
+				</div>
+				<span>
+					You are: <span class="heading">{{ playerName }}</span>
+				</span>
+			</div>
+			<div class="playerInfo" v-for="(player, index) in players">
+				<p :class="turn == index ? 'em' : ''">
+					<!-- TODO: update this code, probably need a debug mode -->
+					<template v-if="joined">
+						{{ player }}
+					</template>
+					<template v-else>
+						<a href="#" v-on:click="joinAs(player)">{{ player }}</a>
+					</template>
+				</p>
 				<div class="playingCards fourColours">
 					<ul class="hand">
-						<li v-for="card in declaration.cards">
+						<li v-for="card in board[index]">
 							<card :suit="card.suit" :rank="card.value"
 								:trump-suit="trumpSuit" :trump-rank="trumpRank">
 							</card>
@@ -116,7 +82,60 @@
 					</ul>
 				</div>
 			</div>
-		</template>
+			<template v-if="status == 'dealing'">
+				<div>
+					<span>
+						<span class="heading">Declare a Suit:</span>
+						<span v-for="(suitName, suit) in suits">
+							<button
+								v-on:click="declareSuit(suit)"
+								:disabled="!(suit in declarableSuits)"
+								>
+								{{ suitName }}
+							</button>&nbsp;
+						</span>
+					</span>
+				</div>
+			</template>
+			<template v-if="cards.length > 0">
+				<div class="playerHand">
+					<span>
+						<span class="heading">Hand</span>&nbsp;
+						<template v-if="canSetBottom">
+							<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
+						</template>
+						<template v-if="canPlay">
+							<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>
+						</template>
+					</span>
+				</div>
+			</template>
+			<div class="playingCards fourColours">
+				<ul class="hand">
+					<li v-for="card in cards">
+						<card :suit="card.suit" :rank="card.value"
+							:selected="card.selected" v-on:update-selected="val => card.selected = val"
+							:selectable="canSelectNewCards"
+							:trump-suit="trumpSuit" :trump-rank="trumpRank">
+						</card>
+					</li>
+				</ul>
+			</div>
+			<template v-if="declaration">
+				<div>
+					<h3>Declared:</h3>
+					<div class="playingCards fourColours">
+						<ul class="hand">
+							<li v-for="card in declaration.cards">
+								<card :suit="card.suit" :rank="card.value"
+									:trump-suit="trumpSuit" :trump-rank="trumpRank">
+								</card>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</template>
+		</div>
 	</div>
 
 	<script src="js/socket.io.js"></script>

@@ -65,8 +65,17 @@ Vue.component('card', {
 var app = new Vue({
 	el: '#app',
 	data: {
-		joined: false,
+		mode: 'register',
+
 		playerName: '',
+
+		gameList: [],
+		createGameOptions: {
+			name: '',
+			numPlayers: 4,
+		},
+
+		joined: false,
 		status: 'disconnected',
 		player: -1,
 		cards: [],
@@ -103,6 +112,18 @@ var app = new Vue({
 		},
 	},
 	methods: {
+		register: function(name) {
+			socket.emit('register', name);
+		},
+		createGame: function(name, numPlayers) {
+			socket.emit('create', name, numPlayers);
+		},
+		refreshGameList: function() {
+			socket.emit('game_list');
+		},
+		joinGame: function(gameId) {
+			socket.emit('join', gameId);
+		},
 		clearSelectedCards: function() {
 			app.cards.forEach(function(el) {
 				el.selected = false;
@@ -153,16 +174,26 @@ function mergeCards(oldCards, newCards) {
 	return merged;
 }
 
-socket.on('connect', () => {
-	socket.emit('players');
+socket.on('register', function(name) {
+	app.playerName = name;
+	app.mode = 'list';
+	app.refreshGameList();
+});
+
+socket.on('game_list', function(data) {
+	console.log('received ' + data);
+	app.gameList = data;
 });
 
 socket.on('lobby', function (data) {
+	app.mode = 'game';
 	app.players = data;
-	if (!app.joined && app.playerName == '' && app.players.length < 4) {
+
+	// TODO: add debug mode and move this code to auto-populate register field with next available name
+	/*if (!app.joined && app.playerName == '' && app.players.length < 4) {
 		let num = app.players.length + 1;
 		app.playerName = 'player' + num.toString();
-	}
+	}*/
 });
 
 socket.on('state', function(data) {

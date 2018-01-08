@@ -33,7 +33,7 @@ class Card(object):
 		return str(self.value) + str(self.suit)
 
 	def __repr__(self):
-		return str(self.value) + str(self.suit)
+		return self.__str__()
 
 	def __eq__(self, other):
 		'''
@@ -68,6 +68,9 @@ class Card(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+	def __hash__(self):
+		return hash(str(self))
+
 	def is_trump(self, trump_suit, trump_value):
 		'''
 		Checks if card is Trump
@@ -82,6 +85,9 @@ class Card(object):
 
 		# handles Trump suit
 		return self.suit == trump_suit
+
+	def index(self):
+		return CARD_VALUES.index(self.value)
 
 	@property
 	def dict(self):

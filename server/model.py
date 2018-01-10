@@ -142,6 +142,8 @@ class Declaration(object):
 			'cards': [card.dict for card in self.cards],
 		}
 
+from tractor import Flush
+
 class RoundState(object):
 	def __init__(self, num_players):
 		'''
@@ -183,6 +185,9 @@ class RoundState(object):
 		self.player_hands[player].append(card)
 		return card
 
+	def set_turn(self, player):
+		self.turn = player
+
 	def increment_turn(self):
 		self.turn = (self.turn + 1) % self.num_players
 
@@ -205,6 +210,21 @@ class RoundState(object):
 	def clear_board(self):
 		for i in range(len(self.board)):
 			self.board[i] = []
+
+	def determine_winner(self):
+		first_player = (self.turn + 1) % self.num_players
+		trick_suit = self.board[first_player][0].suit
+		if trick_suit == 'joker':
+			trick_suit = self.trump_suit
+		winning_player = first_player
+		winning_flush = Flush(self.board[first_player], trick_suit, self.trump_suit)
+		for i in range(self.num_players - 1):
+			player = (first_player + i + 1) % self.num_players
+			flush = Flush(self.board[player], trick_suit, self.trump_suit)
+			if flush > winning_flush:
+				winning_player = player
+				winning_flush = flush
+		return winning_player
 
 	def get_player_view(self, player):
 		'''
@@ -369,7 +389,8 @@ class Round(object):
 			# TODO...
 
 			if len(self.state.player_hands[0]) > 0:
-				self.state.increment_turn()
+				winner = self.state.determine_winner()
+				self.state.set_turn(winner)
 			else:
 				self._end()
 		else:

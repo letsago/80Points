@@ -45,6 +45,8 @@ class TestTractor(unittest.TestCase):
 			 Double('s', '2')),
 			(Double('s', '5'),
 			 Double('h', '2')),
+			(Double('s', '5') + Double('s', '8'),
+			 Double('s', '3') + Double('s', '4')),
 		]
 
 		for test in tests:

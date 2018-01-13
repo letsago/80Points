@@ -27,6 +27,11 @@
 			<span class="heading">Login: </span>&nbsp;
 			<input v-model="playerName" placeholder="player name">
 			<button v-on:click="register(playerName)">Login</button>
+			<template v-if="debug">
+				<li v-for="index in 4" >
+					<a href="#" v-on:click="register('player' + index)">player{{ index }}</a>
+				</li>
+			</template>
 		</div>
 		<div id="modeList" v-if="mode == 'list'">
 			<div>
@@ -64,13 +69,7 @@
 			</div>
 			<div class="playerInfo" v-for="(player, index) in players">
 				<p :class="turn == index ? 'em' : ''">
-					<!-- TODO: update this code, probably need a debug mode -->
-					<template v-if="joined">
-						{{ player }}
-					</template>
-					<template v-else>
-						<a href="#" v-on:click="joinAs(player)">{{ player }}</a>
-					</template>
+					{{ player }}
 				</p>
 				<div class="playingCards fourColours">
 					<ul class="hand">

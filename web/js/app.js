@@ -65,6 +65,7 @@ Vue.component('card', {
 var app = new Vue({
 	el: '#app',
 	data: {
+		debug: false,
 		mode: 'register',
 
 		playerName: '',
@@ -75,7 +76,6 @@ var app = new Vue({
 			numPlayers: 4,
 		},
 
-		joined: false,
 		status: 'disconnected',
 		player: -1,
 		cards: [],
@@ -136,11 +136,6 @@ var app = new Vue({
 			});
 			socket.emit('round_declare', cards);
 		},
-		joinAs: function(playerName) {
-			socket.emit('join', playerName);
-			this.joined = true;
-			this.playerName = playerName;
-		},
 		setBottom: function () {
 			socket.emit('round_set_bottom', this.selectedCards);
 			clearSelectedCards();
@@ -174,6 +169,10 @@ function mergeCards(oldCards, newCards) {
 	return merged;
 }
 
+socket.on('debug', function(data) {
+	app.debug = true;
+});
+
 socket.on('register', function(name) {
 	app.playerName = name;
 	app.mode = 'list';
@@ -188,12 +187,6 @@ socket.on('game_list', function(data) {
 socket.on('lobby', function (data) {
 	app.mode = 'game';
 	app.players = data;
-
-	// TODO: add debug mode and move this code to auto-populate register field with next available name
-	/*if (!app.joined && app.playerName == '' && app.players.length < 4) {
-		let num = app.players.length + 1;
-		app.playerName = 'player' + num.toString();
-	}*/
 });
 
 socket.on('state', function(data) {

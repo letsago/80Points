@@ -58,10 +58,18 @@ class Game(model.RoundListener):
 				return
 		raise GameException('this game is full')
 
-	def join_as(self, user, idx):
-		self.players[idx].user = user
-		if self.players[idx].listener is not None:
-			self.players[idx].listener.send_state(self.round)
+	def join_as(self, user, player_name):
+		player = None
+		for p in self.players:
+			if p.user.name == player_name:
+				player = p
+				break
+		if player is None:
+			raise GameException('no player named %s found in this game' % player_name)
+		player.user = user
+		user.game_player = player
+		if player.listener is not None:
+			player.listener.send_state(self.round)
 
 	def is_full(self):
 		for player in self.players:
@@ -132,11 +140,13 @@ def index(path):
 @sio.on('connect')
 def on_connect(sid, environ):
 	if args.debug:
-		register(sid, 'player{}'.format(random.randint(10000, 99999)))
-		if len(games) > 0:
-			join(sid, games.keys()[0])
-		else:
-			create(sid, 'debug game', 4)
+		sio.emit('debug')
+		if len(users) < 4:
+			register(sid, 'player{}'.format(len(users)+1))
+			if len(games) > 0:
+				join(sid, list(games.keys())[0])
+			else:
+				create(sid, 'debug game', 4)
 
 @sio.on('register')
 def register(sid, name):
@@ -145,6 +155,8 @@ def register(sid, name):
 		return
 	users[sid] = User(sid, name)
 	sio.emit('register', name, sid)
+	if args.debug and len(users) > 4:
+		join_as(sid, name)
 
 @sio.on('game_list')
 def game_list(sid):
@@ -171,16 +183,16 @@ def create(user, name, num_players):
 	game.join(user)
 	sio.emit('lobby', game.lobby_dict, room=user.sid)
 
-def do_join(user, game_id, idx=None):
+def do_join(user, game_id, player_name=None):
 	if game_id not in games:
 		sio.emit('error', 'no such game')
 		return
 	game = games[game_id]
 	try:
-		if idx is None:
+		if player_name is None:
 			game.join(user)
 		else:
-			game.join_as(user, idx)
+			game.join_as(user, player_name)
 	except GameException as e:
 		sio.emit('error', e.message)
 		return
@@ -188,6 +200,9 @@ def do_join(user, game_id, idx=None):
 	for player in game.players:
 		if player is not None:
 			sio.emit('lobby', game.lobby_dict, room=player.user.sid)
+
+	if player_name is not None:
+		return
 
 	if game.is_full():
 		game.start_round(sio)
@@ -199,8 +214,8 @@ def join(user, game_id):
 
 @sio.on('join_as')
 @process_user
-def join_as(user, game_id, idx):
-	do_join(user, game_id, idx=idx)
+def join_as(user, player_name):
+	do_join(user, list(games.keys())[0], player_name=player_name)
 
 def process_game_player(func):
 	def func_wrapper(user, *args):

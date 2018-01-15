@@ -156,21 +156,28 @@ class RoundState(object):
 		self.turn = 0
 		self.trump_value = '2'
 		self.trump_suit = None
+		self.num_decks = num_players // 2
 
 		# list of cards in each player's hand
 		self.player_hands = [[] for i in range(num_players)]
 
-		# list of cards that each player has placed on the board for the current play
+		# list of cards that each player has placed on the board for the current trick
 		self.board = [[] for i in range(num_players)]
 
 		# current declared cards
 		# for now, we only keep track of the most recent set of cards that have been declared
 		# however, this is insufficient to allow defending a previous declaration, so eventually
 		#  we will need to keep a history of declarations from different players
-		self.declaration = None
+		self.declarations = []
 
 		# some cards should form the bottom
 		self.bottom = [self.pop_card_from_deck() for i in range(BOTTOM_SIZE[num_players])]
+
+	@property
+	def declaration(self):
+		if len(self.declarations) == 0:
+			return None
+		return self.declarations[-1]
 
 	def pop_card_from_deck(self):
 		card = self.deck[-1]
@@ -360,7 +367,15 @@ class Round(object):
 		if not is_cards_contained_in(cards, player_hand):
 			raise RoundException("invalid cards")
 
-		self.state.declaration = Declaration(player, cards)
+		if len(cards) > self.state.num_decks:
+			raise RoundException("invalid number of cards")
+		
+		if self.state.declaration is not None:
+			if len(cards) <= len(self.state.declaration.cards):
+				if player != self.state.declarations[0].player:
+					raise RoundException("must use more cards than previous declaration")
+
+		self.state.declarations.append(Declaration(player, cards))
 		self.state.trump_suit = cards[0].suit
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
 

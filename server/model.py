@@ -122,6 +122,7 @@ def is_cards_contained_in(cards, hand):
 STATUS_DEALING = 'dealing'
 STATUS_BOTTOM = 'bottom'
 STATUS_PLAYING = 'playing'
+STATUS_ENDED = 'ended'
 
 BOTTOM_SIZE = {
 	4: 8,
@@ -140,6 +141,8 @@ class Declaration(object):
 			'player': self.player,
 			'cards': [card.dict for card in self.cards],
 		}
+
+from tractor import Flush
 
 class RoundState(object):
 	def __init__(self, num_players):
@@ -189,6 +192,9 @@ class RoundState(object):
 		self.player_hands[player].append(card)
 		return card
 
+	def set_turn(self, player):
+		self.turn = player
+
 	def increment_turn(self):
 		self.turn = (self.turn + 1) % self.num_players
 
@@ -211,6 +217,21 @@ class RoundState(object):
 	def clear_board(self):
 		for i in range(len(self.board)):
 			self.board[i] = []
+
+	def determine_winner(self):
+		first_player = (self.turn + 1) % self.num_players
+		trick_suit = self.board[first_player][0].suit
+		if trick_suit == 'joker':
+			trick_suit = self.trump_suit
+		winning_player = first_player
+		winning_flush = Flush(self.board[first_player], trick_suit, self.trump_suit)
+		for i in range(self.num_players - 1):
+			player = (first_player + i + 1) % self.num_players
+			flush = Flush(self.board[player], trick_suit, self.trump_suit)
+			if flush > winning_flush:
+				winning_player = player
+				winning_flush = flush
+		return winning_player
 
 	def get_player_view(self, player):
 		'''
@@ -272,6 +293,15 @@ class RoundListener(object):
 	def player_played(self, r, player, cards):
 		'''
 		A player played the specified cards.
+		'''
+		pass
+
+	def ended(self, r, player_scores, next_player):
+		'''
+		The round ended.
+
+		player_scores is a list of integers indicating how many levels each player gained.
+		next_player is the player who should start the next round.
 		'''
 		pass
 
@@ -372,7 +402,12 @@ class Round(object):
 		# otherwise, we can just increment it
 		if self.state.is_board_full():
 			# TODO...
-			self.state.increment_turn()
+
+			if len(self.state.player_hands[0]) > 0:
+				winner = self.state.determine_winner()
+				self.state.set_turn(winner)
+			else:
+				self._end()
 		else:
 			self.state.increment_turn()
 
@@ -402,6 +437,18 @@ class Round(object):
 		Returns the current RoundState of this Round.
 		'''
 		return self.state
+
+	def _end(self):
+		'''
+		Called after the last trick is finished.
+
+		We should accumulate points and then notify listeners about the result
+		of this round.
+		'''
+		self.state.status = STATUS_ENDED
+		player_scores = [0] * self.state.num_players
+		player_scores[0] = 1
+		self._fire(lambda listener: listener.end(self, player_scores, 0))
 
 class RoundException(Exception):
 	pass

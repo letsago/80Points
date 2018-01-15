@@ -142,7 +142,7 @@ class Declaration(object):
 			'cards': [card.dict for card in self.cards],
 		}
 
-from tractor import Flush
+from tractor import Flush, cards_to_tractors
 
 class RoundState(object):
 	def __init__(self, num_players):
@@ -216,11 +216,15 @@ class RoundState(object):
 		trick_suit = self.board[first_player][0].suit
 		if trick_suit == 'joker':
 			trick_suit = self.trump_suit
+		first_tractors = cards_to_tractors(self.board[first_player], trick_suit, self.trump_suit)
 		winning_player = first_player
-		winning_flush = Flush(self.board[first_player], trick_suit, self.trump_suit)
+		winning_flush = Flush(first_tractors)
 		for i in range(self.num_players - 1):
 			player = (first_player + i + 1) % self.num_players
-			flush = Flush(self.board[player], trick_suit, self.trump_suit)
+			tractors = cards_to_tractors(self.board[player], trick_suit, self.trump_suit, target_form=first_tractors)
+			if tractors is None:
+				continue
+			flush = Flush(tractors)
 			if flush > winning_flush:
 				winning_player = player
 				winning_flush = flush

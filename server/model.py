@@ -363,7 +363,7 @@ class Round(object):
 		if not is_cards_contained_in(cards, player_hand):
 			raise RoundException("invalid cards")
 
-		if len(cards) > self.num_decks:
+		if len(cards) > self.state.num_decks:
 			raise RoundException("invalid number of cards")
 		
 		if self.state.declaration is not None:

@@ -2,8 +2,6 @@ import functools
 import itertools
 import random
 
-# testing changes
-
 CARD_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
 def key_trump(card, trump_suit, trump_value):

@@ -86,6 +86,8 @@ class TestTractor(unittest.TestCase):
 			 Double('h', '2')),
 			(Double('s', '5') + Double('s', '8'),
 			 Double('s', '3') + Double('s', '4')),
+			([Card('s', '5'), Card('s', '7'), Card('s', '8')],
+			 [Card('s', '9'), Card('s', 'J'), Card('s', 'Q')])
 		]
 
 		for test in tests:

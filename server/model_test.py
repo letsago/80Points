@@ -29,7 +29,7 @@ class TestCard(unittest.TestCase):
 
 		for test in tests:
 			suit, value, card, want = test
-			self.assertEqual(card.isTrump(suit, value), want)
+			self.assertEqual(card.is_trump(suit, value), want)
 
 	def testTrumpSort(self):
 		tests = [
@@ -54,7 +54,7 @@ class TestCard(unittest.TestCase):
 		]
 		for test in tests:
 			trump_suit, trump_value, test_list, want = test
-			self.assertEqual(trumpSorted(test_list, trump_suit, trump_value), want)
+			self.assertEqual(trump_sorted(test_list, trump_suit, trump_value), want)
 
 if __name__ == '__main__':
 	unittest.main()

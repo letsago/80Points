@@ -487,47 +487,52 @@
 .playingCards ul.hand li {
     bottom: 0;
 }
-.playingCards ul.hand li:nth-child(1)  { left: 0; }
-.playingCards ul.hand li:nth-child(2)  { left: 1.1em; }
-.playingCards ul.hand li:nth-child(3)  { left: 2.2em; }
-.playingCards ul.hand li:nth-child(4)  { left: 3.3em; }
-.playingCards ul.hand li:nth-child(5)  { left: 4.4em; }
-.playingCards ul.hand li:nth-child(6)  { left: 5.5em; }
-.playingCards ul.hand li:nth-child(7)  { left: 6.6em; }
-.playingCards ul.hand li:nth-child(8)  { left: 7.7em; }
-.playingCards ul.hand li:nth-child(9)  { left: 8.8em; }
-.playingCards ul.hand li:nth-child(10) { left: 9.9em; }
-.playingCards ul.hand li:nth-child(11) { left: 11em; }
-.playingCards ul.hand li:nth-child(12) { left: 12.1em; }
-.playingCards ul.hand li:nth-child(13) { left: 13.2em; }
 
-.playingCards ul.hand li:nth-child(14) { left: 14.3em; }
-.playingCards ul.hand li:nth-child(15) { left: 15.4em; }
-.playingCards ul.hand li:nth-child(16) { left: 16.5em; }
-.playingCards ul.hand li:nth-child(17) { left: 17.6em; }
-.playingCards ul.hand li:nth-child(18) { left: 18.7em; }
-.playingCards ul.hand li:nth-child(19) { left: 19.8em; }
-.playingCards ul.hand li:nth-child(20) { left: 20.9em; }
-.playingCards ul.hand li:nth-child(21) { left: 22em; }
-.playingCards ul.hand li:nth-child(22) { left: 23.1em; }
-.playingCards ul.hand li:nth-child(23) { left: 24.2em; }
-.playingCards ul.hand li:nth-child(24) { left: 25.3em; }
-.playingCards ul.hand li:nth-child(25) { left: 26.4em; }
-.playingCards ul.hand li:nth-child(26) { left: 27.5em; }
+:root {
+    --cardoffset: 1.3em;
+}
 
-.playingCards ul.hand li:nth-child(27) { left: 28.6em; }
-.playingCards ul.hand li:nth-child(28) { left: 29.7em; }
-.playingCards ul.hand li:nth-child(29) { left: 30.8em; }
-.playingCards ul.hand li:nth-child(30) { left: 31.9em; }
-.playingCards ul.hand li:nth-child(31) { left: 33em; }
-.playingCards ul.hand li:nth-child(32) { left: 34.1em; }
-.playingCards ul.hand li:nth-child(33) { left: 35.2em; }
-.playingCards ul.hand li:nth-child(34) { left: 36.3em; }
-.playingCards ul.hand li:nth-child(35) { left: 37.4em; }
-.playingCards ul.hand li:nth-child(36) { left: 38.5em; }
-.playingCards ul.hand li:nth-child(37) { left: 39.6em; }
-.playingCards ul.hand li:nth-child(38) { left: 40.7em; }
-.playingCards ul.hand li:nth-child(39) { left: 41.8em; }
+.playingCards ul.hand li:nth-child(1)  { left: calc(var(--cardoffset) * 0); }
+.playingCards ul.hand li:nth-child(2)  { left: calc(var(--cardoffset) * 1); }
+.playingCards ul.hand li:nth-child(3)  { left: calc(var(--cardoffset) * 2); }
+.playingCards ul.hand li:nth-child(4)  { left: calc(var(--cardoffset) * 3); }
+.playingCards ul.hand li:nth-child(5)  { left: calc(var(--cardoffset) * 4); }
+.playingCards ul.hand li:nth-child(6)  { left: calc(var(--cardoffset) * 5); }
+.playingCards ul.hand li:nth-child(7)  { left: calc(var(--cardoffset) * 6); }
+.playingCards ul.hand li:nth-child(8)  { left: calc(var(--cardoffset) * 7); }
+.playingCards ul.hand li:nth-child(9)  { left: calc(var(--cardoffset) * 8); }
+.playingCards ul.hand li:nth-child(10) { left: calc(var(--cardoffset) * 9); }
+.playingCards ul.hand li:nth-child(11) { left: calc(var(--cardoffset) * 10); }
+.playingCards ul.hand li:nth-child(12) { left: calc(var(--cardoffset) * 11); }
+.playingCards ul.hand li:nth-child(13) { left: calc(var(--cardoffset) * 12); }
+
+.playingCards ul.hand li:nth-child(14) { left: calc(var(--cardoffset) * 13); }
+.playingCards ul.hand li:nth-child(15) { left: calc(var(--cardoffset) * 14); }
+.playingCards ul.hand li:nth-child(16) { left: calc(var(--cardoffset) * 15); }
+.playingCards ul.hand li:nth-child(17) { left: calc(var(--cardoffset) * 16); }
+.playingCards ul.hand li:nth-child(18) { left: calc(var(--cardoffset) * 17); }
+.playingCards ul.hand li:nth-child(19) { left: calc(var(--cardoffset) * 18); }
+.playingCards ul.hand li:nth-child(20) { left: calc(var(--cardoffset) * 19); }
+.playingCards ul.hand li:nth-child(21) { left: calc(var(--cardoffset) * 20); }
+.playingCards ul.hand li:nth-child(22) { left: calc(var(--cardoffset) * 21); }
+.playingCards ul.hand li:nth-child(23) { left: calc(var(--cardoffset) * 22); }
+.playingCards ul.hand li:nth-child(24) { left: calc(var(--cardoffset) * 23); }
+.playingCards ul.hand li:nth-child(25) { left: calc(var(--cardoffset) * 24); }
+.playingCards ul.hand li:nth-child(26) { left: calc(var(--cardoffset) * 25); }
+
+.playingCards ul.hand li:nth-child(27) { left: calc(var(--cardoffset) * 26); }
+.playingCards ul.hand li:nth-child(28) { left: calc(var(--cardoffset) * 27); }
+.playingCards ul.hand li:nth-child(29) { left: calc(var(--cardoffset) * 28); }
+.playingCards ul.hand li:nth-child(30) { left: calc(var(--cardoffset) * 29); }
+.playingCards ul.hand li:nth-child(31) { left: calc(var(--cardoffset) * 30); }
+.playingCards ul.hand li:nth-child(32) { left: calc(var(--cardoffset) * 31); }
+.playingCards ul.hand li:nth-child(33) { left: calc(var(--cardoffset) * 32); }
+.playingCards ul.hand li:nth-child(34) { left: calc(var(--cardoffset) * 33); }
+.playingCards ul.hand li:nth-child(35) { left: calc(var(--cardoffset) * 34); }
+.playingCards ul.hand li:nth-child(36) { left: calc(var(--cardoffset) * 35); }
+.playingCards ul.hand li:nth-child(37) { left: calc(var(--cardoffset) * 36); }
+.playingCards ul.hand li:nth-child(38) { left: calc(var(--cardoffset) * 37); }
+.playingCards ul.hand li:nth-child(39) { left: calc(var(--cardoffset) * 38); }
 
 /* rotate cards if rotateHand option is on */
 .playingCards.rotateHand ul.hand li:nth-child(1) {

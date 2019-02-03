@@ -202,7 +202,8 @@ socket.on('game_list', function(data) {
 
 socket.on('lobby', function (data) {
 	app.mode = 'game';
-	app.players = data;
+	app.players = data.names;
+	app.player = data.playerIndex;
 });
 
 socket.on('state', function(data) {

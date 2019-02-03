@@ -111,15 +111,17 @@ class Game(model.RoundListener):
 			'total': len(self.players),
 		}
 
-	@property
-	def lobby_dict(self):
+	def lobby_dict(self, playerIndex):
 		names = []
 		for player in self.players:
 			if player is None:
 				names.append('Empty')
 			else:
 				names.append(player.user.name)
-		return names
+		return {
+			'names': names,
+			'playerIndex': playerIndex,
+		}
 
 class GameException(Exception):
 	pass
@@ -181,7 +183,7 @@ def create(user, name, num_players):
 	game = Game(game_id, name, num_players)
 	games[game_id] = game
 	game.join(user)
-	sio.emit('lobby', game.lobby_dict, room=user.sid)
+	sio.emit('lobby', game.lobby_dict(0), room=user.sid)
 
 def do_join(user, game_id, player_name=None):
 	if game_id not in games:
@@ -197,9 +199,9 @@ def do_join(user, game_id, player_name=None):
 		sio.emit('error', e.message)
 		return
 
-	for player in game.players:
+	for i, player in enumerate(game.players):
 		if player is not None:
-			sio.emit('lobby', game.lobby_dict, room=player.user.sid)
+			sio.emit('lobby', game.lobby_dict(i), room=player.user.sid)
 
 	if player_name is not None:
 		return
@@ -224,12 +226,6 @@ def process_game_player(func):
 			return
 		func(user.game_player, *args)
 	return func_wrapper
-
-@sio.on('lobby')
-@process_user
-@process_game_player
-def lobby(game_player):
-	sio.emit('lobby', game_player.game.lobby_dict, room=sid)
 
 def process_round(func):
 	def func_wrapper(game_player, *args):

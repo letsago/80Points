@@ -67,18 +67,20 @@
 					You are: <span class="heading">{{ playerName }}</span>
 				</span>
 			</div>
-			<div class="playerInfo" v-for="(player, index) in players">
-				<p :class="turn == index ? 'em' : ''">
-					{{ player }}
-				</p>
-				<div class="playingCards fourColours">
-					<ul class="hand">
-						<li v-for="card in board[index]">
-							<card :suit="card.suit" :rank="card.value"
-								:trump-suit="trumpSuit" :trump-rank="trumpRank">
-							</card>
-						</li>
-					</ul>
+			<div class="playerInfoContainer">
+				<div :class="['playerInfo', playerPosition(index)]" v-for="(player, index) in players">
+					<p :class="turn == index ? 'em' : ''">
+						{{ player }}
+					</p>
+					<div class="playingCards fourColours">
+						<ul class="hand">
+							<li v-for="card in board[index]">
+								<card :suit="card.suit" :rank="card.value"
+									:trump-suit="trumpSuit" :trump-rank="trumpRank">
+								</card>
+							</li>
+						</ul>
+					</div>
 				</div>
 			</div>
 			<template v-if="status == 'dealing'">

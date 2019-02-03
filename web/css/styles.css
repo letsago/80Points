@@ -21,6 +21,33 @@ h1, h2, h3 {
     top: -1em;
 }
 
+.playerInfoContainer {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	grid-template-rows: 1fr 1fr 1fr 1fr;
+	grid-template-areas: 
+    	". top ."
+    	"left top right"
+    	"left bottom right"
+    	". bottom ."
+}
+
+.topPlayer {
+	grid-area: top;
+}
+
+.leftPlayer {
+	grid-area: left;
+}
+
+.rightPlayer {
+	grid-area: right;
+}
+
+.bottomPlayer {
+	grid-area: bottom;
+}
+
 .playerInfo {
 	width: 50%;
 	float: left;

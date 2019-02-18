@@ -21,12 +21,15 @@ pip install -r requirements.txt
 python3 server/server.py
 ```
 
-## Run unit tests (must be run under server/ directory)
+## Run unit tests
 
 ```bash
-# Run a single test
+# Run a single test (run under server/)
 python3 -m unittest model_test.py
 
-# Runs all tests
+# Runs all tests (run under server/)
 python3 -m unittest *_test.py
+
+# Run using `pytest`, can be run from anywhere (make sure `pytest` is installed)
+pytest
 ```

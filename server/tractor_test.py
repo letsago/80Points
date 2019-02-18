@@ -18,27 +18,47 @@ def Double(suit, value):
 
 class TestTractor(unittest.TestCase):
 	def testCardsToTractors(self):
+		trump_card = Card('s', 'A')
 		tests = [
 			(Double('s', '2') + Double('s', '3'),
-			 [Tractor(2, 2, Card('s', '2'), SUIT_LOWEST)]),
+			 [Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)]),
+
 			(Straight('s', '2', 4),
-			 [Tractor(1, 4, Card('s', '2'), SUIT_LOWEST)]),
+			 [Tractor(1, 4, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)]),
+
 			([Card('s', '2')],
-			 [Tractor(1, 1, Card('s', '2'), SUIT_LOWEST)]),
+			 [Tractor(1, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)]),
+
 			(Double('s', '2') + Double('s', '3') + [Card('s', '5')],
-			 [Tractor(2, 2, Card('s', '2'), SUIT_LOWEST), Tractor(1, 1, Card('s', '5'), SUIT_LOWEST)]),
+			 [
+				Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
+				Tractor(1, 1, Card('s', '5').suit_power(trump_card), SUIT_TRUMP),
+			 ]),
+
 			(Double('s', '2') + [Card('s', '3')],
-			 [Tractor(2, 1, Card('s', '2'), SUIT_LOWEST), Tractor(1, 1, Card('s', '3'), SUIT_LOWEST)]),
+			 [
+				Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
+				Tractor(1, 1, Card('s', '3').suit_power(trump_card), SUIT_TRUMP),
+			 ]),
+
 			(Double('s', '2') + Double('s', '3') + [Card('s', '4')],
-			 [Tractor(2, 2, Card('s', '2'), SUIT_LOWEST), Tractor(1, 1, Card('s', '4'), SUIT_LOWEST)]),
+			 [
+				Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
+				Tractor(1, 1, Card('s', '4').suit_power(trump_card), SUIT_TRUMP),
+			 ]),
+
+			# (s A) is high trump A while (d A) is low trump A
+			(Double('s', 'A') + Double('d', 'A'),
+			 [Tractor(2, 2, Card('d', 'A').suit_power(trump_card), SUIT_TRUMP)]),
 		]
 
 		for test in tests:
 			test_cards, want = test
-			self.assertEqual(cards_to_tractors(test_cards, 's', 's'), want)
+			self.assertEqual(cards_to_tractors(test_cards, 's', trump_card), want)
 
 	def testCardsToTractorsWithForm(self):
 		# trick suit always 'd', trump suit always 's'
+		trump_card = Card('s', 'A')
 		tests = [
 			(
 				# player1 plays triple, double, double in trick suit
@@ -69,13 +89,13 @@ class TestTractor(unittest.TestCase):
 
 		for test in tests:
 			start_cards, cur_cards, want = test
-			target_form = cards_to_tractors(start_cards, 'd', 's')
-			okay = cards_to_tractors(cur_cards, 'd', 's', target_form=target_form) is not None
+			target_form = cards_to_tractors(start_cards, 'd', trump_card)
+			okay = cards_to_tractors(cur_cards, 'd', trump_card, target_form=target_form) is not None
 			self.assertEqual(okay, want)
 
 	def testCompareFlush(self):
 		trick_suit = 's'
-		trump_suit = 'h'
+		trump_card = Card('h', 'A')
 
 		tests = [
 			(Double('s', '2'),
@@ -87,13 +107,17 @@ class TestTractor(unittest.TestCase):
 			(Double('s', '5') + Double('s', '8'),
 			 Double('s', '3') + Double('s', '4')),
 			([Card('s', '5'), Card('s', '7'), Card('s', '8')],
-			 [Card('s', '9'), Card('s', 'J'), Card('s', 'Q')])
+			 [Card('s', '9'), Card('s', 'J'), Card('s', 'Q')]),
+
+			# s A is trump due to trump value, should be higher than low trump
+			([Card('h', '2')],
+			 [Card('s', 'A')]),
 		]
 
 		for test in tests:
 			lesser_cards, greater_cards = test
-			lesser_flush = Flush(cards_to_tractors(lesser_cards, trick_suit, trump_suit))
-			greater_flush = Flush(cards_to_tractors(greater_cards, trick_suit, trump_suit))
+			lesser_flush = Flush(cards_to_tractors(lesser_cards, trick_suit, trump_card))
+			greater_flush = Flush(cards_to_tractors(greater_cards, trick_suit, trump_card))
 			self.assertLess(lesser_flush, greater_flush)
 
 if __name__ == '__main__':

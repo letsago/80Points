@@ -3,24 +3,11 @@ import itertools
 import random
 
 CARD_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+CARD_SUITS = ['c', 'd', 'h', 's']
 
-def key_trump(card, trump_suit, trump_value):
-	if card.suit == 'joker' and card.value == 'big':
-		return 16
-	if card.suit == 'joker' and card.value == 'small':
-		return 15
-	if card.suit == trump_suit and card.value == trump_value:
-		return 14
-	if card.value == trump_value:
-		return 13
-	return CARD_VALUES.index(card.value)
+def display_sorted(cards, trump_card):
+	return sorted(cards, key=lambda card: card.display_index(trump_card))
 
-def trump_sorted(cards, trump_suit, trump_value):
-	trumps = [card for card in cards if card.is_trump(trump_suit, trump_value)]
-	non_trumps = sorted([card for card in cards if not card.is_trump(trump_suit, trump_value)])
-	return non_trumps + sorted(trumps, key=lambda x: key_trump(x, trump_suit, trump_value))
-
-@functools.total_ordering
 class Card(object):
 	def __init__(self, suit, value):
 		'''
@@ -41,37 +28,13 @@ class Card(object):
 		'''
 		return self.suit == other.suit and self.value == other.value
 
-	def __lt__(self, other):
-		'''
-		Returns whether self is less than other.
-		'''
-		# handles sorting Joker cards
-		if self.suit == 'joker' and other.suit == 'joker':
-			if self.value == 'big':
-				return False
-			if other.value == 'big':
-				return True
-		if self.suit == 'joker':
-			return False
-		if other.suit == 'joker':
-			return True
-
-		# handles sorting all other cards
-		if self.suit < other.suit:
-			return True
-		if self.suit > other.suit:
-			return False
-
-		# handles sorting of values in same suit
-		return CARD_VALUES.index(self.value) < CARD_VALUES.index(other.value)
-
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
 	def __hash__(self):
 		return hash(str(self))
 
-	def is_trump(self, trump_suit, trump_value):
+	def is_trump(self, trump_card):
 		'''
 		Checks if card is Trump
 		'''
@@ -80,14 +43,51 @@ class Card(object):
 			return True
 
 		# handles Trump value
-		if self.value == trump_value:
+		if self.value == trump_card.value:
 			return True
 
 		# handles Trump suit
-		return self.suit == trump_suit
+		return self.suit == trump_card.suit
 
-	def index(self):
-		return CARD_VALUES.index(self.value)
+	def suit_power(self, trump_card):
+		'''
+		Returns an integer corresponding to the power of this card in its own suit.
+		This power is sequential, suitable for combining tractors.
+		It is NOT suitable for display because cards of the trump value that don't
+		  match the trump suit are assigned the same power. (For example, if trump
+		  is 2C, 2D and 2S have the same power.)
+		'''
+		if not self.is_trump(trump_card):
+			return CARD_VALUES.index(self.value)
+
+		if self.suit == 'joker' and self.value == 'big':
+			return len(CARD_VALUES) + 3
+		elif self.suit == 'joker' and self.value == 'small':
+			return len(CARD_VALUES) + 2
+		elif self.suit == trump_card.suit and self.value == trump_card.value:
+			return len(CARD_VALUES) + 1
+		elif self.value == trump_card.value:
+			return len(CARD_VALUES)
+		else:
+			return CARD_VALUES.index(self.value)
+
+	def display_index(self, trump_card):
+		'''
+		Returns an integer suitable for sorting cards for display purposes.
+		'''
+		if not self.is_trump(trump_card):
+			return 100*CARD_SUITS.index(self.suit) + CARD_VALUES.index(self.value)
+
+		if self.suit == 'joker' and self.value == 'big':
+			return 1400
+		elif self.suit == 'joker' and self.value == 'small':
+			return 1300
+		elif self.suit == trump_card.suit and self.value == trump_card.value:
+			return 1200
+		elif self.value == trump_card.value:
+			return 1100 + CARD_SUITS.index(self.suit)
+		else:
+			return 1000 + CARD_VALUES.index(self.value)
 
 	@property
 	def dict(self):
@@ -101,8 +101,7 @@ def create_deck(num_decks):
 	Return a list of cards for the specified number of decks.
 	'''
 
-	suit = ['d', 'h', 's', 'c']
-	one_deck = [Card(x[0], x[1]) for x in itertools.product(suit, CARD_VALUES)]
+	one_deck = [Card(x[0], x[1]) for x in itertools.product(CARD_SUITS, CARD_VALUES)]
 	one_deck.extend([Card('joker', 'big'), Card('joker', 'small')])
 	total_decks = num_decks * one_deck
 	return total_decks
@@ -161,8 +160,7 @@ class RoundState(object):
 		self.deck = create_random_deck(num_players // 2)
 		self.status = STATUS_DEALING
 		self.turn = 0
-		self.trump_value = '2'
-		self.trump_suit = None
+		self.trump_card = Card('joker', '2')
 		self.num_decks = num_players // 2
 
 		# list of cards in each player's hand
@@ -229,13 +227,13 @@ class RoundState(object):
 		first_player = (self.turn + 1) % self.num_players
 		trick_suit = self.board[first_player][0].suit
 		if trick_suit == 'joker':
-			trick_suit = self.trump_suit
-		first_tractors = cards_to_tractors(self.board[first_player], trick_suit, self.trump_suit)
+			trick_suit = self.trump_card.suit
+		first_tractors = cards_to_tractors(self.board[first_player], trick_suit, self.trump_card)
 		winning_player = first_player
 		winning_flush = Flush(first_tractors)
 		for i in range(self.num_players - 1):
 			player = (first_player + i + 1) % self.num_players
-			tractors = cards_to_tractors(self.board[player], trick_suit, self.trump_suit, target_form=first_tractors)
+			tractors = cards_to_tractors(self.board[player], trick_suit, self.trump_card, target_form=first_tractors)
 			if tractors is None:
 				continue
 			flush = Flush(tractors)
@@ -250,12 +248,12 @@ class RoundState(object):
 		'''
 		view = {
 			'player': player,
-			'hand': [card.dict for card in trump_sorted(self.player_hands[player], self.trump_suit, self.trump_value)],
+			'hand': [card.dict for card in display_sorted(self.player_hands[player], self.trump_card)],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
 			'status': self.status,
-			'trump_value': self.trump_value,
-			'trump_suit': self.trump_suit,
+			'trump_value': self.trump_card.value,
+			'trump_suit': self.trump_card.suit,
 			'bottom_size': BOTTOM_SIZE[self.num_players],
 		}
 
@@ -378,14 +376,14 @@ class Round(object):
 
 		if len(cards) > self.state.num_decks:
 			raise RoundException("invalid number of cards")
-		
+
 		if self.state.declaration is not None:
 			if len(cards) <= len(self.state.declaration.cards):
 				if player != self.state.declarations[0].player:
 					raise RoundException("must use more cards than previous declaration")
 
 		self.state.declarations.append(Declaration(player, cards))
-		self.state.trump_suit = cards[0].suit
+		self.state.trump_card.suit = cards[0].suit
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
 
 		if len(self.state.deck) == 0:

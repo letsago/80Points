@@ -10,21 +10,21 @@ SUIT_TRUMP = 2
 class Tractor(object):
 	'''Tractor represents a structured set of cards.'''
 
-	def __init__(self, rank, length, card, suit_type):
+	def __init__(self, rank, length, power, suit_type):
 		# Rank refers to how many cards there are of each number.
 		self.rank = rank
 		# Length refers to how long the tractor is, i.e. how many consecutive numbers there are.
 		self.length = length
-		# Card refers to the lowest card in the tractor, which can be used to compare two
-		# tractors of the same rank and length.
-		self.card = card
+		# Power is the suit power of the lowest card in the tractor, which can be used to
+		# compare two tractors of the same rank and length.
+		self.power = power
 		# Suit type is the kind of suit the tractor is. There are three kinds of suits: trump,
 		# trick, and lowest. The trick suit is the suit played in the first play of the trick.
 		# The lowest suit is any suit that is not the trump or trick suit.
 		self.suit_type = suit_type
 
 	def __str__(self):
-		return '(r: %s l: %s c: %s)' % (self.rank, self.length, self.card)
+		return '(r: %s l: %s p: %s t: %d)' % (self.rank, self.length, self.power, self.suit_type)
 
 	def __repr__(self):
 		return self.__str__()
@@ -33,7 +33,7 @@ class Tractor(object):
 		'''
 		Returns whether self and other are the same tractor.
 		'''
-		return self.rank == other.rank and self.length == other.length and self.card == other.card
+		return self.rank == other.rank and self.length == other.length and self.power == other.power and self.suit_type == other.suit_type
 
 	def __lt__(self, other):
 		'''
@@ -45,10 +45,10 @@ class Tractor(object):
 			return self.length < other.length
 		if self.suit_type != other.suit_type:
 			return self.suit_type < other.suit_type
-		return self.card < other.card
+		return self.power < other.power
 
-def card_to_suit_type(card, trick_suit, trump_suit):
-	if card.suit == 'joker' or card.suit == trump_suit:
+def card_to_suit_type(card, trick_suit, trump_card):
+	if card.is_trump(trump_card):
 		return SUIT_TRUMP
 	if card.suit == trick_suit:
 		return SUIT_TRICK
@@ -73,18 +73,18 @@ def match_form(tractors, target_form, depth=0):
 			continue
 
 		# compute remainder tractor(s) after matching other with tractor
-		other_match_tractor = Tractor(tractor.rank, tractor.length, other.card, other.suit_type)
+		other_match_tractor = Tractor(tractor.rank, tractor.length, other.power, other.suit_type)
 		other_minus_tractor = []
 		if other.rank > tractor.rank:
 			# example: tractor={2,2,3,3}
 			# if other is {4,4,4,5,5,5}, remainder is {4,5}
 			# if other is {4,4,4,5,5,5,6,6,6}, remainder is {4,5,6,6,6}
-			other_minus_tractor.append(Tractor(other.rank - tractor.rank, tractor.length, other.card, other.suit_type))
+			other_minus_tractor.append(Tractor(other.rank - tractor.rank, tractor.length, other.power, other.suit_type))
 			if other.length > tractor.length:
-				# TODO: we actually need to adjust other.card here if we want to stay consistent, but it might not matter
-				other_minus_tractor.append(Tractor(other.rank, other.length - tractor.length, other.card, other.suit_type))
+				# TODO: we actually need to adjust other.power here if we want to stay consistent, but it might not matter
+				other_minus_tractor.append(Tractor(other.rank, other.length - tractor.length, other.power, other.suit_type))
 		elif other.length > tractor.length:
-			other_minus_tractor.append(Tractor(other.rank, other.length - tractor.length, other.card, other.suit_type))
+			other_minus_tractor.append(Tractor(other.rank, other.length - tractor.length, other.power, other.suit_type))
 
 		# check if remainders match
 		remainder_tractors = tractors[:i] + other_minus_tractor + tractors[i+1:]
@@ -95,12 +95,13 @@ def match_form(tractors, target_form, depth=0):
 	# nothing matched, so we failed
 	return None
 
-def cards_to_tractors(cards, trick_suit, trump_suit, target_form=None):
+def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 	"""
 	Returns a list of Tractors corresponding to a set of played Cards.
 	cards: an iterable of played Cards
 	trick_suit: the suit played by the first player in this trick
-	trump_suit: the trump suit of this round
+	trump_card: card defining the trump suit/value of this round
+
 	target_form: a list of Tractors; the rank and length of returned tractors must
 		match the rank and length of tractors in target_form. We return None if
 		there is no way to match.
@@ -109,16 +110,17 @@ def cards_to_tractors(cards, trick_suit, trump_suit, target_form=None):
 	counter = collections.Counter(cards)
 	tractors = []
 	for card, count in counter.items():
-		suit_type = card_to_suit_type(card, trick_suit, trump_suit)
-		tractors.append(Tractor(count, 1, card, suit_type))
+		suit_type = card_to_suit_type(card, trick_suit, trump_card)
+		tractors.append(Tractor(count, 1, card.suit_power(trump_card), suit_type))
 	tractors = sorted(tractors, reverse=True)
 
 	# merge consecutive rank 1 Tractors into multi-length Tractors
 	i = 0
 	while i < len(tractors) - 1:
 		tractor1, tractor2 = tractors[i], tractors[i+1]
-		if tractor1.rank == tractor2.rank and tractor1.suit_type == tractor2.suit_type and abs(tractor1.card.index() - tractor2.card.index()) == 1:
-			tractors[i] = Tractor(tractor1.rank, tractor1.length + tractor2.length, tractor2.card, tractor1.suit_type)
+		if tractor1.rank == tractor2.rank and tractor1.suit_type == tractor2.suit_type and abs(tractor1.power - tractor2.power) == 1:
+			assert tractor2.length == 1
+			tractors[i] = Tractor(tractor1.rank, tractor1.length + tractor2.length, tractor2.power, tractor1.suit_type)
 			del tractors[i+1]
 		else:
 			i += 1

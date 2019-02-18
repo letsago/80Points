@@ -107,6 +107,14 @@ def create_deck(num_decks):
 	total_decks = num_decks * one_deck
 	return total_decks
 
+def create_random_deck(num_decks):
+	'''
+	Returns a random list of cards for the specified number of decks.
+	'''
+	deck = create_deck(num_decks)
+	random.shuffle(deck)
+	return deck
+
 def is_cards_contained_in(cards, hand):
 	'''
 	Returns whether cards is contained in hand.
@@ -150,8 +158,7 @@ class RoundState(object):
 		Creates a new RoundState for num_players players.
 		'''
 		self.num_players = num_players
-		self.deck = create_deck(num_players // 2)
-		random.shuffle(self.deck)
+		self.deck = create_random_deck(num_players // 2)
 		self.status = STATUS_DEALING
 		self.turn = 0
 		self.trump_value = '2'
@@ -310,12 +317,14 @@ class RoundListener(object):
 		pass
 
 class Round(object):
-	def __init__(self, num_players, listeners=[]):
+	def __init__(self, num_players, listeners=None):
 		'''
 		Create a new Round instance.
 
 		Each Round represents one round of tractor.
 		'''
+		if listeners is None:
+			listeners = []
 		self.state = RoundState(num_players)
 		self.listeners = list(listeners)
 		self._fire(lambda listener: listener.timed_action(self, 1))
@@ -433,6 +442,9 @@ class Round(object):
 			raise RoundException("invalid cards")
 
 		self.state.remove_cards_from_hand(player, cards)
+		# Set first player to the player who got the bottom.
+		# TODO: set first player properly for all following rounds, i.e. not the first round.
+		self.state.set_turn(player)
 		self.state.status = STATUS_PLAYING
 		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))
 

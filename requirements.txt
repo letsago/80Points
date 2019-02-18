@@ -8,7 +8,7 @@ greenlet==0.4.12
 itsdangerous==0.24
 Jinja2==2.9.6
 MarkupSafe==1.0
-more-itertools==6.0.0
+more-itertools==5.0.0
 pathlib2==2.3.3
 pluggy==0.8.1
 py==1.7.0

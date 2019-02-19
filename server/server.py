@@ -187,7 +187,7 @@ def create(user, name, num_players):
 
 def do_join(user, game_id, player_name=None):
 	if game_id not in games:
-		sio.emit('error', 'no such game')
+		sio.emit('error', 'no such game', room=user.sid)
 		return
 	game = games[game_id]
 	try:
@@ -196,7 +196,7 @@ def do_join(user, game_id, player_name=None):
 		else:
 			game.join_as(user, player_name)
 	except GameException as e:
-		sio.emit('error', e.message)
+		sio.emit('error', e.message, room=user.sid)
 		return
 
 	for i, player in enumerate(game.players):
@@ -222,7 +222,7 @@ def join_as(user, player_name):
 def process_game_player(func):
 	def func_wrapper(user, *args):
 		if user.game_player is None:
-			sio.emit('error', 'you are not currently in a game', room=sid)
+			sio.emit('error', 'you are not currently in a game', room=user.sid)
 			return
 		func(user.game_player, *args)
 	return func_wrapper
@@ -230,12 +230,12 @@ def process_game_player(func):
 def process_round(func):
 	def func_wrapper(game_player, *args):
 		if game_player.game.round is None:
-			sio.emit('error', 'the round has not started yet', room=sid)
+			sio.emit('error', 'the round has not started yet', room=game_player.user.sid)
 			return
 		try:
 			func(game_player.game.round, game_player.idx, *args)
 		except model.RoundException as e:
-			sio.emit('error', e.message, room=sid)
+			sio.emit('error', e.message, room=game_player.user.sid)
 	return func_wrapper
 
 def process_user_round(func):

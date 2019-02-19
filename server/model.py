@@ -60,6 +60,7 @@ class Card(object):
 		if not self.is_trump(trump_card):
 			return CARD_VALUES.index(self.value)
 
+		# handle trump suit
 		if self.suit == 'joker' and self.value == 'big':
 			return len(CARD_VALUES) + 3
 		elif self.suit == 'joker' and self.value == 'small':
@@ -78,6 +79,7 @@ class Card(object):
 		if not self.is_trump(trump_card):
 			return 100*CARD_SUITS.index(self.suit) + CARD_VALUES.index(self.value)
 
+		# handle trump suit, starting at 1000 (so that it's higher than any non-trump)
 		if self.suit == 'joker' and self.value == 'big':
 			return 1400
 		elif self.suit == 'joker' and self.value == 'small':

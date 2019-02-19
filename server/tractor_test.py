@@ -119,6 +119,17 @@ class TestTractor(unittest.TestCase):
 			lesser_flush = Flush(cards_to_tractors(lesser_cards, trick_suit, trump_card))
 			greater_flush = Flush(cards_to_tractors(greater_cards, trick_suit, trump_card))
 			self.assertLess(lesser_flush, greater_flush)
+	
+	def testTractorValidity(self):
+		testInvalid = []
+
+		for test in testInvalid:
+			self.assertFalse(isTractorValid(test))
+
+		testValid = []
+
+		for test in testValid:
+			self.assertTrue(isTractorValid(test))
 
 if __name__ == '__main__':
 	unittest.main()

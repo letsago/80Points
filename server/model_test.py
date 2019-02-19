@@ -75,13 +75,13 @@ class TestRound(unittest.TestCase):
 			round.tick()
 		# After dealing out all cards, the turn should return to the first player.
 		self.assertEqual(round.state.turn, first_player)
-		# Have the third player declare the 2 of hearts.
-		round.declare(third_player, [Card('h', '2')])
+		# Have the third player declare the 2 of diamonds.
+		round.declare(third_player, [Card('d', '2')])
 		# This tick allows for the player to receive the bottom cards.
 		round.tick()
 		round.set_bottom(third_player, 
-			[Card('c', '4'), Card('c', '6'), Card('c', '8'), Card('c', 'Q'),
-			 Card('d', '3'), Card('d', '5'), Card('d', '7'), Card('d', '9')])
+			[Card('d', '4'), Card('d', '6'), Card('d', '8'), Card('d', '10'),
+			 Card('c', '3'), Card('c', '5'), Card('c', '7'), Card('c', '9')])
 		# After setting the bottom, it should now be the third player's turn.
 		self.assertEqual(round.state.turn, third_player)
 

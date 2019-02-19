@@ -17,8 +17,8 @@ jobs:
         python.version: '2.7'
       Python35:
         python.version: '3.5'
-      Python36:
-        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
     maxParallel: 3
 
   steps:
@@ -31,7 +31,6 @@ jobs:
     displayName: 'Install dependencies'
 
   - script: |
-      pip install pytest
       pytest --junitxml=junit/test-results.xml
     displayName: 'pytest'
 

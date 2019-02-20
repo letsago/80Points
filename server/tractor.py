@@ -118,6 +118,7 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 	i = 0
 	while i < len(tractors) - 1:
 		tractor1, tractor2 = tractors[i], tractors[i+1]
+		# TODO(workitem0022): only allow rank > 1 tractors to be merged
 		if tractor1.rank == tractor2.rank and tractor1.suit_type == tractor2.suit_type and abs(tractor1.power - tractor2.power) == 1:
 			assert tractor2.length == 1
 			tractors[i] = Tractor(tractor1.rank, tractor1.length + tractor2.length, tractor2.power, tractor1.suit_type)

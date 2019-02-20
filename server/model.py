@@ -57,6 +57,7 @@ class Card(object):
 		  match the trump suit are assigned the same power. (For example, if trump
 		  is 2C, 2D and 2S have the same power.)
 		'''
+		# TODO(workitem0022): handle nonconsecutive pairs as valid tractors case
 		if not self.is_trump(trump_card):
 			return CARD_VALUES.index(self.value)
 
@@ -65,6 +66,7 @@ class Card(object):
 			return len(CARD_VALUES) + 3
 		elif self.suit == 'joker' and self.value == 'small':
 			return len(CARD_VALUES) + 2
+		# TODO(workitem0022): handle trump power level for joker trump round case
 		elif self.suit == trump_card.suit and self.value == trump_card.value:
 			return len(CARD_VALUES) + 1
 		elif self.value == trump_card.value:

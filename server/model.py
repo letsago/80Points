@@ -177,7 +177,7 @@ class RoundState(object):
 		# current declared cards
 		# for now, we only keep track of the most recent set of cards that have been declared
 		# however, this is insufficient to allow defending a previous declaration, so eventually
-		# we will need to keep a history of declarations from different players
+		# TODO(workitem0027): we will need to keep a history of declarations from different players
 		self.declarations = []
 
 		# some cards should form the bottom

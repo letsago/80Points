@@ -162,7 +162,8 @@ class RoundState(object):
 		self.deck = create_random_deck(num_players // 2)
 		self.status = STATUS_DEALING
 		self.turn = 0
-		self.trump_card = Card('joker', '2')
+		# Card object that represents the trump suit and value, not an actual card used in play
+		self.trump_card = Card(None, '2')
 		self.num_decks = num_players // 2
 
 		# list of cards in each player's hand
@@ -174,7 +175,7 @@ class RoundState(object):
 		# current declared cards
 		# for now, we only keep track of the most recent set of cards that have been declared
 		# however, this is insufficient to allow defending a previous declaration, so eventually
-		#  we will need to keep a history of declarations from different players
+		# we will need to keep a history of declarations from different players
 		self.declarations = []
 
 		# some cards should form the bottom
@@ -357,9 +358,9 @@ class Round(object):
 					self._fire(lambda listener: listener.timed_action(self, 5))
 			elif self.state.declaration is not None:
 				# advance to STATUS_BOTTOM by adding the bottom to the player who declared
-				# TODO: handle case where no player declared within the time limit
-				# TODO: the 10 second time limit above should be shorter if a player has declared
-				#  and longer if no player has declared yet
+				# TODO(workitem0024): handle case where no player declared within the time limit
+				# TODO(workitem0025): the 10 second time limit above should be shorter if a player has declared
+				# and longer if no player has declared yet
 				bottom_player = self.state.declaration.player
 				bottom_cards = self.state.give_bottom_to_player(bottom_player)
 				self.state.status = STATUS_BOTTOM
@@ -414,8 +415,6 @@ class Round(object):
 		# if all players have played, then we need to figure out who won to update the turn
 		# otherwise, we can just increment it
 		if self.state.is_board_full():
-			# TODO...
-
 			if len(self.state.player_hands[0]) > 0:
 				winner = self.state.determine_winner()
 				self.state.set_turn(winner)

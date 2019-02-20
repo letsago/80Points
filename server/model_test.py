@@ -1,4 +1,5 @@
 import unittest
+import mock
 from model import *
 
 class TestCard(unittest.TestCase):
@@ -55,6 +56,32 @@ class TestCard(unittest.TestCase):
 		for test in tests:
 			trump_suit, trump_value, test_list, want = test
 			self.assertEqual(trump_sorted(test_list, trump_suit, trump_value), want)
+
+class TestRound(unittest.TestCase):
+	def testFirstPlayerSetToBottomPlayer(self):
+		num_players = 4
+		num_decks = 2
+		first_player = 0
+		third_player = 2
+		# Mock model.create_random_deck to use a determinstic deck.
+		with mock.patch('model.create_random_deck', return_value=create_deck(num_decks)):
+			round = Round(num_players)
+		self.assertEqual(round.state.turn, first_player)
+		# Deal out all cards.
+		for _ in range(len(round.state.deck)):
+			round.tick()
+		# After dealing out all cards, the turn should return to the first player.
+		self.assertEqual(round.state.turn, first_player)
+		# Have the third player declare the 2 of hearts.
+		round.declare(third_player, [Card('h', '2')])
+		# This tick allows for the player to receive the bottom cards.
+		round.tick()
+		round.set_bottom(third_player, 
+			[Card('c', '4'), Card('c', '6'), Card('c', '8'), Card('c', 'Q'),
+			 Card('d', '3'), Card('d', '5'), Card('d', '7'), Card('d', '9')])
+		# After setting the bottom, it should now be the third player's turn.
+		self.assertEqual(round.state.turn, third_player)
+
 
 if __name__ == '__main__':
 	unittest.main()

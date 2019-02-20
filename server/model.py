@@ -442,7 +442,7 @@ class Round(object):
 
 		self.state.remove_cards_from_hand(player, cards)
 		# Set first player to the player who got the bottom.
-		# TODO: set first player properly for all following rounds, i.e. not the first round.
+		# TODO(workitem0023): set first player properly for all following rounds, i.e. not the first round.
 		self.state.set_turn(player)
 		self.state.status = STATUS_PLAYING
 		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))

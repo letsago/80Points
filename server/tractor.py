@@ -54,7 +54,7 @@ def card_to_suit_type(card, trick_suit, trump_card):
 		return SUIT_TRICK
 	return SUIT_LOWEST
 
-def match_form(tractors, target_form, depth=0):
+def match_form(tractors, target_form):
 	'''
 	Recursively finds a length/rank matching between tractors and target_form.
 	Returns the adjusted Tractors, or None if no match was found.
@@ -88,7 +88,7 @@ def match_form(tractors, target_form, depth=0):
 
 		# check if remainders match
 		remainder_tractors = tractors[:i] + other_minus_tractor + tractors[i+1:]
-		remainder_matched = match_form(remainder_tractors, target_form[1:], depth=depth+1)
+		remainder_matched = match_form(remainder_tractors, target_form[1:])
 		if remainder_matched is not None:
 			return remainder_matched + [other_match_tractor]
 

@@ -57,16 +57,17 @@ class Card(object):
 		  match the trump suit are assigned the same power. (For example, if trump
 		  is 2C, 2D and 2S have the same power.)
 		'''
-		# TODO(workitem0022): handle nonconsecutive pairs as valid tractors case
+		# TODO(workitem0029): handle nonconsecutive pairs as valid tractors case
 		if not self.is_trump(trump_card):
 			return CARD_VALUES.index(self.value)
 
 		# handle trump suit
+		# increments of 1 are used to explicitly make clear what the power hierarchy is
 		if self.suit == 'joker' and self.value == 'big':
 			return len(CARD_VALUES) + 3
 		elif self.suit == 'joker' and self.value == 'small':
 			return len(CARD_VALUES) + 2
-		# TODO(workitem0022): handle trump power level for joker trump round case
+		# TODO(workitem0030): handle trump power level for joker trump round case
 		elif self.suit == trump_card.suit and self.value == trump_card.value:
 			return len(CARD_VALUES) + 1
 		elif self.value == trump_card.value:
@@ -78,6 +79,7 @@ class Card(object):
 		'''
 		Returns an integer suitable for sorting cards for display purposes.
 		'''
+		# multiple of 100 is used by design to guarantee that non-trump card index is lower than any trump index
 		if not self.is_trump(trump_card):
 			return 100*CARD_SUITS.index(self.suit) + CARD_VALUES.index(self.value)
 

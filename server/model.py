@@ -57,13 +57,17 @@ class Card(object):
 		  match the trump suit are assigned the same power. (For example, if trump
 		  is 2C, 2D and 2S have the same power.)
 		'''
+		# TODO(workitem0029): handle nonconsecutive pairs as valid tractors case
 		if not self.is_trump(trump_card):
 			return CARD_VALUES.index(self.value)
 
+		# handle trump suit
+		# increments of 1 are used to explicitly make clear what the power hierarchy is
 		if self.suit == 'joker' and self.value == 'big':
 			return len(CARD_VALUES) + 3
 		elif self.suit == 'joker' and self.value == 'small':
 			return len(CARD_VALUES) + 2
+		# TODO(workitem0030): handle trump power level for joker trump round case
 		elif self.suit == trump_card.suit and self.value == trump_card.value:
 			return len(CARD_VALUES) + 1
 		elif self.value == trump_card.value:
@@ -75,9 +79,11 @@ class Card(object):
 		'''
 		Returns an integer suitable for sorting cards for display purposes.
 		'''
+		# multiple of 100 is used by design to guarantee that non-trump card index is lower than any trump index
 		if not self.is_trump(trump_card):
 			return 100*CARD_SUITS.index(self.suit) + CARD_VALUES.index(self.value)
 
+		# handle trump suit, starting at 1000 (so that it's higher than any non-trump)
 		if self.suit == 'joker' and self.value == 'big':
 			return 1400
 		elif self.suit == 'joker' and self.value == 'small':
@@ -160,7 +166,8 @@ class RoundState(object):
 		self.deck = create_random_deck(num_players // 2)
 		self.status = STATUS_DEALING
 		self.turn = 0
-		self.trump_card = Card('joker', '2')
+		# Card object that represents the trump suit and value, not an actual card used in play
+		self.trump_card = Card(None, '2')
 		self.num_decks = num_players // 2
 
 		# list of cards in each player's hand
@@ -172,7 +179,7 @@ class RoundState(object):
 		# current declared cards
 		# for now, we only keep track of the most recent set of cards that have been declared
 		# however, this is insufficient to allow defending a previous declaration, so eventually
-		#  we will need to keep a history of declarations from different players
+		# TODO(workitem0027): we will need to keep a history of declarations from different players
 		self.declarations = []
 
 		# some cards should form the bottom
@@ -355,9 +362,9 @@ class Round(object):
 					self._fire(lambda listener: listener.timed_action(self, 5))
 			elif self.state.declaration is not None:
 				# advance to STATUS_BOTTOM by adding the bottom to the player who declared
-				# TODO: handle case where no player declared within the time limit
-				# TODO: the 10 second time limit above should be shorter if a player has declared
-				#  and longer if no player has declared yet
+				# TODO(workitem0024): handle case where no player declared within the time limit
+				# TODO(workitem0025): the 10 second time limit above should be shorter if a player has declared
+				# and longer if no player has declared yet
 				bottom_player = self.state.declaration.player
 				bottom_cards = self.state.give_bottom_to_player(bottom_player)
 				self.state.status = STATUS_BOTTOM
@@ -412,8 +419,6 @@ class Round(object):
 		# if all players have played, then we need to figure out who won to update the turn
 		# otherwise, we can just increment it
 		if self.state.is_board_full():
-			# TODO...
-
 			if len(self.state.player_hands[0]) > 0:
 				winner = self.state.determine_winner()
 				self.state.set_turn(winner)
@@ -441,7 +446,7 @@ class Round(object):
 
 		self.state.remove_cards_from_hand(player, cards)
 		# Set first player to the player who got the bottom.
-		# TODO: set first player properly for all following rounds, i.e. not the first round.
+		# TODO(workitem0023): set first player properly for all following rounds, i.e. not the first round.
 		self.state.set_turn(player)
 		self.state.status = STATUS_PLAYING
 		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))

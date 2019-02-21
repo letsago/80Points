@@ -101,6 +101,9 @@ class TestRound(unittest.TestCase):
 			# 2 consecutive pairs + single
 			[Card('d', '2'), Card('d', '2'), Card('d', '3'), Card('d', '3'), Card('c', '5')],
 
+			# 2 pairs in different suits
+			[Card('d', '4'), Card('d', '4'), Card('h', '5'), Card('h', '5')],
+
 			# 2 consecutive pairs + pair
 			[Card('d', '2'), Card('d', '2'), Card('d', '3'), Card('d', '3'), Card('s', '5'), Card('s', '5')]
 		]

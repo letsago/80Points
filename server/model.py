@@ -85,6 +85,7 @@ class Card(object):
 		'''
 		Returns an integer suitable for sorting cards for display purposes.
 		'''
+		# multiple of 100 is used by design to guarantee that non-trump card index is lower than any trump index
 		if not self.is_trump(trump_card):
 			return 100*CARD_SUITS.index(self.suit) + CARD_VALUES.index(self.value)
 

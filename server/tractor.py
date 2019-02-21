@@ -114,12 +114,12 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 		tractors.append(Tractor(count, 1, card.suit_power(trump_card), suit_type))
 	tractors = sorted(tractors, reverse=True)
 
-	# merge consecutive length 1 Tractors of the same rank into multi-length Tractors
+	# merge consecutive rank > 1, length 1 Tractors of the same rank into multi-length Tractors
 	i = 0
 	while i < len(tractors) - 1:
 		tractor1, tractor2 = tractors[i], tractors[i+1]
-		# TODO(workitem0022): only allow rank > 1 tractors to be merged
-		if tractor1.rank == tractor2.rank and tractor1.suit_type == tractor2.suit_type and abs(tractor1.power - tractor2.power) == 1:
+		# WORKITEM0022: merge consecutive rank > 1 tractors only
+		if tractor1.rank > 1 and tractor1.rank == tractor2.rank and tractor1.suit_type == tractor2.suit_type and abs(tractor1.power - tractor2.power) == 1:
 			assert tractor2.length == 1
 			tractors[i] = Tractor(tractor1.rank, tractor1.length + tractor2.length, tractor2.power, tractor1.suit_type)
 			del tractors[i+1]

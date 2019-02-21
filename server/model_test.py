@@ -93,15 +93,14 @@ class TestCard(unittest.TestCase):
 			self.assertEqual(display_sorted(test_list, trump_card), want)
 
 class TestRound(unittest.TestCase):
-	num_players = 4
-
 	def testFirstPlayerSetToBottomPlayer(self):
+		num_players = 4
 		num_decks = 2
 		first_player = 0
 		third_player = 2
 		# Mock model.create_random_deck to use a deterministic deck.
 		with mock.patch('model.create_random_deck', return_value=create_deck(num_decks)):
-			round = Round(TestRound.num_players)
+			round = Round(num_players)
 		self.assertEqual(round.state.turn, first_player)
 		# Deal out all cards.
 		for _ in range(len(round.state.deck)):
@@ -118,9 +117,15 @@ class TestRound(unittest.TestCase):
 		# After setting the bottom, it should now be the third player's turn.
 		self.assertEqual(round.state.turn, third_player)
 
+class TestRoundState(unittest.TestCase):
+	num_players = 4
+
 	def testFirstPlayValidity(self):
-		round_state = RoundState(TestRound.num_players)
+		round_state = RoundState(TestRoundState.num_players)
 		invalid_play_tests = [
+			# no play
+			[],
+
 			# 2 singles
 			[Card('d', '2'), Card('h', '3')],
 
@@ -141,7 +146,7 @@ class TestRound(unittest.TestCase):
 		]
 
 		for test in invalid_play_tests:
-			self.assertTrue(round_state.is_first_play_invalid(test))
+			self.assertTrue(round_state.is_play_invalid(test))
 		
 		round_state.trump_card = Card('c', '3')
 		valid_play_tests = [
@@ -162,7 +167,7 @@ class TestRound(unittest.TestCase):
 		]
 
 		for test in valid_play_tests:
-			self.assertFalse(round_state.is_first_play_invalid(test))	
+			self.assertFalse(round_state.is_play_invalid(test))	
 
 if __name__ == '__main__':
 	unittest.main()

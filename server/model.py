@@ -278,8 +278,18 @@ class RoundState(object):
 
 		return view
 	
-	def is_first_play_invalid(self, cards):
-		return self.is_board_empty() and len(cards_to_tractors(cards, self.trump_card.suit, self.trump_card)) > 1
+	def is_play_invalid(self, cards):
+		if not cards:
+			return True
+
+		# for now, prevent playing multiple tractors at once for first play
+		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
+		if self.is_board_empty():
+			# need the first card's suit in order to accurately transform cards to tractors if board is empty
+			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) > 1
+		
+		# TODO(workitem0005): must follow first play's suit if board is not empty 
+		return True
 
 class RoundListener(object):
 	def timed_action(self, r, delay):
@@ -419,13 +429,10 @@ class Round(object):
 		if self.state.is_board_full():
 			self.state.clear_board()
 
-		# prevent playing multiple tractors at once for first play
-		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
-		if self.state.is_first_play_invalid(cards):
-			raise RoundException("please play only one tractor as a first play")
+		# checks if play is invalid
+		if self.state.is_play_invalid(cards):
+			raise RoundException("invalid play")
 		
-		# TODO(workitem0005): players must follow suit once first play has been made
-
 		self.state.board[player] = cards
 		self.state.remove_cards_from_hand(player, cards)
 

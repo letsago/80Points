@@ -120,5 +120,22 @@ class TestTractor(unittest.TestCase):
 			greater_flush = Flush(cards_to_tractors(greater_cards, trick_suit, trump_card))
 			self.assertLess(lesser_flush, greater_flush)
 
+	# this test added due to broken flush comparator in python2.7
+	def testFlushComparators(self):
+		trick_suit = 's'
+		trump_card = Card('h', 'A')
+
+		tests = [
+			([Card('d', 'K')],
+			 [Card('d', 'K')]),
+		]
+
+		for test in tests:
+			cards1, cards2 = test
+			flush1 = Flush(cards_to_tractors(cards1, trick_suit, trump_card))
+			flush2 = Flush(cards_to_tractors(cards2, trick_suit, trump_card))
+			self.assertFalse(flush1 > flush2 or flush2 > flush1 or flush1 < flush2 or flush2 < flush1)
+			self.assertTrue(flush1 == flush2)
+
 if __name__ == '__main__':
 	unittest.main()

@@ -158,3 +158,4 @@ class Flush(object):
 			if tractor == other.tractors[i]:
 				continue
 			return tractor < other.tractors[i]
+		return False

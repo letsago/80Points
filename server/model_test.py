@@ -147,7 +147,7 @@ class TestRoundState(unittest.TestCase):
 		]
 
 		for test in invalid_play_tests:
-			self.assertTrue(TestRoundState.round_state.is_play_invalid(first_player, test))
+			self.assertTrue(TestRoundState.round_state.is_play_invalid(TestRoundState.first_player, test))
 		
 		TestRoundState.round_state.trump_card = Card('c', '3')
 		valid_play_tests = [
@@ -168,7 +168,7 @@ class TestRoundState(unittest.TestCase):
 		]
 
 		for test in valid_play_tests:
-			self.assertFalse(TestRoundState.round_state.is_play_invalid(first_player, test))
+			self.assertFalse(TestRoundState.round_state.is_play_invalid(TestRoundState.first_player, test))
 
 	def testFollowSuitValidity(self):
 		second_player = 1

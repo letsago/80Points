@@ -288,8 +288,74 @@ class RoundState(object):
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
 			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) > 1
 		
-		# TODO(workitem0005): must follow first play's suit if board is not empty 
-		return True
+		# TODO(workitem0005): must follow first play's suit if board is not empty
+		# TODO: need to add self.trick_first_player
+		first_play = self.board[self.trick_first_player]
+		trick_suit = first_play[0].suit
+		trick_card_count = len(first_play)
+		# TODO: need to add self.get_suits_from_hand
+		player_hand_suit = self.get_suits_from_hand(self.player_hands[player], trick_suit)
+		first_tractor = cards_to_tractors(first_play, trick_suit, self.trump_card)
+		tractor_hand_suits = cards_to_tractors(player_hand_suit, trick_suit, self.trump_card)
+
+		# for edge case where first play is pair but second player only has consecutive pairs
+		# TODO: need to add multirank_tractor_combinations in tractor.py
+		# eg. (8,8,9,9,10,10) -> (8,8,9,9,10,10), (8,8,9,9), (9,9,10,10), (8,8), (9,9), (10,10)
+		hand_nonsingle_suit_tractors = multirank_tractor_combinations(tractor_hand_suits)
+
+		priority_tractors = []
+		possible_plays_card_count = 0
+		hand_nonsingle_suit_tractors = sorted(hand_nonsingle_suit_tractors, reverse=True)
+
+		# this will get all priority trick suit tractor plays if player still has any multirank, multilength tractors in hand
+		i = 0
+		for priority_rank in range(first_tractor.rank, 1, -1):
+			if possible_plays_card_count >= trick_card_count:
+				break
+			for priority_length in range(first_tractor.length, 0, -1):
+				if possible_plays_card_count >= trick_card_count:
+					break
+				# finds a matching tractor in hand
+				while hand_nonsingle_suit_tractors[i].rank >= priority_rank and hand_nonsingle_suit_tractors[i].length >= priority_length:
+					if hand_nonsingle_suit_tractors[i].rank == priority_rank and hand_nonsingle_suit_tractors[i].length == priority_length:
+						priority_tractors.append(tractor)
+						possible_plays_card_count += tractor.rank * tractor.length
+					i += 1
+
+		tractor_play = cards_to_tractors(cards, trick_suit, self.trump_card)
+		play_card_count = 0
+
+		for tractor in tractor_play:
+			play_card_count += tractor.rank * tractor.length
+		
+		# number of cards in tractor_play have to match number of cards in first_play
+		if play_card_count != trick_card_count:
+			return True
+
+		# all priority tractors must be present in tractor_play
+		for tractor in priority_tractor_plays:
+			if tractor not in tractor_play:
+				return True
+			else:
+				tractor_play.remove(tractor)
+
+		# if trick_card_count > possible_plays_card_count 
+		# then must prioritize singles in same suit before any other cards can be played
+		# TODO: need to add single_rank_tractor_combinations in tractor.py
+		single_rank_suit_tractors = singlerank_tractors(tractor_hand_suits)
+		if trick_card_count > possible_plays_card_count 
+			# handles case where rest of the plays after priority have to be same suit single rank tractors if player is not out of suit
+			if len(single_rank_suit_tractors) >= trick_card_count - possible_plays_card_count:
+				for tractor in tractor_play:
+					if tractor not in single_rank_suit_tractors:
+						return True
+			# otherwise player must play remainder of suit and any other cards to satisfy the trick_card_count		
+			else:
+				for tractor in single_rank_suit_tractors:
+					if tractor not in tractor_play:
+						return True
+
+		return False
 
 class RoundListener(object):
 	def timed_action(self, r, delay):

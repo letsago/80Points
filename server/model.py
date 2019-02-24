@@ -1,19 +1,6 @@
 import functools
 import itertools
-import random
-from card import create_random_deck, Card
-
-def is_cards_contained_in(cards, hand):
-	'''
-	Returns whether cards is contained in hand.
-	'''
-	check_list = hand[:]
-	for x in cards:
-		if x in check_list:
-			check_list.remove(x)
-		else:
-			return False
-	return True
+from card import create_random_deck, Card, display_sorted, is_cards_contained_in
 
 STATUS_DEALING = 'dealing'
 STATUS_BOTTOM = 'bottom'

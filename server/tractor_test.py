@@ -1,13 +1,13 @@
 import unittest
-import model
-from model import Card
+import card
+from card import Card
 from tractor import *
 
 def Many(suit, value, rank=1, length=1):
 	cards = []
-	initial = model.CARD_VALUES.index(value)
+	initial = card.CARD_VALUES.index(value)
 	for i in range(length):
-		cards.extend(rank * [Card(suit, model.CARD_VALUES[initial + i])])
+		cards.extend(rank * [Card(suit, card.CARD_VALUES[initial + i])])
 	return cards
 
 def Straight(suit, value, length):

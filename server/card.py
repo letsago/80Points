@@ -4,36 +4,6 @@ import random
 CARD_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 CARD_SUITS = ['c', 'd', 'h', 's']
 
-def create_deck(num_decks):
-	'''
-	Return a list of cards for the specified number of decks.
-	'''
-
-	one_deck = [Card(x[0], x[1]) for x in itertools.product(CARD_SUITS, CARD_VALUES)]
-	one_deck.extend([Card('joker', 'big'), Card('joker', 'small')])
-	total_decks = num_decks * one_deck
-	return total_decks
-
-def create_random_deck(num_decks):
-	'''
-	Returns a random list of cards for the specified number of decks.
-	'''
-	deck = create_deck(num_decks)
-	random.shuffle(deck)
-	return deck
-
-def is_cards_contained_in(cards, hand):
-	'''
-	Returns whether cards is contained in hand.
-	'''
-	check_list = hand[:]
-	for x in cards:
-		if x in check_list:
-			check_list.remove(x)
-		else:
-			return False
-	return True
-
 def display_sorted(cards, trump_card):
 	return sorted(cards, key=lambda card: card.display_index(trump_card))
 
@@ -130,4 +100,33 @@ class Card(object):
 
 def card_from_dict(d):
 	return Card(d['suit'], d['value'])
-	
+
+def create_deck(num_decks):
+	'''
+	Return a list of cards for the specified number of decks.
+	'''
+
+	one_deck = [Card(x[0], x[1]) for x in itertools.product(CARD_SUITS, CARD_VALUES)]
+	one_deck.extend([Card('joker', 'big'), Card('joker', 'small')])
+	total_decks = num_decks * one_deck
+	return total_decks
+
+def create_random_deck(num_decks):
+	'''
+	Returns a random list of cards for the specified number of decks.
+	'''
+	deck = create_deck(num_decks)
+	random.shuffle(deck)
+	return deck
+
+def is_cards_contained_in(cards, hand):
+	'''
+	Returns whether cards is contained in hand.
+	'''
+	check_list = hand[:]
+	for x in cards:
+		if x in check_list:
+			check_list.remove(x)
+		else:
+			return False
+	return True

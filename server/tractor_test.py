@@ -2,6 +2,7 @@ import unittest
 import model
 from model import Card
 from tractor import *
+from parameterized import parameterized_class
 
 def Many(suit, value, rank=1, length=1):
 	cards = []
@@ -18,140 +19,311 @@ def Double(suit, value):
 		return 2 * [Card(suit, value)]
 	return Many(suit, value, rank=2)
 
-class TestTractor(unittest.TestCase):
-	def testNonJokerTrumpCardsToTractors(self):
+def tractor_generator(tractors, trump_card):
+	return [Tractor(data['rank'], data['length'], data['power_card'].suit_power(trump_card), data['suit_type']) for data in tractors]
+
+@parameterized_class(('test_description', 'test_cards', 's_8_trump_tractor_data', 'joker_8_trump_tractor_data'), [
+
+		(	"same suit consecutive pairs", 
+			Double('s', '2') + Double('s', '3'), 
+			[{'rank': 2, 'length': 2, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP}],
+			[{'rank': 2, 'length': 2, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST}],
+		),
+
+		(	"same suit consecutive singles", 
+			Straight('s', '2', 4), 
+			[
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '5'), 'suit_type': SUIT_TRUMP},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '4'), 'suit_type': SUIT_TRUMP},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '3'), 'suit_type': SUIT_TRUMP},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP},
+			],
+			[
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '5'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '4'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '3'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST},
+			],
+		),
+
+		(	"different suit consecutive value singles", 
+			[Card('s', '2'), Card('d', '3')],  
+			[
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP},
+				{'rank': 1, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
+			],
+			[
+				{'rank': 1, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST},
+			],
+		),
+
+		(	"single", 
+			[Card('s', '2')], 
+			[{'rank': 1, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP}],
+			[{'rank': 1, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST}],
+		),
+
+		(	"same suit consecutive pairs and single", 
+			Double('s', '2') + Double('s', '3') + [Card('s', '5')],
+			[
+				{'rank': 2, 'length': 2, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '5'), 'suit_type': SUIT_TRUMP},
+			],
+			[
+				{'rank': 2, 'length': 2, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('s', '5'), 'suit_type': SUIT_LOWEST},
+			],
+		),
+
+		(	"different suit pair and single", 
+			Double('s', '2') + [Card('d', '3')],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP},
+				{'rank': 1, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
+			],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
+			],
+		),
+
+		(	"same suit 3 consecutive pairs", 
+			Double('s', '2') + Double('s', '3') + Double('s', '4'),
+			[{'rank': 2, 'length': 3, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP}],
+			[{'rank': 2, 'length': 3, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST}],
+		),
+
+		(	"same suit 3 non-consecutive pairs", 
+			Double('s', '2') + Double('s', '5') + Double('s', '9'),
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '9'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '5'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP},
+			],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '9'), 'suit_type': SUIT_LOWEST},
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '5'), 'suit_type': SUIT_LOWEST},
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST},
+			],
+		),
+
+		(	"same suit 2 consecutive pairs, 1 separate pair, 1 single", 
+			Double('s', '2') + Double('s', '3') + Double('s', '9') + [Card('joker', 'big')],
+			[
+				{'rank': 2, 'length': 2, 'power_card': Card('s', '2'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '9'), 'suit_type': SUIT_TRUMP},
+				{'rank': 1, 'length': 1, 'power_card': Card('joker', 'big'), 'suit_type': SUIT_TRUMP},
+			],
+			[
+				{'rank': 2, 'length': 2, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST},
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '9'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('joker', 'big'), 'suit_type': SUIT_TRUMP},
+			],
+		),
+
+		(	"consecutive joker pair", 
+			Double('joker', 'big') + Double('joker', 'small'),
+			[{'rank': 2, 'length': 2, 'power_card': Card('joker', 'small'), 'suit_type': SUIT_TRUMP}],
+			[{'rank': 2, 'length': 2, 'power_card': Card('joker', 'small'), 'suit_type': SUIT_TRUMP}],
+		),
+
+		(	"consecutive trump value, joker pair", 
+			Double('s', '8') + Double('joker', 'small'),
+			[{'rank': 2, 'length': 2, 'power_card': Card('s', '8'), 'suit_type': SUIT_TRUMP}],
+			[{'rank': 2, 'length': 2, 'power_card': Card('s', '8'), 'suit_type': SUIT_TRUMP}],
+		),
+
+		(	"trump suit 2 non-consecutive pairs", 
+			Double('c', '8') + Double('h', '8'),
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '8'), 'suit_type': SUIT_TRUMP},
+			],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '8'), 'suit_type': SUIT_TRUMP},
+			],
+		),
+
+		(	"different suit 2 consecutive value pairs", 
+			Double('c', '2') + Double('h', '3'),
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('c', '2'), 'suit_type': SUIT_TRICK},
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '3'), 'suit_type': SUIT_LOWEST},
+			],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('c', '2'), 'suit_type': SUIT_TRICK},
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '3'), 'suit_type': SUIT_LOWEST},
+			],
+		),
+
+		(	"different suit 2 non-consecutive value pairs", 
+			Double('h', '2') + Double('d', '5'),
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('d', '5'), 'suit_type': SUIT_LOWEST},
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '2'), 'suit_type': SUIT_LOWEST},
+			],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('d', '5'), 'suit_type': SUIT_LOWEST},
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '2'), 'suit_type': SUIT_LOWEST},
+			],
+		),
+
+		(
+			"different suit 2 nonconsecutive trump value pairs",
+			Double('c', '8') + Double('h', '8'),
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '8'), 'suit_type': SUIT_TRUMP},
+			],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '8'), 'suit_type': SUIT_TRUMP},
+			],
+		),
+
+		(
+			"trump value, joker 2 consecutive pairs",
+			Double('s', '8') + Double('joker', 'small'),
+			[{'rank': 2, 'length': 2, 'power_card': Card('s', '8'), 'suit_type': SUIT_TRUMP}],
+			[{'rank': 2, 'length': 2, 'power_card': Card('s', '8'), 'suit_type': SUIT_TRUMP}],
+		),
+
+		(
+			"same suit 2 consecutive pairs due to trump value",
+			Double('h', '7') + Double('h', '9'),
+			[{'rank': 2, 'length': 2, 'power_card': Card('h', '7'), 'suit_type': SUIT_LOWEST}],
+			[{'rank': 2, 'length': 2, 'power_card': Card('h', '7'), 'suit_type': SUIT_LOWEST}],
+		),
+
+		(
+			"s 8 trump - trump value 2 consecutive pairs; joker 8 trump - trump value 2 nonconsecutive pairs",
+			Double('s', '8') + Double('d', '8'),
+			[{'rank': 2, 'length': 2, 'power_card': Card('d', '8'), 'suit_type': SUIT_TRUMP}],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('s', '8'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('d', '8'), 'suit_type': SUIT_TRUMP},
+			],
+		),
+
+		(
+			"s 8 trump - trump suit, trump value 2 consecutive pairs; joker 8 trump - different suit 2 nonconsecutive pairs",
+			Double('s', 'A') + Double('h', '8'),
+			[{'rank': 2, 'length': 2, 'power_card': Card('s', 'A'), 'suit_type': SUIT_TRUMP}],
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('h', '8'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('s', 'A'), 'suit_type': SUIT_LOWEST},
+			],
+		),
+
+		(
+			"s 8 trump - trump value, joker 2 nonconsecutive pairs; joker 8 trump - trump value, joker 2 consecutive pairs",
+			Double('c', '8') + Double('joker', 'small'),
+			[
+				{'rank': 2, 'length': 1, 'power_card': Card('joker', 'small'), 'suit_type': SUIT_TRUMP},
+				{'rank': 2, 'length': 1, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRUMP},
+			],
+			[{'rank': 2, 'length': 2, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRUMP}],
+		),
+])
+class TestCardsToTractors(unittest.TestCase):
+	# trick suit always 'c' by design because testing cards_to_tractors output and not comparable tractor strength
+
+	def testNonJokerTrump(self):
 		trump_card = Card('s', '8')
-		trick_suit = 's'
-		tests = [
-			# consecutive pairs (s 2, s 2, s 3, s 3)
-			(Double('s', '2') + Double('s', '3'),
-			 [Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)]),
-
-			# consecutive singles (s 2, s 3, s 4, s 5)
-			(Straight('s', '2', 4),
-			 [
-				Tractor(1, 1, Card('s', '5').suit_power(trump_card), SUIT_TRUMP),
-			 	Tractor(1, 1, Card('s', '4').suit_power(trump_card), SUIT_TRUMP),
-			 	Tractor(1, 1, Card('s', '3').suit_power(trump_card), SUIT_TRUMP),
-			 	Tractor(1, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
-			 ]),
-
-			# single card (s 2)
-			([Card('s', '2')],
-			 [Tractor(1, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)]),
-
-			# consecutive pairs (s 2, s 2, s 3, s 3) and single card (s 5)
-			(Double('s', '2') + Double('s', '3') + [Card('s', '5')],
-			 [
-				Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
-				Tractor(1, 1, Card('s', '5').suit_power(trump_card), SUIT_TRUMP),
-			 ]),
-
-			# pair (s 2, s 2) and single card (s 3)
-			(Double('s', '2') + [Card('s', '3')],
-			 [
-				Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
-				Tractor(1, 1, Card('s', '3').suit_power(trump_card), SUIT_TRUMP),
-			 ]),
-
-			# consecutive pairs (s 2, s 2, s 3, s 3, s 4, s 4)
-			(Double('s', '2') + Double('s', '3') + Double('s', '4'),
-			 [Tractor(2, 3, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)]),
-
-			# non-consecutive pairs (s 2, s 2, s 5, s 5, s 9, s 9)
-			(Double('s', '2') + Double('s', '5') + Double('s', '9'),
-			 [
-				Tractor(2, 1, Card('s', '9').suit_power(trump_card), SUIT_TRUMP),
-				Tractor(2, 1, Card('s', '5').suit_power(trump_card), SUIT_TRUMP),
-				Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
-			 ]),
-
-			# consecutive pairs (s 2, s 2, s 3, s 3), pair (s 9, s 9), single card (big joker) 
-			(Double('s', '2') + Double('s', '3') + Double('s', '9') + [Card('joker', 'big')],
-			 [
-				Tractor(2, 1, Card('s', '9').suit_power(trump_card), SUIT_TRUMP),
-				Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
-				Tractor(1, 1, Card('joker', 'big').suit_power(trump_card), SUIT_TRUMP),
-			 ]),
-
-			# consecutive pairs (h 7, h 7, h 9, h 9) since (s 8) is trump
-			(Double('h', '7') + Double('h', '9'),
-			 [Tractor(2, 2, Card('s', '7').suit_power(trump_card), SUIT_LOWEST)]),
-
-			# consecutive pairs (d 8, d 8, s 8, s 8) since (s 8) is high trump 8 and (d 8) is low trump 8
-			(Double('s', '8') + Double('d', '8'),
-			 [Tractor(2, 2, Card('d', '8').suit_power(trump_card), SUIT_TRUMP)]),
-
-			# consecutive pairs (s A, s A, h 8, h 8) since (s 8) is trump
-			(Double('s', 'A') + Double('h', '8'),
-			 [Tractor(2, 2, Card('s', 'A').suit_power(trump_card), SUIT_TRUMP)]),
-
-			# non-consecutive pairs (c 8, c 8, h 8, h 8) since (s 8) is trump
-			(Double('c', '8') + Double('h', '8'),
-			 [
-				Tractor(2, 1, Card('c', '8').suit_power(trump_card), SUIT_TRUMP),				 
-				Tractor(2, 1, Card('h', '8').suit_power(trump_card), SUIT_TRUMP),
-			 ]),
-
-			# consecutive pairs (s 8, s 8, small joker, small joker) since (s 8) is trump
-			(Double('s', '8') + Double('joker', 'small'),
-			 [
-				Tractor(2, 2, Card('s', '8').suit_power(trump_card), SUIT_TRUMP),
-			 ]),
-
-			# consecutive pairs (small joker, small joker, big joker, big joker)
-			(Double('joker', 'big') + Double('joker', 'small'),
-			 [
-				Tractor(2, 2, Card('joker', 'small').suit_power(trump_card), SUIT_TRUMP),				 
-			 ])
-		]
-
-		for test in tests:
-			test_cards, want = test
-			self.assertEqual(cards_to_tractors(test_cards, trick_suit, trump_card), want)
+		want = tractor_generator(self.s_8_trump_tractor_data, trump_card)
+		self.assertEqual(cards_to_tractors(self.test_cards, 'c', trump_card), want)
 	
-	def testJokerTrumpCardsToTractors(self):
+	def testJokerTrump(self):
 		# Card('joker', '8') object represents the trump suit and value, not an actual card
 		trump_card = Card('joker', '8')
+		want = tractor_generator(self.joker_8_trump_tractor_data, trump_card)
+		self.assertEqual(cards_to_tractors(self.test_cards, 'c', trump_card), want)
+
+@parameterized_class(('test_description', 'h_A_trump_flush_order', 'joker_A_trump_flush_order'), [
+		(
+			"1 play: same suit, different nontrump values",
+			{'lesser': [Card('s', '2')], 'greater': [Card('s', '5')]},
+			{'lesser': [Card('s', '2')], 'greater': [Card('s', '5')]},
+		),
+		(
+			"1 play: trick suit vs lowest suit",
+			{'lesser': [Card('d', '5')], 'greater': [Card('s', '5')]},
+			{'lesser': [Card('d', '5')], 'greater': [Card('s', '5')]},
+		),
+		(
+			"1 play: h A trump - trick suit vs trump suit; joker A trump - trick suit vs lowest suit",
+			{'lesser': [Card('s', '5')], 'greater': [Card('h', '5')]},
+			{'lesser': [Card('h', '5')], 'greater': [Card('s', '5')]},
+		),
+		(
+			"1 play: h A trump - trump suit vs trump value; joker A trump - lowest suit vs trump suit",
+			{'lesser': [Card('h', '2')], 'greater': [Card('s', 'A')]},
+			{'lesser': [Card('h', '2')], 'greater': [Card('s', 'A')]},
+		),
+		(
+			"multiple plays: same suit, all greater values",
+			{'lesser': [Card('s', '5'), Card('s', '8')], 'greater': [Card('s', '9'), Card('s', 'Q')]},
+			{'lesser': [Card('s', '5'), Card('s', '8')], 'greater': [Card('s', '9'), Card('s', 'Q')]},
+		),
+		(
+			"multiple plays: same suit, highest value of play decides priority",
+			{'lesser': [Card('s', '4'), Card('s', '7')], 'greater': [Card('s', '2'), Card('s', '8')]},
+			{'lesser': [Card('s', '4'), Card('s', '7')], 'greater': [Card('s', '2'), Card('s', '8')]},
+		),
+		(
+			"multiple plays: h A trump - trump suit vs trick suit, joker A - lowest suit vs trick suit",
+			{'lesser': [Card('s', '4'), Card('s', '7')], 'greater': [Card('h', '4'), Card('h', '7')]},
+			{'lesser': [Card('h', '4'), Card('h', '7')], 'greater': [Card('s', '4'), Card('s', '7')]},
+		),
+])
+class TestFlushStrengthOrder(unittest.TestCase):
+	def testNonJokerTrump(self):
 		trick_suit = 's'
-	
-		tests = [
-			# non-consecutive pairs (c 8, c 8, h 8, h 8) since (joker, 8) is trump
-			(Double('c', '8') + Double('h', '8'),
-			 [
-				Tractor(2, 1, Card('c', '8').suit_power(trump_card), SUIT_TRUMP),				 
-				Tractor(2, 1, Card('h', '8').suit_power(trump_card), SUIT_TRUMP),
-			 ]),
+		trump_card = Card('h', 'A')
+		lesser_flush = Flush(cards_to_tractors(self.h_A_trump_flush_order['lesser'], trick_suit, trump_card))
+		greater_flush = Flush(cards_to_tractors(self.h_A_trump_flush_order['greater'], trick_suit, trump_card))
+		self.assertLess(lesser_flush, greater_flush)
+	def testNonJokerTrump(self):
+		trick_suit = 's'
+		trump_card = Card('joker', 'A')
+		lesser_flush = Flush(cards_to_tractors(self.joker_A_trump_flush_order['lesser'], trick_suit, trump_card))
+		greater_flush = Flush(cards_to_tractors(self.joker_A_trump_flush_order['greater'], trick_suit, trump_card))
+		self.assertLess(lesser_flush, greater_flush)
 
-			# consecutive pairs (c 8, c 8, small joker, small joker) since (joker, 8) is trump
-			(Double('c', '8') + Double('joker', 'small'),
-			 [
-				Tractor(2, 2, Card('c', '8').suit_power(trump_card), SUIT_TRUMP),				 
-			 ]),
+@parameterized_class(('test_description', 'h_A_trump_flush_data', 'joker_A_trump_flush_data'), [
+		(
+			"1 play: same trump value, different nontrump suits",
+			{'flush_1': [Card('s', 'A')], 'flush_2': [Card('c', 'A')], 'is_equal': True},
+			{'flush_1': [Card('s', 'A')], 'flush_2': [Card('c', 'A')], 'is_equal': True},
+		),
+		(
+			"1 play: same trump value, different trump suit",
+			{'flush_1': [Card('s', 'A')], 'flush_2': [Card('h', 'A')], 'is_equal': False},
+			{'flush_1': [Card('s', 'A')], 'flush_2': [Card('h', 'A')], 'is_equal': True},
+		),
+		(
+			"multiple plays: same trump value, different trump suits",
+			{'flush_1': [Card('s', 'A'), Card('c', 'A')], 'flush_2': [Card('h', 'A'), Card('d', 'A')], 'is_equal': False},
+			{'flush_1': [Card('s', 'A'), Card('c', 'A')], 'flush_2': [Card('h', 'A'), Card('d', 'A')], 'is_equal': True},
+		),
+])
+class TestEqualFlush(unittest.TestCase):
+	def testNonJokerTrump(self):
+		trick_suit = 's'
+		trump_card = Card('h', 'A')
+		flush_1 = Flush(cards_to_tractors(self.h_A_trump_flush_data['flush_1'], trick_suit, trump_card))
+		flush_2 = Flush(cards_to_tractors(self.h_A_trump_flush_data['flush_2'], trick_suit, trump_card))
+		self.assertEqual(flush_1 == flush_2, self.h_A_trump_flush_data['is_equal'])
+	def testNonJokerTrump(self):
+		trick_suit = 's'
+		trump_card = Card('joker', 'A')
+		flush_1 = Flush(cards_to_tractors(self.joker_A_trump_flush_data['flush_1'], trick_suit, trump_card))
+		flush_2 = Flush(cards_to_tractors(self.joker_A_trump_flush_data['flush_2'], trick_suit, trump_card))
+		self.assertEqual(flush_1 == flush_2, self.joker_A_trump_flush_data['is_equal'])
 
-			# consecutive pairs (d 8, d 8, small joker, small joker) since (joker, 8) is trump
-			(Double('d', '8') + Double('joker', 'small'),
-			 [
-				Tractor(2, 2, Card('d', '8').suit_power(trump_card), SUIT_TRUMP),				 
-			 ]),
-			
-			# consecutive pairs (h 8, h 8, small joker, small joker) since (joker, 8) is trump
-			(Double('h', '8') + Double('joker', 'small'),
-			 [
-				Tractor(2, 2, Card('h', '8').suit_power(trump_card), SUIT_TRUMP),				 
-			 ]),
-
-			# consecutive pairs (s 8, s 8, small joker, small joker) since (joker, 8) is trump
-			(Double('s', '8') + Double('joker', 'small'),
-			 [
-				Tractor(2, 2, Card('s', '8').suit_power(trump_card), SUIT_TRUMP),				 
-			 ]),
-		]
-
-		for test in tests:
-			test_cards, want = test
-			self.assertEqual(cards_to_tractors(test_cards, trick_suit, trump_card), want)
-
+class TestTractorMisc(unittest.TestCase):
 	def testCardsToTractorsWithForm(self):
 		# trick suit always 'd', trump suit always 's'
 		trump_card = Card('s', 'A')
@@ -188,33 +360,6 @@ class TestTractor(unittest.TestCase):
 			target_form = cards_to_tractors(start_cards, 'd', trump_card)
 			okay = cards_to_tractors(cur_cards, 'd', trump_card, target_form=target_form) is not None
 			self.assertEqual(okay, want)
-
-	def testCompareFlush(self):
-		trick_suit = 's'
-		trump_card = Card('h', 'A')
-
-		tests = [
-			(Double('s', '2'),
-			 Double('s', '5')),
-			(Double('d', '5'),
-			 Double('s', '2')),
-			(Double('s', '5'),
-			 Double('h', '2')),
-			(Double('s', '5') + Double('s', '8'),
-			 Double('s', '3') + Double('s', '4')),
-			([Card('s', '5'), Card('s', '7'), Card('s', '8')],
-			 [Card('s', '9'), Card('s', 'J'), Card('s', 'Q')]),
-
-			# s A is trump due to trump value, should be higher than low trump
-			([Card('h', '2')],
-			 [Card('s', 'A')]),
-		]
-
-		for test in tests:
-			lesser_cards, greater_cards = test
-			lesser_flush = Flush(cards_to_tractors(lesser_cards, trick_suit, trump_card))
-			greater_flush = Flush(cards_to_tractors(greater_cards, trick_suit, trump_card))
-			self.assertLess(lesser_flush, greater_flush)
 
 	# this test added due to broken flush comparator in python2.7
 	def testFlushComparators(self):

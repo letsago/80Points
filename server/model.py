@@ -308,6 +308,7 @@ class RoundState(object):
 		hand_nonsingle_suit_tractors = sorted(hand_nonsingle_suit_tractors, reverse=True)
 
 		# this will get all priority trick suit tractor plays if player still has any multirank, multilength tractors in hand
+		# IDEA: change to dictionary with keys as (rank, length) and bin tractors
 		i = 0
 		for priority_rank in range(first_tractor.rank, 1, -1):
 			if possible_plays_card_count >= trick_card_count:
@@ -322,6 +323,9 @@ class RoundState(object):
 						possible_plays_card_count += tractor.rank * tractor.length
 					i += 1
 
+		# IDEA: sort tractors in play based on rank and length and match with dictionary bin content
+		# make sure to not look for sub-plays already prioritized
+		# EDGE CASE: play = (2,2,3,3,4,4); hand = (5,5,6,6,7,7,8,8) 
 		tractor_play = cards_to_tractors(cards, trick_suit, self.trump_card)
 		play_card_count = 0
 

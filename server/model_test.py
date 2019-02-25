@@ -1,6 +1,7 @@
 import unittest
 import mock
 from model import *
+from parameterized import parameterized
 
 class TestCard(unittest.TestCase):
 	def testIsTrump(self):
@@ -118,56 +119,48 @@ class TestRound(unittest.TestCase):
 		self.assertEqual(round.state.turn, third_player)
 
 class TestRoundState(unittest.TestCase):
-	num_players = 4
+	def setUp(self):
+		self.num_players = 4
+		self.round_state = RoundState(self.num_players)
+		self.round_state.trump_card = Card('c', '3')
 
-	def testFirstPlayValidity(self):
-		round_state = RoundState(TestRoundState.num_players)
-		invalid_play_tests = [
-			# no play
-			[],
+	@parameterized.expand([
+		['no play', [], False],
 
-			# 2 singles
-			[Card('d', '2'), Card('h', '3')],
+		['different suits 2 singles', [Card('d', '2'), Card('h', '3')], False],
 
-			# 1 pair + 1 single
-			[Card('d', '2'), Card('d', '2'), Card('s', '5')],
+		['different suits 1 pair + 1 single', [Card('d', '2'), Card('d', '2'), Card('s', '5')], False],
 
-			# 2 nonconsecutive pairs 
-			[Card('h', '3'), Card('h', '3'), Card('h', '5'), Card('h', '5')],
+		['same suits 2 nonconsecutive pairs', [Card('h', '2'), Card('h', '2'), Card('h', '6'), Card('h', '6')], False],
 
-			# 2 consecutive pairs + single
-			[Card('d', '2'), Card('d', '2'), Card('d', '3'), Card('d', '3'), Card('c', '5')],
+		['different suits 2 consecutive pairs + single', 
+			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('c', '5')], False],
 
-			# 2 pairs in different suits
-			[Card('d', '4'), Card('d', '4'), Card('h', '5'), Card('h', '5')],
+		['different suits 2 nonconsecutive pairs', 
+			[Card('d', '4'), Card('d', '4'), Card('h', '5'), Card('h', '5')], False],
+			
+		['different suits 2 consecutive pairs + pair', 
+			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('s', '7'), Card('s', '7')], False],
 
-			# 2 consecutive pairs + pair
-			[Card('d', '2'), Card('d', '2'), Card('d', '3'), Card('d', '3'), Card('s', '5'), Card('s', '5')]
-		]
+		['1 single', [Card('h', '2')], True],
 
-		for test in invalid_play_tests:
-			self.assertTrue(round_state.is_play_invalid(test))
-		
-		round_state.trump_card = Card('c', '3')
-		valid_play_tests = [
-			# 1 single
-			[Card('h', '2')],
+		['same suit 1 pair', [Card('s', '2'), Card('s', '2')], True],
 
-			# 1 pair
-			[Card('s', '2'), Card('s', '2')],
+		['same suit 2 consecutive pairs considering trump value', 
+			[Card('c', '2'), Card('c', '2'), Card('c', '4'), Card('c', '4')], True],
 
-			# 2 consecutive pairs after accounting for trump value
-			[Card('c', '2'), Card('c', '2'), Card('c', '4'), Card('c', '4')],
+		['same suit 2 consecutive pairs', 
+			[Card('c', '4'), Card('c', '4'), Card('c', '5'), Card('c', '5')], True],
 
-			# 2 consecutive pairs
-			[Card('c', '4'), Card('c', '4'), Card('c', '5'), Card('c', '5')],
+		['same suit 3 consecutive pairs considering trump value', 
+			[Card('d', '2'), Card('d', '2'), Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5')], True],
 
-			# 3 consecutive pairs
-			[Card('d', '2'), Card('d', '2'), Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5')]
-		]
+		['same suit 3 consecutive pairs', 
+			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('d', '6'), Card('d', '6')], True],
+	])
 
-		for test in valid_play_tests:
-			self.assertFalse(round_state.is_play_invalid(test))	
+	def testFirstPlayValidity(self, name, play, is_valid):
+		self.assertEqual(self.round_state.is_play_valid(play), is_valid)
 
 if __name__ == '__main__':
 	unittest.main()

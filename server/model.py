@@ -489,7 +489,7 @@ class Round(object):
 			raise RoundException("invalid cards")
 
 		self.state.remove_cards_from_hand(player, cards)
-		# Clear board to remove any declared cards off the board.
+		# Clear board to remove any declared cards from the board.
 		self.state.clear_board()
 		self.state.status = STATUS_PLAYING
 		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))

@@ -155,7 +155,7 @@ class Declaration(object):
 			'cards': [card.dict for card in self.cards],
 		}
 
-from tractor import Flush, cards_to_tractors
+from tractor import Flush, cards_to_tractors, card_to_suit_type, SUIT_TRICK, SUIT_TRUMP
 
 class RoundState(object):
 	def __init__(self, num_players):
@@ -278,6 +278,18 @@ class RoundState(object):
 
 		return view
 	
+	def get_suit_tractors(self, player, trick_suit):
+		suit_cards = []
+		player_hand = self.player_hands[player]
+		trick_suit_type = SUIT_TRICK
+		if self.trump_card.suit == trick_suit or self.trump_card.suit == 'joker':
+			trick_suit_type = SUIT_TRUMP
+		for card in player_hand:
+			if card_to_suit_type(card, trick_suit, self.trump_card) == trick_suit_type:
+				suit_cards.append(card)
+		suit_tractors = cards_to_tractors(suit_cards, trick_suit, self.trump_card)
+		return suit_tractors
+
 	def is_play_valid(self, player, cards):
 		if not cards:
 			return False

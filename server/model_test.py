@@ -154,10 +154,9 @@ class TestRoundState(unittest.TestCase):
 		],
 	])
 	
-	@unittest.skip('get_tractors_from_hand function is not properly functioning yet')
-	def testSuitTractorsFromHand(self, suit_name, trick_suit, suit_tractors):
-		trump_card = self.round_state.trump_card
-		self.assertEqual(self.round_state.get_suit_tractors(self.second_player, trick_suit, trump_card), suit_tractors)
+	def testSuitTractorsFromHand(self, suit_name, trick_suit, suit_tractor_data):
+		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
+		self.assertEqual(self.round_state.get_suit_tractors(self.second_player, trick_suit), suit_tractors)
 
 	@parameterized.expand([
 		['no play', []],

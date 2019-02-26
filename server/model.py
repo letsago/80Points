@@ -278,7 +278,7 @@ class RoundState(object):
 
 		return view
 	
-	def is_play_valid(self, cards):
+	def is_play_valid(self, player, cards):
 		if not cards:
 			return False
 
@@ -430,7 +430,7 @@ class Round(object):
 			self.state.clear_board()
 
 		# checks if play is invalid
-		if not self.state.is_play_valid(cards):
+		if not self.state.is_play_valid(player, cards):
 			raise RoundException("invalid play")
 		
 		self.state.board[player] = cards

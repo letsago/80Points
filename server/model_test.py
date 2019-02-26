@@ -2,6 +2,7 @@ import unittest
 import mock
 from model import *
 from parameterized import parameterized
+from model_test_data import follow_suit_validity_test_data
 
 class TestCard(unittest.TestCase):
 	def testIsTrump(self):
@@ -35,19 +36,19 @@ class TestCard(unittest.TestCase):
 		     	[Card('c', 'K'), Card('d', '8'), Card('h', '3')]
 			),
 
-		    	(
-			    	Card('joker', '2'),
-			    	[Card('joker', 'big'), Card('joker', 'small'), Card('h', '3')],
+			(
+				Card('joker', '2'),
+				[Card('joker', 'big'), Card('joker', 'small'), Card('h', '3')],
 		     	[Card('h', '3'), Card('joker', 'small'), Card('joker', 'big')]
 			),
 
-		    	(
-			    	Card('joker', '2'),
-			    	[Card('c', 'K'), Card('c', '3'), Card('c', '10')],
+			(
+				Card('joker', '2'),
+				[Card('c', 'K'), Card('c', '3'), Card('c', '10')],
 		     	[Card('c', '3'), Card('c', '10'), Card('c', 'K')]
 			),
 
-		    	(
+			(
 				Card('joker', '2'),
 				[Card('c', '2'), Card('d', '2'), Card('c', '2')],
 		     	[Card('c', '2'), Card('c', '2'), Card('d', '2')]
@@ -77,13 +78,13 @@ class TestCard(unittest.TestCase):
 		     	[Card('d', '8'), Card('c', 'K'), Card('h', '3')]
 			),
 
-		    	(
+		    (
 				Card('h', '3'),
 		     	[Card('joker', 'big'), Card('joker', 'small'), Card('h', '3')],
 		     	[Card('h', '3'), Card('joker', 'small'), Card('joker', 'big')]
 			),
 
-		    	(
+		    (
 				Card('d', '2'),
 		     	[Card('c', 'K'), Card('c', '2'), Card('c', '10')],
 		     	[Card('c', '10'), Card('c', 'K'), Card('c', '2')]
@@ -119,10 +120,19 @@ class TestRound(unittest.TestCase):
 		self.assertEqual(round.state.turn, third_player)
 
 class TestRoundState(unittest.TestCase):
+	# TODO(workitem0028): will add flush validation tests once flush capability is integrated
 	def setUp(self):
-		self.num_players = 4
+		self.num_players = 6
+		self.first_player = 0
+		self.second_player = 1
 		self.round_state = RoundState(self.num_players)
 		self.round_state.trump_card = Card('c', '3')
+		self.round_state.player_hands[self.second_player] = [
+			Card('s', '4'), Card('s', '5'), Card('s', '5'), Card('s', '10'), Card('s', 'K'), # spades
+			Card('h', '5'), # hearts
+			Card('c', '8'), Card('c', '8'), Card('c', '8'), Card('h', '3'), Card('s', '3'), Card('s', '3'), # trump
+			Card('c', '3'), Card('c', '3'), Card('joker', 'small'), Card('joker', 'small') # trump
+		]
 
 	@parameterized.expand([
 		['no play', []],
@@ -144,7 +154,7 @@ class TestRoundState(unittest.TestCase):
 	])
 
 	def testInvalidFirstPlays(self, name, play):
-		self.assertFalse(self.round_state.is_play_valid(play))
+		self.assertFalse(self.round_state.is_play_valid(self.first_player, play))
 	
 	@parameterized.expand([
 		['1 single', [Card('h', '2')]],
@@ -165,7 +175,16 @@ class TestRoundState(unittest.TestCase):
 	])
 
 	def testValidFirstPlays(self, name, play):
-		self.assertTrue(self.round_state.is_play_valid(play))
+		self.assertTrue(self.round_state.is_play_valid(self.first_player, play))
+		
+	@parameterized.expand(follow_suit_validity_test_data)
+
+	# will remove skipping this test once is_play_valid function is fully built
+	@unittest.skip('is_play_valid function is not properly functioning yet')
+	def testFollowSuitValidity(self, name, first_play, invalid_play, valid_play):
+		self.round_state.board[0] = first_play
+		self.assertFalse(self.round_state.is_play_valid(second_player, invalid_play))
+		self.assertTrue(self.round_state.is_play_valid(second_player, valid_play))
 
 if __name__ == '__main__':
 	unittest.main()

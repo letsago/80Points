@@ -127,6 +127,7 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 
 	# sorting is necessary after merging so that tractors are guaranteed to be 
 	# sorted by rank, length, suit_type, and then power in that priority order
+	# that way, it will make play validation easier as the tractors will already be sorted based on play priority order
 	tractors = sorted(tractors, reverse=True)
 	
 	if target_form is not None:

@@ -112,10 +112,12 @@ class TestRound(unittest.TestCase):
 		round.declare(third_player, [Card('d', '2')])
 		# This tick allows for the player to receive the bottom cards.
 		round.tick()
+		# After getting the bottom, it should now be the third player's turn.
+		self.assertEqual(round.state.turn, third_player)
 		round.set_bottom(third_player, 
 			[Card('d', '4'), Card('d', '6'), Card('d', '8'), Card('d', '10'),
 			 Card('c', '3'), Card('c', '5'), Card('c', '7'), Card('c', '9')])
-		# After setting the bottom, it should now be the third player's turn.
+		# After the bottom is set, it should still be the third player's turn.
 		self.assertEqual(round.state.turn, third_player)
 
 class TestRoundState(unittest.TestCase):

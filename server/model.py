@@ -210,7 +210,15 @@ class RoundState(object):
 	def increment_turn(self):
 		self.turn = (self.turn + 1) % self.num_players
 
+	def declare(self, player, cards):
+		self.declarations.append(Declaration(player, cards))
+		self.board[player] = cards
+		self.trump_card.suit = cards[0].suit
+
 	def give_bottom_to_player(self, player):
+		# Set first player to the player who got the bottom.
+		# TODO(workitem0023): set first player properly for all following rounds, i.e. not the first round.
+		self.set_turn(player)
 		bottom_cards = self.bottom
 		self.bottom = []
 		self.player_hands[player].extend(bottom_cards)
@@ -404,9 +412,7 @@ class Round(object):
 			if len(cards) <= len(self.state.declaration.cards):
 				if player != self.state.declarations[0].player:
 					raise RoundException("must use more cards than previous declaration")
-
-		self.state.declarations.append(Declaration(player, cards))
-		self.state.trump_card.suit = cards[0].suit
+		self.state.declare(player, cards)
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
 
 		if len(self.state.deck) == 0:
@@ -465,9 +471,8 @@ class Round(object):
 			raise RoundException("invalid cards")
 
 		self.state.remove_cards_from_hand(player, cards)
-		# Set first player to the player who got the bottom.
-		# TODO(workitem0023): set first player properly for all following rounds, i.e. not the first round.
-		self.state.set_turn(player)
+		# Clear board to remove any declared cards off the board.
+		self.state.clear_board()
 		self.state.status = STATUS_PLAYING
 		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))
 

@@ -3,6 +3,8 @@ import mock
 from model import *
 from parameterized import parameterized
 from model_test_data import follow_suit_validity_test_data
+from tractor_test import tractor_generator
+from tractor import SUIT_LOWEST, SUIT_TRICK, SUIT_TRUMP 
 
 class TestCard(unittest.TestCase):
 	def testIsTrump(self):
@@ -133,6 +135,28 @@ class TestRoundState(unittest.TestCase):
 			Card('c', '8'), Card('c', '8'), Card('c', '8'), Card('h', '3'), Card('s', '3'), Card('s', '3'), # trump
 			Card('c', '3'), Card('c', '3'), Card('joker', 'small'), Card('joker', 'small') # trump
 		]
+
+	@parameterized.expand([
+		['diamonds', 'd', []],
+		['hearts', 'h', [
+			{'rank': 1, 'length': 1, 'power_card': Card('h', '5'), 'suit_type': SUIT_TRICK}]
+		],
+		['spades', 's', [
+			{'rank': 2, 'length': 1, 'power_card': Card('s', '5'), 'suit_type': SUIT_TRICK},
+			{'rank': 1, 'length': 1, 'power_card': Card('s', 'K'), 'suit_type': SUIT_TRICK},
+			{'rank': 1, 'length': 1, 'power_card': Card('s', '10'), 'suit_type': SUIT_TRICK},
+			{'rank': 1, 'length': 1, 'power_card': Card('s', '4'), 'suit_type': SUIT_TRICK}]
+		],
+		['trump', 'c', [
+			{'rank': 3, 'length': 1, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRUMP},
+			{'rank': 2, 'length': 3, 'power_card': Card('s', '3'), 'suit_type': SUIT_TRUMP},
+			{'rank': 1, 'length': 1, 'power_card': Card('h', '3'), 'suit_type': SUIT_TRUMP}]
+		],
+	])
+	
+	def testSuitTractorsFromHand(self, suit_name, trick_suit, suit_tractor_data):
+		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
+		self.assertEqual(self.round_state.get_suit_tractors(self.second_player, trick_suit), suit_tractors)
 
 	@parameterized.expand([
 		['no play', []],

@@ -225,6 +225,9 @@ class RoundState(object):
 
 	def is_board_full(self):
 		return all([len(cards) > 0 for cards in self.board])
+	
+	def is_board_empty(self):
+		return all([len(cards) == 0 for cards in self.board])
 
 	def clear_board(self):
 		for i in range(len(self.board)):
@@ -274,6 +277,19 @@ class RoundState(object):
 			view['declaration'] = self.declaration.dict
 
 		return view
+	
+	def is_play_valid(self, cards):
+		if not cards:
+			return False
+
+		# for now, prevent playing multiple tractors at once for first play
+		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
+		if self.is_board_empty():
+			# need the first card's suit in order to accurately transform cards to tractors if board is empty
+			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
+		
+		# TODO(workitem0005): must follow first play's suit if board is not empty 
+		return True
 
 class RoundListener(object):
 	def timed_action(self, r, delay):
@@ -413,6 +429,10 @@ class Round(object):
 		if self.state.is_board_full():
 			self.state.clear_board()
 
+		# checks if play is invalid
+		if not self.state.is_play_valid(cards):
+			raise RoundException("invalid play")
+		
 		self.state.board[player] = cards
 		self.state.remove_cards_from_hand(player, cards)
 

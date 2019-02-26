@@ -1,6 +1,7 @@
 import unittest
 import mock
 from model import *
+from parameterized import parameterized
 
 class TestCard(unittest.TestCase):
 	def testIsTrump(self):
@@ -98,7 +99,7 @@ class TestRound(unittest.TestCase):
 		num_decks = 2
 		first_player = 0
 		third_player = 2
-		# Mock model.create_random_deck to use a determinstic deck.
+		# Mock model.create_random_deck to use a deterministic deck.
 		with mock.patch('model.create_random_deck', return_value=create_deck(num_decks)):
 			round = Round(num_players)
 		self.assertEqual(round.state.turn, first_player)
@@ -117,6 +118,54 @@ class TestRound(unittest.TestCase):
 		# After setting the bottom, it should now be the third player's turn.
 		self.assertEqual(round.state.turn, third_player)
 
+class TestRoundState(unittest.TestCase):
+	def setUp(self):
+		self.num_players = 4
+		self.round_state = RoundState(self.num_players)
+		self.round_state.trump_card = Card('c', '3')
+
+	@parameterized.expand([
+		['no play', []],
+
+		['different suits 2 singles', [Card('d', '2'), Card('h', '3')]],
+
+		['different suits 1 pair + 1 single', [Card('d', '2'), Card('d', '2'), Card('s', '5')]],
+
+		['same suits 2 nonconsecutive pairs', [Card('h', '2'), Card('h', '2'), Card('h', '6'), Card('h', '6')]],
+
+		['different suits 2 consecutive pairs + single', 
+			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('c', '5')]],
+
+		['different suits 2 nonconsecutive pairs', 
+			[Card('d', '4'), Card('d', '4'), Card('h', '5'), Card('h', '5')]],
+			
+		['different suits 2 consecutive pairs + pair', 
+			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('s', '7'), Card('s', '7')]],
+	])
+
+	def testInvalidFirstPlays(self, name, play):
+		self.assertFalse(self.round_state.is_play_valid(play))
+	
+	@parameterized.expand([
+		['1 single', [Card('h', '2')]],
+
+		['same suit 1 pair', [Card('s', '2'), Card('s', '2')]],
+
+		['same suit 2 consecutive pairs considering trump value', 
+			[Card('c', '2'), Card('c', '2'), Card('c', '4'), Card('c', '4')]],
+
+		['same suit 2 consecutive pairs', 
+			[Card('c', '4'), Card('c', '4'), Card('c', '5'), Card('c', '5')]],
+
+		['same suit 3 consecutive pairs considering trump value', 
+			[Card('d', '2'), Card('d', '2'), Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5')]],
+
+		['same suit 3 consecutive pairs', 
+			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('d', '6'), Card('d', '6')]],
+	])
+
+	def testValidFirstPlays(self, name, play):
+		self.assertTrue(self.round_state.is_play_valid(play))
 
 if __name__ == '__main__':
 	unittest.main()

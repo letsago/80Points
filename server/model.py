@@ -278,15 +278,15 @@ class RoundState(object):
 
 		return view
 	
-	def is_play_invalid(self, player, cards):
+	def is_play_valid(self, cards):
 		if not cards:
-			return True
+			return False
 
 		# for now, prevent playing multiple tractors at once for first play
 		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
 		if self.is_board_empty():
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
-			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) > 1
+			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
 		
 		# TODO(workitem0005): must follow first play's suit if board is not empty 
 		return True
@@ -430,7 +430,7 @@ class Round(object):
 			self.state.clear_board()
 
 		# checks if play is invalid
-		if self.state.is_play_invalid(player, cards):
+		if not self.state.is_play_valid(cards):
 			raise RoundException("invalid play")
 		
 		self.state.board[player] = cards

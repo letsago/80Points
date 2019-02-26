@@ -169,5 +169,46 @@ class TestRoundState(unittest.TestCase):
 	def testValidFirstPlays(self, name, play):
 		self.assertTrue(self.round_state.is_play_valid(play))
 
+	@parameterized.expand([
+		['no play', 0, [], []],
+
+		['too many cards', 0, [Card('s', '3'), Card('s', '3'), Card('s', '4')], []],
+
+		['cards not in player hand', 0, [Card('h', '3')], []],
+
+		['card value does not match trump value', 0, [Card('s', '4')], []],
+
+		['cards do not have the same suit', 0, [Card('s', '3'), Card('d', '3')], []],
+
+		['equal length to most recent declaration', 0, [Card('s', '3')], 
+			[Declaration(1, [Card('d', '3')])]],
+
+		['smaller length than most recent declaration', 0, [Card('s', '3')], 
+			[Declaration(1, [Card('d', '3')]), Declaration(1, [Card('d', '3'), Card('d', '3')])]],
+
+		['suit does not match previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+			[Declaration(0, [Card('d', '3')])]],
+	])
+
+	def testInvalidDeclarations(self, name, player, cards, declarations):
+		self.round_state.declarations = declarations
+		self.round_state.player_hands[0] = [Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('d', '3')]
+		self.assertFalse(self.round_state.is_declaration_valid(player, cards))
+
+	@parameterized.expand([
+		['initial play', 0, [Card('s', '3')], []],
+
+		['overturn another declaration', 0, [Card('s', '3'), Card('s', '3')], 
+			[Declaration(1, [Card('d', '3')])]],
+
+		['defend previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+			[Declaration(0, [Card('s', '3')])]],
+	])
+
+	def testValidDeclarations(self, name, player, cards, declarations):
+		self.round_state.declarations = declarations
+		self.round_state.player_hands[0] = [Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('d', '3')]
+		self.assertTrue(self.round_state.is_declaration_valid(player, cards))
+
 if __name__ == '__main__':
 	unittest.main()

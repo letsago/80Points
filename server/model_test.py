@@ -159,6 +159,31 @@ class TestRoundState(unittest.TestCase):
 		self.assertEqual(self.round_state.get_suit_tractors_from_hand(self.second_player, target_suit), suit_tractors)
 
 	@parameterized.expand([
+		['diamonds', 'd', []],
+		['hearts', 'h', [
+			{'rank': 1, 'length': 1, 'power_card': Card('h', '5'), 'suit_type': SUIT_TRICK}]
+		],
+		['spades', 's', [
+			{'rank': 2, 'length': 1, 'power_card': Card('s', '5'), 'suit_type': SUIT_TRICK},
+			{'rank': 1, 'length': 1, 'power_card': Card('s', 'K'), 'suit_type': SUIT_TRICK},
+			{'rank': 1, 'length': 1, 'power_card': Card('s', '10'), 'suit_type': SUIT_TRICK},
+			{'rank': 1, 'length': 1, 'power_card': Card('s', '4'), 'suit_type': SUIT_TRICK}]
+		],
+		['clubs', 'c', [
+			{'rank': 3, 'length': 1, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRICK}],
+		],
+		['joker', 'joker', [
+			{'rank': 2, 'length': 3, 'power_card': Card('s', '3'), 'suit_type': SUIT_TRUMP},
+			{'rank': 1, 'length': 1, 'power_card': Card('h', '3'), 'suit_type': SUIT_TRUMP}]
+		],
+	])
+	
+	def testSuitTractorsFromHandJokerTrump(self, suit_name, target_suit, suit_tractor_data):
+		self.round_state.trump_card = Card('joker', '3')
+		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
+		self.assertEqual(self.round_state.get_suit_tractors_from_hand(self.second_player, target_suit), suit_tractors)
+
+	@parameterized.expand([
 		['no play', []],
 
 		['different suits 2 singles', [Card('d', '2'), Card('h', '3')]],

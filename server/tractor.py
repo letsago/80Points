@@ -136,6 +136,23 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 
 	return tractors
 
+# will be used in play validation to return list of SAME SUIT only tractor subcombination rank > 1, length >= 1 plays
+# eg. (8,8,9,9,10,10) -> (8,8,9,9,10,10), (8,8,9,9), (9,9,10,10), (8,8), (9,9), (10,10)
+def get_all_multirank_tractor_subcombinations(tractors):
+	all_subcombinations = []
+	for tractor in tractors:
+		for new_rank in range(tractor.rank, 1, -1):
+			for new_length in range(tractor.length, 0, -1):
+				# eg. given (2,2,3,3,4,4) where tractor.length == 3, 
+				# when new_length == 2, valid tractors are (2,2,3,3) and (3,3,4,4),
+				# in this case, max_tractor_power_increment == 2 
+				# as there are now 2 valid tractor powers of rank 2, length 2 
+				max_tractor_power_increment = tractor.length - new_length + 1
+				for i in range(max_tractor_power_increment):
+					new_tractor_combination = Tractor(new_rank, new_length, tractor.power + i, tractor.suit_type)
+					all_subcombinations.append(new_tractor_combination)
+	return all_subcombinations		
+
 @functools.total_ordering
 class Flush(object):
 	'''Flush represents a single person's play in a trick.'''

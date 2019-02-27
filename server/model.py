@@ -278,9 +278,18 @@ class RoundState(object):
 
 		return view
 	
-	# this function returns a list of all tractor plays that are of suit target_suit within a specified player's hand
-	# if target_suit is trump then, a list of all trump tractor plays within a player's hand will be returned
 	def get_suit_tractors_from_hand(self, player, target_suit):
+		'''	
+		This function returns a list of all tractor plays that are of suit target_suit 
+		within a specified player's hand. If target_suit is trump then, a list of all 
+		trump tractor plays within a player's hand will be returned.
+
+		Args:
+			player: int 
+			target_suit: char
+		Returns:
+			Tractor []
+		'''
 		suit_cards = []
 		player_hand = self.player_hands[player]
 		# default target_suit_type to SUIT_TRICK as we can use card_to_suit_type on target_suit 

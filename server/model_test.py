@@ -154,9 +154,9 @@ class TestRoundState(unittest.TestCase):
 		],
 	])
 	
-	def testSuitTractorsFromHand(self, suit_name, trick_suit, suit_tractor_data):
+	def testSuitTractorsFromHand(self, suit_name, target_suit, suit_tractor_data):
 		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
-		self.assertEqual(self.round_state.get_suit_tractors(self.second_player, trick_suit), suit_tractors)
+		self.assertEqual(self.round_state.get_suit_tractors_from_hand(self.second_player, target_suit), suit_tractors)
 
 	@parameterized.expand([
 		['no play', []],

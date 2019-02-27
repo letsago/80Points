@@ -136,9 +136,17 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 
 	return tractors
 
-# will be used in play validation to return list of SAME SUIT only tractor subcombination rank > 1, length >= 1 plays
-# eg. (8,8,9,9,10,10) -> (8,8,9,9,10,10), (8,8,9,9), (9,9,10,10), (8,8), (9,9), (10,10)
 def get_all_multirank_tractor_subcombinations(tractors):
+	'''
+	Given same suit_type tractors input, returns a list of all tractor subcombination rank > 1 and length > 0 plays.
+	eg. (8,8,9,9,10,10) -> (8,8,9,9,10,10), (8,8,9,9), (9,9,10,10), (8,8), (9,9), (10,10). 
+	Tractor output suit type is asserted to be equal to tractor input suit type. 
+
+	Args:
+		tractors: Tractor []
+	Returns:
+		Tractor []
+	'''
 	all_subcombinations = []
 	for tractor in tractors:
 		for new_rank in range(tractor.rank, 1, -1):
@@ -150,6 +158,8 @@ def get_all_multirank_tractor_subcombinations(tractors):
 				max_tractor_power_increment = tractor.length - new_length + 1
 				for i in range(max_tractor_power_increment):
 					new_tractor_combination = Tractor(new_rank, new_length, tractor.power + i, tractor.suit_type)
+					if all_subcombinations:
+						assert all_subcombinations[-1].suit_type == new_tractor_combination.suit_type
 					all_subcombinations.append(new_tractor_combination)
 	return all_subcombinations		
 

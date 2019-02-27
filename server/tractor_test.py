@@ -262,13 +262,11 @@ class TestTractorMisc(unittest.TestCase):
 		],					
 	])
 
-	# only 1 suit is tested because, when implemented in play validation, get_all_multirank_tractor_subcombinations 
-	# input and output will all be 1 suit only. therefore, suit is independent from the goal of the test
 	def testMultirankTractorCombinations(self, name, tractor_data, all_tractor_combinations_data):
 		trump_card = Card('s', '8')
-		for data in tractor_data:
-			data['suit_type'] = SUIT_TRUMP
-		for data in all_tractor_combinations_data:
+		# only 1 suit_type is tested because, when implemented in play validation, get_all_multirank_tractor_subcombinations 
+		# input will only be 1 suit_type. therefore, suit_type is independent from the goal of the test
+		for data in tractor_data + all_tractor_combinations_data:
 			data['suit_type'] = SUIT_TRUMP
 		all_tractors = get_all_multirank_tractor_subcombinations(tractor_generator(tractor_data, trump_card))
 		all_expected_tractors = tractor_generator(all_tractor_combinations_data, trump_card)

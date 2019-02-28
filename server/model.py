@@ -52,7 +52,7 @@ class Card(object):
 	def get_normalized_suit(self, trump_card):
 		'''
 		Normally returns a card's suit. However, if the card is trump, then this
-		function will return a different suit called trump.
+		function will return a different suit called 'trump'.
 
 		Args:
 			trump_card: Card 
@@ -305,7 +305,6 @@ class RoundState(object):
 			Tractor []
 		'''
 		suit_cards = []
-		player_hand = self.player_hands[player]
 		for card in self.player_hands[player]:
 			if card.get_normalized_suit(self.trump_card) == trick_card.get_normalized_suit(self.trump_card):
 				suit_cards.append(card)

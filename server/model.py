@@ -48,6 +48,20 @@ class Card(object):
 
 		# handles Trump suit
 		return self.suit == trump_card.suit
+	
+	def get_normalized_suit(self, trump_card):
+		'''
+		Normally returns a card's suit. However, if the card is trump, then this
+		function will return a different suit called 'trump'.
+
+		Args:
+			trump_card: Card 
+		Returns:
+			string
+		''' 
+		if self.is_trump(trump_card):
+			return 'trump'
+		return self.suit
 
 	def suit_power(self, trump_card):
 		'''
@@ -155,7 +169,7 @@ class Declaration(object):
 			'cards': [card.dict for card in self.cards],
 		}
 
-from tractor import Flush, cards_to_tractors
+from tractor import Flush, cards_to_tractors, card_to_suit_type, SUIT_TRICK, SUIT_TRUMP
 
 class RoundState(object):
 	def __init__(self, num_players):
@@ -278,6 +292,25 @@ class RoundState(object):
 
 		return view
 	
+	def get_suit_tractors_from_hand(self, player, trick_card):
+		'''	
+		This function returns a list of all tractor plays that are of the trick card's 
+		suit within a specified player's hand. If trick suit is trump then, a list of all 
+		trump tractor plays within a player's hand will be returned.
+
+		Args:
+			player: int 
+			trick_card: Card 
+		Returns:
+			Tractor []
+		'''
+		suit_cards = []
+		for card in self.player_hands[player]:
+			if card.get_normalized_suit(self.trump_card) == trick_card.get_normalized_suit(self.trump_card):
+				suit_cards.append(card)
+		suit_tractors = cards_to_tractors(suit_cards, trick_card.suit, self.trump_card)
+		return suit_tractors
+
 	def is_play_valid(self, player, cards):
 		if not cards:
 			return False

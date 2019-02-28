@@ -155,7 +155,7 @@ class Declaration(object):
 			'cards': [card.dict for card in self.cards],
 		}
 
-from tractor import Flush, cards_to_tractors
+from tractor import Flush, cards_to_tractors, get_max_tractor_index, get_min_tractor
 
 class RoundState(object):
 	def __init__(self, num_players):
@@ -169,6 +169,7 @@ class RoundState(object):
 		# Card object that represents the trump suit and value, not an actual card used in play
 		self.trump_card = Card(None, '2')
 		self.num_decks = num_players // 2
+		self.trick_first_player = 0
 
 		# list of cards in each player's hand
 		self.player_hands = [[] for i in range(num_players)]
@@ -282,13 +283,55 @@ class RoundState(object):
 		if not cards:
 			return False
 
-		# for now, prevent playing multiple tractors at once for first play
 		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
 		if self.is_board_empty():
+			self.trick_first_player = player
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
 			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
 		
-		# TODO(workitem0005): must follow first play's suit if board is not empty 
+		play_card_count = len(cards)
+		first_play = self.board[self.trick_first_player]
+		trick_card_count = len(first_play)
+				
+		# number of cards played must match number of cards in trick
+		if play_card_count != trick_card_count:
+			return False
+		
+		# grab trick tractors and trick suit tractors from player hand
+		trick_suit = first_play[0].suit
+		trick_suit_type = card_to_suit_type(first_play[0], trick_suit, self.trump_card)
+		trick_tractors = cards_to_tractors(first_play, trick_suit, self.trump_card)
+		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_suit)
+
+		# transform tractors into tractor (rank, length) tuple data
+		trick_tractor_data = []
+		hand_suit_tractor_data = []
+		for tractor in trick_tractors:
+			trick_tractor_data.append((tractor.rank, tractor.length))
+		for tractor in hand_suit_tractors:
+			hand_suit_tractor_data.append((tractor.rank, tractor.length))
+		
+		# find hand tractor (rank, length) data that matches trick tractor (rank, length) data
+		priority_tractor_data = []
+		for data in trick_tractor_data:
+			i = get_max_tractor_index(hand_suit_tractor_data, data)
+			while data != (0,0) and hand_suit_tractor_data[i] != (0,0):
+				min_tractor_data = get_min_tractor(data, hand_suit_tractor_data[i])
+				priority_tractor_data.append(min_tractor_data)
+				data -= min_tractor_data
+				hand_suit_tractor_data[i] -= min_tractor_data
+				i = get_max_tractor_index(hand_suit_tractor_data, data)
+
+		# number of played tractors must be at least the number of priority tractors
+		tractor_play = cards_to_tractors(cards, trick_suit, self.trump_card)
+		if len(tractor_play) < len(priority_tractor_data):
+			return False
+
+		# all sorted priority tractor (rank, length, suit_type) data must match sorted played tractor data
+		for i in range(priority_tractor_data):
+			if tractor_play[i].rank != priority_tractor_data[i][0] or tractor_play[i].length != priority_tractor_data[i][0] or tractor_play[i].suit_type != trick_suit_type:
+				return False
+
 		return True
 
 class RoundListener(object):

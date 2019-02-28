@@ -39,12 +39,12 @@ class Tractor(object):
 		'''
 		Returns whether self is less than other.
 		'''
+		if self.suit_type != other.suit_type:
+			return self.suit_type < other.suit_type
 		if self.rank != other.rank:
 			return self.rank < other.rank
 		if self.length != other.length:
 			return self.length < other.length
-		if self.suit_type != other.suit_type:
-			return self.suit_type < other.suit_type
 		return self.power < other.power
 
 def card_to_suit_type(card, trick_suit, trump_card):
@@ -135,6 +135,26 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 		tractors = match_form(tractors, target_form)
 
 	return tractors
+
+def get_max_tractor_index(tractor_data, target_data):
+	'''
+	Returns the index corresponding to tractor data that is at least target_data's rank and length.
+	If index is not found, then by default the first index will be returned as it corresponds with
+	max tractor_data since tractor_data input is sorted from greatest to least.
+	'''
+	for i in range(tractor_data):
+		if tractor_data[i][0] >= target_data[0] and tractor_data[i][1] >= target_data[1]:
+			return i
+	return 0
+
+def get_min_tractor_data(tractor_data_1, tractor_data_2)
+	'''
+	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a 
+	new tuple (min_rank, min_length).
+	'''
+	min_rank = min(tractor_data_1[0], tractor_data_2[0])
+	min_length = min(tractor_data_1[1], tractor_data_2[1])
+	return (min_rank, min_length)
 
 @functools.total_ordering
 class Flush(object):

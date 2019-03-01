@@ -122,20 +122,6 @@
 					</li>
 				</ul>
 			</div>
-			<template v-if="declaration">
-				<div>
-					<h3>Declared:</h3>
-					<div class="playingCards fourColours">
-						<ul class="hand">
-							<li v-for="card in declaration.cards">
-								<card :suit="card.suit" :rank="card.value"
-									:trump-suit="trumpSuit" :trump-rank="trumpRank">
-								</card>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</template>
 		</div>
 	</div>
 

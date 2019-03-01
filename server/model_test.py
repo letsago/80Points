@@ -275,18 +275,27 @@ class TestRoundState(unittest.TestCase):
 		self.assertFalse(self.round_state.is_declaration_valid(player, cards))
 
 	@parameterized.expand([
-		['initial play', 0, [Card('s', '3')], []],
+		['initial play with a single', 0, [Card('s', '3')], []],
+
+		['initial play with a pair', 0, [Card('s', '3'), Card('s', '3')], []],
 
 		['overturn another declaration', 0, [Card('s', '3'), Card('s', '3')], 
 			[Declaration(1, [Card('d', '3')])]],
 
+		['overturn another declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+			[Declaration(1, [Card('d', '3')])]],
+
 		['defend previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+			[Declaration(0, [Card('s', '3')])]],
+
+		['defend previous declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
 			[Declaration(0, [Card('s', '3')])]],
 	])
 
 	def testValidDeclarations(self, name, player, cards, declarations):
 		self.round_state.declarations = declarations
-		self.round_state.player_hands[0] = [Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('d', '3')]
+		self.round_state.player_hands[0] = [
+			Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('s', '3'), Card('d', '3')]
 		self.assertTrue(self.round_state.is_declaration_valid(player, cards))
 
 if __name__ == '__main__':

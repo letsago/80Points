@@ -223,7 +223,7 @@ class RoundState(object):
 		self.turn = (self.turn + 1) % self.num_players
 
 	def is_declaration_valid(self, player, cards):
-	 	# Number of cards must be less than the number of decks and greater than 0.
+	 	# Number of cards must be less than or equal to the number of decks and greater than 0.
 		if len(cards) > self.num_decks or len(cards) == 0:
 			return False
 		# Player can't declare with cards they don't have.
@@ -252,6 +252,8 @@ class RoundState(object):
 
 	def declare(self, player, cards):
 		self.declarations.append(Declaration(player, cards))
+		# Putting the cards on the board makes it appear in the UI, which allows
+		# the players to see who declared what.
 		self.board[player] = cards
 		self.trump_card.suit = cards[0].suit
 

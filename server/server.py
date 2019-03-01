@@ -12,6 +12,7 @@ import server_utils
 parser = argparse.ArgumentParser()
 parser.add_argument('--speed', default=5)
 parser.add_argument('--debug', action='store_true')
+parser.add_argument('--deck_name')
 
 args = parser.parse_args()
 
@@ -92,7 +93,9 @@ class Game(model.RoundListener):
 		for player in self.players:
 			player.listener = server_utils.ForwardToGamePlayer(sio, player)
 			self.listeners.append(player.listener)
-		self.round = model.Round(len(self.players), [self, server_utils.TimedActionListener(args.speed)] + self.listeners)
+		self.round = model.Round(len(self.players), 
+		                         listeners=[self, server_utils.TimedActionListener(args.speed)] + self.listeners,
+								 deck_name=args.deck_name)
 
 	def ended(self, r, player_scores, next_player):
 		for player in self.players:

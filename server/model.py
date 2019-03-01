@@ -190,10 +190,8 @@ class RoundState(object):
 		# list of cards that each player has placed on the board for the current trick
 		self.board = [[] for i in range(num_players)]
 
-		# current declared cards
-		# for now, we only keep track of the most recent set of cards that have been declared
-		# however, this is insufficient to allow defending a previous declaration, so eventually
-		# TODO(workitem0027): we will need to keep a history of declarations from different players
+		# history of all declarations
+		# to get the most recent declaration, use self.declaration
 		self.declarations = []
 
 		# some cards should form the bottom
@@ -224,7 +222,55 @@ class RoundState(object):
 	def increment_turn(self):
 		self.turn = (self.turn + 1) % self.num_players
 
+	def is_declaration_valid(self, player, cards):
+		'''	
+		This function determines whether a declaration is valid based on the
+		history of any previous declarations in this round.
+
+		Args:
+			player: int 
+			cards: Card []
+		Returns:
+			bool
+		'''
+	 	# Number of cards must be less than or equal to the number of decks and greater than 0.
+		if len(cards) > self.num_decks or len(cards) == 0:
+			return False
+		# Player can't declare with cards they don't have.
+		if not is_cards_contained_in(cards, self.player_hands[player]):
+			return False
+		# All cards must have the same value as the trump card.
+		for card in cards:
+			if card.value != self.trump_card.value:
+				return False
+		# All cards must have the same suit.
+		if len({card.suit for card in cards}) != 1:
+			return False
+		# No previous declarations, so this declaration is fine.
+		if self.declaration is None:
+			return True
+
+		# Must use more cards than most recent declaration.
+		if len(cards) <= len(self.declaration.cards):
+			return False
+		# If the player previously declared, they must use the same suit as before.
+		for declaration in self.declarations:
+			if player == declaration.player and declaration.cards[0].suit != cards[0].suit:
+				return False
+
+		return True
+
+	def declare(self, player, cards):
+		self.declarations.append(Declaration(player, cards))
+		# Putting the cards on the board makes it appear in the UI, which allows
+		# the players to see who declared what.
+		self.board[player] = cards
+		self.trump_card.suit = cards[0].suit
+
 	def give_bottom_to_player(self, player):
+		# Set first player to the player who got the bottom.
+		# TODO(workitem0023): set first player properly for all following rounds, i.e. not the first round.
+		self.set_turn(player)
 		bottom_cards = self.bottom
 		self.bottom = []
 		self.player_hands[player].extend(bottom_cards)
@@ -426,20 +472,10 @@ class Round(object):
 		if self.state.status != STATUS_DEALING:
 			raise RoundException("the trump suit has already been decided")
 
-		player_hand = self.state.player_hands[player]
-		if not is_cards_contained_in(cards, player_hand):
-			raise RoundException("invalid cards")
+		if not self.state.is_declaration_valid(player, cards):
+			raise RoundException("invalid declaration")
 
-		if len(cards) > self.state.num_decks:
-			raise RoundException("invalid number of cards")
-
-		if self.state.declaration is not None:
-			if len(cards) <= len(self.state.declaration.cards):
-				if player != self.state.declarations[0].player:
-					raise RoundException("must use more cards than previous declaration")
-
-		self.state.declarations.append(Declaration(player, cards))
-		self.state.trump_card.suit = cards[0].suit
+		self.state.declare(player, cards)
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
 
 		if len(self.state.deck) == 0:
@@ -498,9 +534,8 @@ class Round(object):
 			raise RoundException("invalid cards")
 
 		self.state.remove_cards_from_hand(player, cards)
-		# Set first player to the player who got the bottom.
-		# TODO(workitem0023): set first player properly for all following rounds, i.e. not the first round.
-		self.state.set_turn(player)
+		# Clear board to remove any declared cards from the board.
+		self.state.clear_board()
 		self.state.status = STATUS_PLAYING
 		self._fire(lambda listener: listener.player_set_bottom(self, player, cards))
 

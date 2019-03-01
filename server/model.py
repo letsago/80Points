@@ -223,6 +223,16 @@ class RoundState(object):
 		self.turn = (self.turn + 1) % self.num_players
 
 	def is_declaration_valid(self, player, cards):
+		'''	
+		This function determines whether a declaration is valid based on the
+		history of any previous declarations in this round.
+
+		Args:
+			player: int 
+			cards: Card []
+		Returns:
+			bool
+		'''
 	 	# Number of cards must be less than or equal to the number of decks and greater than 0.
 		if len(cards) > self.num_decks or len(cards) == 0:
 			return False

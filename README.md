@@ -34,12 +34,12 @@ python3 -m unittest *_test.py
 pytest
 ```
 
-## Set up a test deck
+## Testing with a deterministic deck
 
-To use a deterministic test deck, add a file under server/testdata ending
-in .txt.
+To use a deterministic test deck, add a file under `server/testdata/` ending
+in .txt, e.g. `declaration.txt`.
 
-Format:
+### Format of test data file
 
 The first four lines correspond to player hands, and the cards are dealt
 in order that they appear on the line. The last line corresponds to the
@@ -60,7 +60,9 @@ jbig jbig jsmall jsmall dA hA sA cA
 
 Then the first card dealt will be a 2 of diamonds to hand 0. The second card
 dealt will be 2 of heards to hand 1, then 2 of spades to hand 2, 2 of clubs
-to hand 3, d3 to hand 0, and so on.
+to hand 3, 3 of diamonds to hand 0, and so on.
+
+### Usage with server
 
 To use the deterministic deck, run:
 
@@ -69,5 +71,5 @@ python3 server/server.py --deck_name=<deck_name>
 ```
 
 where `<deck_name>` is the name of the file without the .txt extension in the
-testdata directory. For example, if the file path was `testdata/declaration.txt`,
-you would pass `--deck_name=declaration`.
+testdata directory. For example, if the file path was 
+`server/testdata/declaration.txt`, you would pass `--deck_name=declaration`.

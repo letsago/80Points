@@ -169,7 +169,7 @@ class Declaration(object):
 			'cards': [card.dict for card in self.cards],
 		}
 
-from tractor import Flush, cards_to_tractors, card_to_suit_type, SUIT_TRICK, SUIT_TRUMP
+from tractor import Flush, cards_to_tractors, card_to_suit_type, get_min_data, update_data_array, find_matching_data_index
 
 class RoundState(object):
 	def __init__(self, num_players):
@@ -330,39 +330,33 @@ class RoundState(object):
 		if play_card_count != trick_card_count:
 			return False
 		
-		# grab trick tractors and trick suit tractors from player hand
-		trick_suit = first_play[0].suit
-		trick_suit_type = card_to_suit_type(first_play[0], trick_suit, self.trump_card)
-		trick_tractors = cards_to_tractors(first_play, trick_suit, self.trump_card)
-		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_suit)
-
-		# transform tractors into tractor (rank, length) tuple data
-		trick_tractor_data = []
-		hand_suit_tractor_data = []
-		for tractor in trick_tractors:
-			trick_tractor_data.append((tractor.rank, tractor.length))
-		for tractor in hand_suit_tractors:
-			hand_suit_tractor_data.append((tractor.rank, tractor.length))
+		# grab trick tractor and player hand trick suit tractor rank and length data
+		trick_card = first_play[0]
+		trick_tractors = cards_to_tractors(first_play, trick_card.suit, self.trump_card)
+		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_card)
+		trick_data_array = [{'rank': tractor.rank, 'length': tractor.length} for tractor in trick_tractors]
+		hand_data_array = [{'rank': tractor.rank, 'length': tractor.length} for tractor in hand_suit_tractors]
 		
-		# find hand tractor (rank, length) data that matches trick tractor (rank, length) data
-		priority_tractor_data = []
-		for data in trick_tractor_data:
-			i = get_max_tractor_index(hand_suit_tractor_data, data)
-			while data != (0,0) and hand_suit_tractor_data[i] != (0,0):
-				min_tractor_data = get_min_tractor(data, hand_suit_tractor_data[i])
-				priority_tractor_data.append(min_tractor_data)
-				data -= min_tractor_data
-				hand_suit_tractor_data[i] -= min_tractor_data
-				i = get_max_tractor_index(hand_suit_tractor_data, data)
+		# find hand data (rank, length) that matches trick data and update trick_data and hand_data accordingly
+		priority_data_array = []
+		while trick_data_array and hand_data_array:
+			i = find_matching_data_index(hand_data_array, trick_data_array[0])
+			min_data = get_min_data(trick_data_array[0], hand_data_array[i])
+			priority_data_array.append(min_data)
+			trick_data_array = update_data_array(trick_data_array, min_data)
+			hand_data_array = update_data_array(hand_data_array, min_data)
 
 		# number of played tractors must be at least the number of priority tractors
-		tractor_play = cards_to_tractors(cards, trick_suit, self.trump_card)
-		if len(tractor_play) < len(priority_tractor_data):
+		play_tractors = cards_to_tractors(cards, trick_card.suit, self.trump_card)
+		if len(play_tractors) < len(priority_data_array):
 			return False
 
-		# all sorted priority tractor (rank, length, suit_type) data must match sorted played tractor data
-		for i in range(priority_tractor_data):
-			if tractor_play[i].rank != priority_tractor_data[i][0] or tractor_play[i].length != priority_tractor_data[i][0] or tractor_play[i].suit_type != trick_suit_type:
+		trick_suit_type = card_to_suit_type(trick_card, trick_card.suit, self.trump_card)
+		# all sorted priority (rank, length) data must match sorted played tractor data
+		for i in range(len(priority_data_array)):
+			priority_rank = priority_data_array[i]['rank']
+			priority_length = priority_data_array[i]['length']
+			if play_tractors[i].rank != priority_rank or play_tractors[i].length != priority_length or play_tractors[i].suit_type != trick_suit_type:
 				return False
 
 		return True

@@ -136,25 +136,80 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 
 	return tractors
 
-def get_max_tractor_index(tractor_data, target_data):
+def get_min_data(tractor_data_1, tractor_data_2):
 	'''
-	Returns the index corresponding to tractor data that is at least target_data's rank and length.
-	If index is not found, then by default the first index will be returned as it corresponds with
-	max tractor_data since tractor_data input is sorted from greatest to least.
+	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a 
+	new dictionary {min_rank, min_length}.
+
+	Args:
+		tractor_data_1: dict{int, int}
+		tractor_data_2: dict{int, int}
+	
+	Returns:
+		dict{int, int}
 	'''
-	for i in range(tractor_data):
-		if tractor_data[i][0] >= target_data[0] and tractor_data[i][1] >= target_data[1]:
+	min_rank = min(tractor_data_1['rank'], tractor_data_2['rank'])
+	min_length = min(tractor_data_1['length'], tractor_data_2['length'])
+	return {'rank': min_rank, 'length': min_length}
+
+def find_matching_data_index(data_array, target_data):
+	'''
+	Returns the index to the first data from a reverse sorted data array corresponding to at least a target 
+	data's rank and length. If data is not found, then by default the first index will be returned 
+	as it corresponds with max data within the reverse sorted data array input.
+
+	Args:
+		data_array: dict{int, int} []
+		target_data: dict{int, int}
+	
+	Returns:
+		int
+	'''
+	for i in range(len(data_array)):
+		if data_array[i]['rank'] >= target_data['rank'] and data_array[i]['length'] >= target_data['length']:
 			return i
 	return 0
 
-def get_min_tractor_data(tractor_data_1, tractor_data_2)
+def update_data_array(data_array, data_to_remove):
 	'''
-	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a 
-	new tuple (min_rank, min_length).
+	Returns an updated reverse sorted rank, length dict data array after removing data_to_remove from 
+	data array. This function is used primarily in play validation to accurately update the trick and hand data 
+	arrays for subsequent priority play matching.
+
+	Args:
+		data_array: dict{int, int} []
+		data_to_remove: dict{int, int}
+	
+	Returns:
+		dict{int, int} []
 	'''
-	min_rank = min(tractor_data_1[0], tractor_data_2[0])
-	min_length = min(tractor_data_1[1], tractor_data_2[1])
-	return (min_rank, min_length)
+	# find the index corresponding to the data in array guaranteed to be greater than remove data's rank and length
+	i = find_matching_data_index(data_array, data_to_remove)
+	assert data_to_remove['rank'] <= data_array[i]['rank']
+	assert data_to_remove['length'] <= data_array[i]['length']
+
+	# case 1: if (2, 1) tractor were to be removed from array tractor (2, 1) then (2, 1) can be directly removed from array
+	# case 2: if (2, 1) tractor were to be removed from array tractor (2, 2) then (2, 2) tractor becomes (2, 1)
+	# case 3: if (2, 1) tractor were to be removed from array tractor (3, 1) then (3, 1) tractor becomes (1, 1)
+	# case 4: if (2, 1) tractor were to be removed from array tractor (3, 2) then (3, 2) tractor becomes (3, 1) and leftover (1, 1) is added
+	if data_array[i]['rank'] == data_to_remove['rank'] and data_array[i]['length'] == data_to_remove['length']:
+		del data_array[i]
+	elif data_array[i]['rank'] == data_to_remove['rank']:
+		data_array[i]['length'] = data_array[i]['length'] - data_to_remove['length']
+	elif data_array[i]['length'] == data_to_remove['length']:
+		data_array[i]['rank'] = data_array[i]['rank'] - data_to_remove['rank']
+	else:
+		data_array.append({'rank': data_array[i]['rank'], 'length': data_array[i]['length'] - data_to_remove['length']})
+		data_array[i]['rank'] = data_array[i]['rank'] - data_to_remove['rank']
+		data_array[i]['length'] = data_to_remove['length']
+
+	# if (1, n), where n > 1, tractor is found at data_array[i], then decompose it into n (1, 1) tractors,
+	# add them to data_array, and remove the (1, n) tractor
+	if len(data_array) > i and data_array[i]['rank'] == 1 and data_array[i]['length'] > 1:
+		data_array += data_array[i]['length'] * [{'rank': 1, 'length': 1}]
+		del data_array[i]
+
+	return sorted(data_array, key=lambda k: (k['rank'], k['length']), reverse=True)
 
 @functools.total_ordering
 class Flush(object):

@@ -239,12 +239,10 @@ class TestRoundState(unittest.TestCase):
 		
 	@parameterized.expand(follow_suit_validity_test_data)
 
-	# will remove skipping this test once is_play_valid function is fully built
-	@unittest.skip('is_play_valid function is not properly functioning yet')
 	def testFollowSuitValidity(self, name, first_play, invalid_play, valid_play):
 		self.round_state.board[0] = first_play
-		self.assertFalse(self.round_state.is_play_valid(second_player, invalid_play))
-		self.assertTrue(self.round_state.is_play_valid(second_player, valid_play))
+		self.assertFalse(self.round_state.is_play_valid(self.second_player, invalid_play))
+		self.assertTrue(self.round_state.is_play_valid(self.second_player, valid_play))
 
 if __name__ == '__main__':
 	unittest.main()

@@ -153,7 +153,7 @@ def create_deck_from_file(deck_name):
 					suit = 'joker'
 				deck.append(Card(suit, value))
 	num_players = 4
-	num_decks = 4 // 2
+	num_decks = num_players // 2
 	num_cards_in_deck = 54
 	num_cards_in_bottom = 8
 	assert len(deck) == num_decks * num_cards_in_deck

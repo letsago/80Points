@@ -115,10 +115,12 @@ class TestRound(unittest.TestCase):
 		round.declare(third_player, [Card('d', '2')])
 		# This tick allows for the player to receive the bottom cards.
 		round.tick()
+		# After getting the bottom, it should now be the third player's turn.
+		self.assertEqual(round.state.turn, third_player)
 		round.set_bottom(third_player, 
 			[Card('d', '4'), Card('d', '6'), Card('d', '8'), Card('d', '10'),
 			 Card('c', '3'), Card('c', '5'), Card('c', '7'), Card('c', '9')])
-		# After setting the bottom, it should now be the third player's turn.
+		# After the bottom is set, it should still be the third player's turn.
 		self.assertEqual(round.state.turn, third_player)
 
 class TestRoundState(unittest.TestCase):
@@ -243,6 +245,56 @@ class TestRoundState(unittest.TestCase):
 		self.round_state.board[0] = first_play
 		self.assertFalse(self.round_state.is_play_valid(self.second_player, invalid_play))
 		self.assertTrue(self.round_state.is_play_valid(self.second_player, valid_play))
+
+	@parameterized.expand([
+		['no play', 0, [], []],
+
+		['too many cards', 0, [Card('s', '3'), Card('s', '3'), Card('s', '4')], []],
+
+		['cards not in player hand', 0, [Card('h', '3')], []],
+
+		['card value does not match trump value', 0, [Card('s', '4')], []],
+
+		['cards do not have the same suit', 0, [Card('s', '3'), Card('d', '3')], []],
+
+		['equal length to most recent declaration', 0, [Card('s', '3')], 
+			[Declaration(1, [Card('d', '3')])]],
+
+		['smaller length than most recent declaration', 0, [Card('s', '3')], 
+			[Declaration(1, [Card('d', '3')]), Declaration(1, [Card('d', '3'), Card('d', '3')])]],
+
+		['suit does not match previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+			[Declaration(0, [Card('d', '3')])]],
+	])
+
+	def testInvalidDeclarations(self, name, player, cards, declarations):
+		self.round_state.declarations = declarations
+		self.round_state.player_hands[0] = [Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('d', '3')]
+		self.assertFalse(self.round_state.is_declaration_valid(player, cards))
+
+	@parameterized.expand([
+		['initial play with a single', 0, [Card('s', '3')], []],
+
+		['initial play with a pair', 0, [Card('s', '3'), Card('s', '3')], []],
+
+		['overturn another declaration', 0, [Card('s', '3'), Card('s', '3')], 
+			[Declaration(1, [Card('d', '3')])]],
+
+		['overturn another declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+			[Declaration(1, [Card('d', '3')])]],
+
+		['defend previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+			[Declaration(0, [Card('s', '3')])]],
+
+		['defend previous declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+			[Declaration(0, [Card('s', '3')])]],
+	])
+
+	def testValidDeclarations(self, name, player, cards, declarations):
+		self.round_state.declarations = declarations
+		self.round_state.player_hands[0] = [
+			Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('s', '3'), Card('d', '3')]
+		self.assertTrue(self.round_state.is_declaration_valid(player, cards))
 
 if __name__ == '__main__':
 	unittest.main()

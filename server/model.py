@@ -152,9 +152,10 @@ def create_deck_from_file(deck_name):
 				if suit == 'j':
 					suit = 'joker'
 				deck.append(Card(suit, value))
+	assert len(deck) == 108
 	# Reorder the deck so that it matches how the cards will be popped off the deck to
 	# deal the hands.
-	reordered_deck = deck[:]
+	reordered_deck = list(deck)
 	for hand in range(4):
 		for position in range(25):
 			reordered_deck[99 - hand - 4 * position] = deck[25*hand+position]
@@ -164,7 +165,7 @@ def is_cards_contained_in(cards, hand):
 	'''
 	Returns whether cards is contained in hand.
 	'''
-	check_list = hand[:]
+	check_list = list(hand)
 	for x in cards:
 		if x in check_list:
 			check_list.remove(x)

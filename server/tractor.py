@@ -136,6 +136,65 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 
 	return tractors
 
+def find_matching_data_index(data_array, target_data):
+	'''
+	Returns the index to the first data from a reverse sorted data array corresponding to at least a target 
+	data's rank and length. If data is not found, then by default the first index will be returned 
+	as it corresponds with max data within the reverse sorted data array input.
+
+	Args:
+		data_array: dict{int, int} []
+		target_data: dict{int, int}
+	
+	Returns:
+		int
+	'''
+	for i in range(len(data_array)):
+		if data_array[i]['rank'] >= target_data['rank'] and data_array[i]['length'] >= target_data['length']:
+			return i
+	return 0
+
+def update_data_array(data_array, data_to_remove):
+	'''
+	Returns an updated reverse sorted rank, length dict data array after removing data_to_remove from 
+	data array. This function is used primarily in play validation to accurately update the trick and hand data 
+	arrays for subsequent priority play matching. Note that assertions are made to check that there must be data 
+	within data_array guaranteed to have a rank and length no less than remove data's rank and length.
+
+	Args:
+		data_array: dict{int, int} []
+		data_to_remove: dict{int, int}
+	
+	Returns:
+		dict{int, int} []
+	'''
+	i = find_matching_data_index(data_array, data_to_remove)
+	assert data_to_remove['rank'] <= data_array[i]['rank']
+	assert data_to_remove['length'] <= data_array[i]['length']
+
+	# case 1: if (2, 1) tractor were to be removed from array tractor (2, 1) then (2, 1) can be directly removed from array
+	# case 2: if (2, 1) tractor were to be removed from array tractor (2, 2) then (2, 2) tractor becomes (2, 1)
+	# case 3: if (2, 1) tractor were to be removed from array tractor (3, 1) then (3, 1) tractor becomes (1, 1)
+	# case 4: if (2, 1) tractor were to be removed from array tractor (3, 2) then (3, 2) tractor becomes (3, 1) and leftover (1, 1) is added
+	if data_array[i]['rank'] == data_to_remove['rank'] and data_array[i]['length'] == data_to_remove['length']:
+		del data_array[i]
+	elif data_array[i]['rank'] == data_to_remove['rank']:
+		data_array[i]['length'] = data_array[i]['length'] - data_to_remove['length']
+	elif data_array[i]['length'] == data_to_remove['length']:
+		data_array[i]['rank'] = data_array[i]['rank'] - data_to_remove['rank']
+	else:
+		data_array.append({'rank': data_array[i]['rank'], 'length': data_array[i]['length'] - data_to_remove['length']})
+		data_array[i]['rank'] = data_array[i]['rank'] - data_to_remove['rank']
+		data_array[i]['length'] = data_to_remove['length']
+
+	# if (1, n), where n > 1, tractor is found at data_array[i], then decompose it into n (1, 1) tractors,
+	# add them to data_array, and remove the (1, n) tractor
+	if len(data_array) > i and data_array[i]['rank'] == 1 and data_array[i]['length'] > 1:
+		data_array += data_array[i]['length'] * [{'rank': 1, 'length': 1}]
+		del data_array[i]
+
+	return sorted(data_array, key=lambda k: (k['rank'], k['length']), reverse=True)
+
 @functools.total_ordering
 class Flush(object):
 	'''Flush represents a single person's play in a trick.'''

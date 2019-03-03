@@ -123,6 +123,26 @@ class TestRound(unittest.TestCase):
 		# After the bottom is set, it should still be the third player's turn.
 		self.assertEqual(round.state.turn, third_player)
 
+	def testCreateDeckFromFile(self):
+		num_players = 4
+		round = Round(num_players, deck_name='declaration')
+		# Deal out all cards.
+		for _ in range(len(round.state.deck)):
+			round.tick()
+		# Verify the first few cards in each hand.
+		self.assertEqual(round.state.player_hands[0][:3], 
+			[Card('d', '2'), Card('d', '3'), Card('d', '4')])
+		self.assertEqual(round.state.player_hands[1][:3], 
+			[Card('h', '2'), Card('h', '2'), Card('h', '3')])
+		self.assertEqual(round.state.player_hands[2][:3], 
+			[Card('s', '2'), Card('s', '2'), Card('s', '3')])
+		self.assertEqual(round.state.player_hands[3][:3], 
+			[Card('c', '2'), Card('c', '2'), Card('c', '3')])
+		# Verify the bottom is set properly.
+		self.assertEqual(round.state.bottom,
+			[Card('c', 'A'), Card('s', 'A'), Card('h', 'A'), Card('d', 'A'), 
+			 Card('joker', 'small'), Card('joker', 'small'), Card('joker', 'big'), Card('joker', 'big')])
+
 class TestRoundState(unittest.TestCase):
 	# TODO(workitem0028): will add flush validation tests once flush capability is integrated
 	def setUp(self):

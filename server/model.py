@@ -396,16 +396,18 @@ class RoundState(object):
 		return suit_tractors
 
 	def is_play_valid(self, player, cards):
-		if not cards:
+		play_card_count = len(cards)
+		# number of cards must be nonzero
+		if play_card_count == 0:
 			return False
 
 		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
+		# for now, first play must be one tractor
 		if self.is_board_empty():
 			self.trick_first_player = player
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
 			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
 		
-		play_card_count = len(cards)
 		first_play = self.board[self.trick_first_player]
 		trick_card_count = len(first_play)
 				
@@ -420,7 +422,8 @@ class RoundState(object):
 		trick_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in trick_tractors]
 		hand_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in hand_suit_tractors]
 		
-		# find hand data (rank, length) that matches trick data and update trick_data and hand_data accordingly
+		# find hand data (rank, length) that matches trick data, add it to priority_data_array, and update trick_data 
+		# and hand_data accordingly by removing that data from both arrays
 		priority_data_array = []
 		while trick_data_array and hand_data_array:
 			i = find_matching_data_index(hand_data_array, trick_data_array[0])
@@ -435,7 +438,7 @@ class RoundState(object):
 			return False
 
 		trick_suit_type = card_to_suit_type(trick_card, trick_card.suit, self.trump_card)
-		# all sorted priority (rank, length) data must match sorted played tractor data
+		# all sorted priority (rank, length) data must match sorted played tractor data by rank, length, and trick suit_type
 		for i in range(len(priority_data_array)):
 			priority_rank = priority_data_array[i].rank
 			priority_length = priority_data_array[i].length

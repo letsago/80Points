@@ -186,33 +186,33 @@ class TestTractorMisc(unittest.TestCase):
 	@parameterized.expand([
 		[
 			'same rank and length', 
-			[{'rank': 3, 'length': 2}], 
-			{'rank': 3, 'length': 2}, 
+			[TractorMetadata(3, 2)], 
+			TractorMetadata(3, 2), 
 			[]
 		],
 		[
 			'same rank, different length', 
-			[{'rank': 2, 'length': 2}], 
-			{'rank': 2, 'length': 1}, 
-			[{'rank': 2, 'length': 1}]
+			[TractorMetadata(2, 2)], 
+			TractorMetadata(2, 1), 
+			[TractorMetadata(2, 1)], 
 		],
 		[
 			'different rank, same length', 
-			[{'rank': 3, 'length': 1}], 
-			{'rank': 2, 'length': 1}, 
-			[{'rank': 1, 'length': 1}]
+			[TractorMetadata(3, 1)], 
+			TractorMetadata(2, 1), 
+			[TractorMetadata(1, 1)], 
 		],
 		[
 			'different rank and length', 
-			[{'rank': 3, 'length': 2}], 
-			{'rank': 1, 'length': 1}, 
-			[{'rank': 3, 'length': 1}, {'rank': 2, 'length': 1}]
+			[TractorMetadata(3, 2)], 
+			TractorMetadata(1, 1), 
+			[TractorMetadata(3, 1), TractorMetadata(2, 1)], 
 		],
 		[
 			'different rank and length, multiple (1, 1) tractor decomposition', 
-			[{'rank': 3, 'length': 3}], 
-			{'rank': 2, 'length': 2}, 
-			[{'rank': 3, 'length': 1}, {'rank': 1, 'length': 1}, {'rank': 1, 'length': 1}]
+			[TractorMetadata(3, 3)], 
+			TractorMetadata(2, 2),
+			[TractorMetadata(3, 1), TractorMetadata(1, 1), TractorMetadata(1, 1)], 
 		],
 	])
 

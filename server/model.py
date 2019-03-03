@@ -1,5 +1,6 @@
 import functools
 import itertools
+import os
 import random
 
 CARD_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
@@ -134,11 +135,44 @@ def create_random_deck(num_decks):
 	random.shuffle(deck)
 	return deck
 
+def create_deck_from_file(deck_name):
+	'''
+	Creates a deck from a file found in the testdata directory. The file
+	should be under testdata/<deck_name>.txt
+
+	Returns:
+		Card []
+	'''
+	file_name = os.path.join(os.path.dirname(__file__), 'testdata', deck_name + '.txt')
+	deck = []
+	with open(file_name, 'r') as f:
+		for line in f:
+			for card in line.split():
+				suit, value = card[0], card[1:]
+				if suit == 'j':
+					suit = 'joker'
+				deck.append(Card(suit, value))
+	num_players = 4
+	num_decks = num_players // 2
+	num_cards_in_deck = 54
+	num_cards_in_bottom = 8
+	assert len(deck) == num_decks * num_cards_in_deck
+	num_playing_cards = len(deck) - num_cards_in_bottom
+	num_cards_per_hand = num_playing_cards // num_players
+	# Reorder the deck so that it matches how the cards will be popped off the deck to
+	# deal the hands.
+	reordered_deck = list(deck)
+	for hand in range(num_players):
+		for position in range(num_cards_per_hand):
+			# -1 is to make the index 0-based.
+			reordered_deck[num_playing_cards - 1 - hand - num_players * position] = deck[num_cards_per_hand*hand+position]
+	return reordered_deck
+
 def is_cards_contained_in(cards, hand):
 	'''
 	Returns whether cards is contained in hand.
 	'''
-	check_list = hand[:]
+	check_list = list(hand)
 	for x in cards:
 		if x in check_list:
 			check_list.remove(x)
@@ -172,12 +206,15 @@ class Declaration(object):
 from tractor import Flush, cards_to_tractors, card_to_suit_type, get_min_data, update_data_array, find_matching_data_index
 
 class RoundState(object):
-	def __init__(self, num_players):
+	def __init__(self, num_players, deck_name=None):
 		'''
 		Creates a new RoundState for num_players players.
 		'''
 		self.num_players = num_players
-		self.deck = create_random_deck(num_players // 2)
+		if deck_name is None:
+			self.deck = create_random_deck(num_players // 2)
+		else:
+			self.deck = create_deck_from_file(deck_name)
 		self.status = STATUS_DEALING
 		self.turn = 0
 		# Card object that represents the trump suit and value, not an actual card used in play
@@ -454,7 +491,7 @@ class RoundListener(object):
 		pass
 
 class Round(object):
-	def __init__(self, num_players, listeners=None):
+	def __init__(self, num_players, listeners=None, deck_name=None):
 		'''
 		Create a new Round instance.
 
@@ -462,7 +499,7 @@ class Round(object):
 		'''
 		if listeners is None:
 			listeners = []
-		self.state = RoundState(num_players)
+		self.state = RoundState(num_players, deck_name=deck_name)
 		self.listeners = list(listeners)
 		self._fire(lambda listener: listener.timed_action(self, 1))
 

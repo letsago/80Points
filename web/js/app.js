@@ -156,7 +156,7 @@ var app = new Vue({
 			// When 'index' == 'this.player', this expression is 0, which maps
 			// to the bottom player's position in 'this.playerPositions'.
 			// Even though the elements are always listed with index 0 first
-			// in the HTML, the CSS grid ignores order of the element and goes 
+			// in the HTML, the CSS grid ignores order of the element and goes
 			// strictly based on the CSS class.
 			return this.playerPositions[(index - this.player + 4) % 4];
 		},
@@ -202,7 +202,7 @@ socket.on('game_list', function(data) {
 
 socket.on('lobby', function (data) {
 	app.mode = 'game';
-	app.players = data.names;
+	app.players = data.players;
 	app.player = data.playerIndex;
 });
 

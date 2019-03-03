@@ -69,8 +69,13 @@
 			</div>
 			<div class="playerInfoContainer">
 				<div :class="['playerInfo', playerPosition(index)]" v-for="(player, index) in players">
-					<p :class="turn == index ? 'em' : ''">
-						{{ player }}
+					<p
+						class="playerName"
+						:class="{
+							turn: turn == index,
+							left: player.left,
+						}">
+						{{ player.name }}
 					</p>
 					<div class="playingCards fourColours">
 						<ul class="hand">

@@ -224,6 +224,7 @@ def update_data_array(data_array, data_to_remove):
 		TractorMetadata []
 	'''
 	i = find_matching_data_index(data_array, data_to_remove)
+	assert i is not None
 	data = data_array[i]
 	assert data_to_remove.rank <= data.rank
 	assert data_to_remove.length <= data.length

@@ -220,5 +220,42 @@ class TestTractorMisc(unittest.TestCase):
 	def testUpdateTractorDataArray(self, name, data_array, data_to_remove, expected_output):
 		self.assertEqual(update_data_array(data_array, data_to_remove), expected_output)
 
+	@parameterized.expand([
+		[
+			'same rank and length', 
+			[TractorMetadata(3, 2)], 
+			TractorMetadata(3, 2), 
+			[]
+		],
+		[
+			'same rank, different length', 
+			[TractorMetadata(2, 2)], 
+			TractorMetadata(2, 1), 
+			[TractorMetadata(2, 1)], 
+		],
+		[
+			'different rank, same length', 
+			[TractorMetadata(3, 1)], 
+			TractorMetadata(2, 1), 
+			[TractorMetadata(1, 1)], 
+		],
+		[
+			'different rank and length', 
+			[TractorMetadata(3, 2)], 
+			TractorMetadata(1, 1), 
+			[TractorMetadata(3, 1), TractorMetadata(2, 1)], 
+		],
+		[
+			'different rank and length, multiple (1, 1) tractor decomposition', 
+			[TractorMetadata(3, 3)], 
+			TractorMetadata(2, 2),
+			[TractorMetadata(3, 1), TractorMetadata(1, 1), TractorMetadata(1, 1)], 
+		],
+	])
+
+	# data_to_remove rank and length is asserted to be less than or equal to at least one data element in data_array 
+	def testUpdateTractorDataArray(self, name, data_array, data_to_remove, expected_output):
+		self.assertEqual(update_data_array(data_array, data_to_remove), expected_output)
+
 if __name__ == '__main__':
 	unittest.main()

@@ -203,7 +203,7 @@ class Declaration(object):
 			'cards': [card.dict for card in self.cards],
 		}
 
-from tractor import Flush, cards_to_tractors, card_to_suit_type, get_min_data, update_data_array, find_matching_data_index
+from tractor import *
 
 class RoundState(object):
 	def __init__(self, num_players, deck_name=None):
@@ -417,8 +417,8 @@ class RoundState(object):
 		trick_card = first_play[0]
 		trick_tractors = cards_to_tractors(first_play, trick_card.suit, self.trump_card)
 		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_card)
-		trick_data_array = [{'rank': tractor.rank, 'length': tractor.length} for tractor in trick_tractors]
-		hand_data_array = [{'rank': tractor.rank, 'length': tractor.length} for tractor in hand_suit_tractors]
+		trick_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in trick_tractors]
+		hand_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in hand_suit_tractors]
 		
 		# find hand data (rank, length) that matches trick data and update trick_data and hand_data accordingly
 		priority_data_array = []
@@ -437,8 +437,8 @@ class RoundState(object):
 		trick_suit_type = card_to_suit_type(trick_card, trick_card.suit, self.trump_card)
 		# all sorted priority (rank, length) data must match sorted played tractor data
 		for i in range(len(priority_data_array)):
-			priority_rank = priority_data_array[i]['rank']
-			priority_length = priority_data_array[i]['length']
+			priority_rank = priority_data_array[i].rank
+			priority_length = priority_data_array[i].length
 			if play_tractors[i].rank != priority_rank or play_tractors[i].length != priority_length or play_tractors[i].suit_type != trick_suit_type:
 				return False
 

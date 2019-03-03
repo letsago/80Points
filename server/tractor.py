@@ -136,80 +136,120 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 
 	return tractors
 
+class TractorMetadata(object):
+	'''
+	TractorMetadata represents only the rank and length of a particular tractor play.
+	This object is primarily used in play validation where rank and length are most relevant to consider.
+	'''
+	
+	def __init__(self, rank, length):
+		self.rank = rank
+		self.length = length
+	
+	def __str__(self):
+		return '(r: %s l: %s)' % (self.rank, self.length)
+
+	def __repr__(self):
+		return self.__str__()
+	
+	def __eq__(self, other):
+		'''
+		Returns whether self and other are equal.
+		'''
+		return self.rank == other.rank and self.length == other.length
+
+	def __lt__(self, other):
+		'''
+		Returns whether self is less than other.
+		'''
+		if self.rank != other.rank:
+			return self.rank < other.rank
+		return self.length < other.length
+
 def get_min_data(tractor_data_1, tractor_data_2):
 	'''
 	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a 
-	new dictionary {min_rank, min_length}.
+	new TractorMetadata (min_rank, min_length).
 
 	Args:
-		tractor_data_1: dict{int, int}
-		tractor_data_2: dict{int, int}
+		tractor_data_1: TractorMetadata
+		tractor_data_2: TractorMetadata
 	
 	Returns:
-		dict{int, int}
+		TractorMetadata
 	'''
-	min_rank = min(tractor_data_1['rank'], tractor_data_2['rank'])
-	min_length = min(tractor_data_1['length'], tractor_data_2['length'])
-	return {'rank': min_rank, 'length': min_length}
-
+	min_rank = min(tractor_data_1.rank, tractor_data_2.rank)
+	min_length = min(tractor_data_1.length, tractor_data_2.length)
+	return TractorMetadata(min_rank, min_length)
+	
 def find_matching_data_index(data_array, target_data):
 	'''
 	Returns the index to the first data from a reverse sorted data array corresponding to at least a target 
 	data's rank and length. If data is not found, then by default the first index will be returned 
-	as it corresponds with max data within the reverse sorted data array input.
+	as it corresponds with max data within the reverse sorted data array input. This function is used in both
+	update_data_array, where it is guaranteed that matching data index is found, and in the is_play_valid function,
+	where it is not guaranteed that matching data index is found.
 
 	Args:
-		data_array: dict{int, int} []
-		target_data: dict{int, int}
+		data_array: TractorMetadata []
+		target_data: TractorMetadata
 	
 	Returns:
 		int
 	'''
-	for i in range(len(data_array)):
-		if data_array[i]['rank'] >= target_data['rank'] and data_array[i]['length'] >= target_data['length']:
+	for i, data in enumerate(data_array):
+		# succeeds in finding matching data
+		if data.rank >= target_data.rank and data.length >= target_data.length:
 			return i
-	return 0
+	# fails to find matching data so defaults to first index of data_array, which corresponds to max data, 
+	# if data_array is empty, return None
+	if data_array:
+		return 0
+	return None
 
 def update_data_array(data_array, data_to_remove):
 	'''
-	Returns an updated reverse sorted rank, length dict data array after removing data_to_remove from 
+	Returns an updated reverse sorted rank, length data array after removing data_to_remove from 
 	data array. This function is used primarily in play validation to accurately update the trick and hand data 
-	arrays for subsequent priority play matching.
+	arrays for subsequent priority play matching. Since you cannot remove greater data from lesser data, assertions 
+	are made to check that there exists at least one TractorMetadata in data_array that is greater than data_to_remove. 
+	In the play validation logic, before being passed into the function, data_to_remove is calculated to have a rank 
+	and length less than at least one element in data_array.
 
 	Args:
-		data_array: dict{int, int} []
-		data_to_remove: dict{int, int}
+		data_array: TractorMetadata []
+		data_to_remove: TractorMetadata
 	
 	Returns:
-		dict{int, int} []
+		TractorMetadata []
 	'''
-	# find the index corresponding to the data in array guaranteed to be greater than remove data's rank and length
 	i = find_matching_data_index(data_array, data_to_remove)
-	assert data_to_remove['rank'] <= data_array[i]['rank']
-	assert data_to_remove['length'] <= data_array[i]['length']
+	data = data_array[i]
+	assert data_to_remove.rank <= data.rank
+	assert data_to_remove.length <= data.length
 
 	# case 1: if (2, 1) tractor were to be removed from array tractor (2, 1) then (2, 1) can be directly removed from array
 	# case 2: if (2, 1) tractor were to be removed from array tractor (2, 2) then (2, 2) tractor becomes (2, 1)
 	# case 3: if (2, 1) tractor were to be removed from array tractor (3, 1) then (3, 1) tractor becomes (1, 1)
 	# case 4: if (2, 1) tractor were to be removed from array tractor (3, 2) then (3, 2) tractor becomes (3, 1) and leftover (1, 1) is added
-	if data_array[i]['rank'] == data_to_remove['rank'] and data_array[i]['length'] == data_to_remove['length']:
-		del data_array[i]
-	elif data_array[i]['rank'] == data_to_remove['rank']:
-		data_array[i]['length'] = data_array[i]['length'] - data_to_remove['length']
-	elif data_array[i]['length'] == data_to_remove['length']:
-		data_array[i]['rank'] = data_array[i]['rank'] - data_to_remove['rank']
+	if data.rank == data_to_remove.rank and data.length == data_to_remove.length:
+		data_array.remove(data)
+	elif data.rank == data_to_remove.rank:
+		data.length = data.length - data_to_remove.length
+	elif data.length == data_to_remove.length:
+		data.rank = data.rank - data_to_remove.rank
 	else:
-		data_array.append({'rank': data_array[i]['rank'], 'length': data_array[i]['length'] - data_to_remove['length']})
-		data_array[i]['rank'] = data_array[i]['rank'] - data_to_remove['rank']
-		data_array[i]['length'] = data_to_remove['length']
+		data_array.append(TractorMetadata(data.rank, data.length - data_to_remove.length))
+		data.rank = data.rank - data_to_remove.rank
+		data.length = data_to_remove.length
 
-	# if (1, n), where n > 1, tractor is found at data_array[i], then decompose it into n (1, 1) tractors,
+	# if (1, n), where n > 1, tractor is found at data, then decompose it into n (1, 1) tractors,
 	# add them to data_array, and remove the (1, n) tractor
-	if len(data_array) > i and data_array[i]['rank'] == 1 and data_array[i]['length'] > 1:
-		data_array += data_array[i]['length'] * [{'rank': 1, 'length': 1}]
-		del data_array[i]
+	if len(data_array) > i and data.rank == 1 and data.length > 1:
+		data_array += data.length * [TractorMetadata(1, 1)]
+		data_array.remove(data)
 
-	return sorted(data_array, key=lambda k: (k['rank'], k['length']), reverse=True)
+	return sorted(data_array, reverse=True)
 
 @functools.total_ordering
 class Flush(object):

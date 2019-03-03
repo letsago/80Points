@@ -174,8 +174,9 @@ class TestTractorMatchForm(unittest.TestCase):
 	])
 	
 	def testCardsToTractorsWithForm(self, start_cards, cur_cards, want_tractors):
-		target_form = cards_to_tractors(start_cards, 'd', TestTractorMatchForm.trump_card)
-		got_tractors = cards_to_tractors(cur_cards, 'd', TestTractorMatchForm.trump_card, target_form=target_form)
+		trick_suit = 'd'
+		target_form = cards_to_tractors(start_cards, trick_suit, TestTractorMatchForm.trump_card)
+		got_tractors = cards_to_tractors(cur_cards, trick_suit, TestTractorMatchForm.trump_card, target_form=target_form)
 		self.assertEqual(got_tractors, want_tractors)
 
 class TestTractorMisc(unittest.TestCase):

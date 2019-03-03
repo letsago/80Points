@@ -182,9 +182,6 @@ def find_matching_data_index(data_array, target_data):
 		int
 	'''
 	for i, data in enumerate(data_array):
-		# assert that data_array is reverse sorted
-		if i < len(data_array) - 1:
-			assert data >= data_array[i + 1]
 		# succeeds in finding matching data
 		if data.rank >= target_data.rank and data.length >= target_data.length:
 			return i

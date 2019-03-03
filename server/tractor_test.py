@@ -182,43 +182,6 @@ class TestTractorMisc(unittest.TestCase):
 			flush2 = Flush(cards_to_tractors(cards2, trick_suit, trump_card))
 			self.assertFalse(flush1 > flush2 or flush2 > flush1 or flush1 < flush2 or flush2 < flush1)
 			self.assertTrue(flush1 == flush2)
-	
-	@parameterized.expand([
-		[
-			'same rank and length', 
-			[{'rank': 3, 'length': 2}], 
-			{'rank': 3, 'length': 2}, 
-			[]
-		],
-		[
-			'same rank, different length', 
-			[{'rank': 2, 'length': 2}], 
-			{'rank': 2, 'length': 1}, 
-			[{'rank': 2, 'length': 1}]
-		],
-		[
-			'different rank, same length', 
-			[{'rank': 3, 'length': 1}], 
-			{'rank': 2, 'length': 1}, 
-			[{'rank': 1, 'length': 1}]
-		],
-		[
-			'different rank and length', 
-			[{'rank': 3, 'length': 2}], 
-			{'rank': 1, 'length': 1}, 
-			[{'rank': 3, 'length': 1}, {'rank': 2, 'length': 1}]
-		],
-		[
-			'different rank and length, multiple (1, 1) tractor decomposition', 
-			[{'rank': 3, 'length': 3}], 
-			{'rank': 2, 'length': 2}, 
-			[{'rank': 3, 'length': 1}, {'rank': 1, 'length': 1}, {'rank': 1, 'length': 1}]
-		],
-	])
-
-	# data_to_remove rank and length is asserted to be less than or equal to at least one data element in data_array 
-	def testUpdateTractorDataArray(self, name, data_array, data_to_remove, expected_output):
-		self.assertEqual(update_data_array(data_array, data_to_remove), expected_output)
 
 	@parameterized.expand([
 		[

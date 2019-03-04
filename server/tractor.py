@@ -66,25 +66,24 @@ def match_form(tractors, target_form):
 
 	# try matching the first tractor in target_form with every tractor in tractors
 	# then, we recursively match the remainder (brute force)
-	tractor = target_form[0]
+	target_tractor = target_form[0]
 	for i in range(len(tractors)):
 		other = tractors[i]
-		if other.rank < tractor.rank or other.length < tractor.length:
+		if other.rank < target_tractor.rank or other.length < target_tractor.length:
 			continue
 
-		# compute remainder tractor(s) after matching other with tractor
-		other_match_tractor = Tractor(tractor.rank, tractor.length, other.power, other.suit_type)
+		# compute remainder tractor(s) after matching other with target_tractor
+		other_match_tractor = Tractor(target_tractor.rank, target_tractor.length, other.power, other.suit_type)
 		other_minus_tractor = []
-		if other.rank > tractor.rank:
-			# example: tractor={2,2,3,3}
+		if other.rank > target_tractor.rank:
+			# example: target_tractor={2,2,3,3}
 			# if other is {4,4,4,5,5,5}, remainder is {4,5}
 			# if other is {4,4,4,5,5,5,6,6,6}, remainder is {4,5,6,6,6}
-			other_minus_tractor.append(Tractor(other.rank - tractor.rank, tractor.length, other.power, other.suit_type))
-			if other.length > tractor.length:
-				# TODO(workitem0026): we actually need to adjust other.power here if we want to stay consistent, but it might not matter
-				other_minus_tractor.append(Tractor(other.rank, other.length - tractor.length, other.power, other.suit_type))
-		elif other.length > tractor.length:
-			other_minus_tractor.append(Tractor(other.rank, other.length - tractor.length, other.power, other.suit_type))
+			other_minus_tractor.append(Tractor(other.rank - target_tractor.rank, target_tractor.length, other.power, other.suit_type))
+			if other.length > target_tractor.length:
+				other_minus_tractor.append(Tractor(other.rank, other.length - target_tractor.length, other.power + target_tractor.length, other.suit_type))
+		elif other.length > target_tractor.length:
+			other_minus_tractor.append(Tractor(other.rank, other.length - target_tractor.length, other.power, other.suit_type))
 
 		# check if remainders match
 		remainder_tractors = tractors[:i] + other_minus_tractor + tractors[i+1:]

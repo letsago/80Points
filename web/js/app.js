@@ -94,7 +94,6 @@ var app = new Vue({
 		playerPositions: ['bottomPlayer', 'leftPlayer', 'topPlayer', 'rightPlayer'],
 		players: [],
 		declaration: null,
-		declarableSuits: {},
 		board: [],
 	},
 	computed: {
@@ -137,20 +136,18 @@ var app = new Vue({
 				el.selected = false;
 			});
 		},
-		declareSuit: function (suit) {
-			// find all cards matching trumpRank in this suit, and declare them together
-			let cards = this.cards.filter(card => {
-				return (card.suit == suit && card.value == this.trumpRank);
-			});
-			socket.emit('round_declare', cards);
+		performCardsAction: function(actionName) {
+			socket.emit(actionName, this.selectedCards);
+			this.clearSelectedCards();
+		},
+		declare: function () {
+			this.performCardsAction('round_declare');
 		},
 		setBottom: function () {
-			socket.emit('round_set_bottom', this.selectedCards);
-			clearSelectedCards();
+			this.performCardsAction('round_set_bottom');
 		},
 		play: function () {
-			socket.emit('round_play', this.selectedCards);
-			clearSelectedCards();
+			this.performCardsAction('round_play');
 		},
 		playerPosition: function(index) {
 			// This function assigns the right CSS class so that the person who
@@ -230,32 +227,4 @@ socket.on('state', function(data) {
 	app.bottomSize = data.bottom_size;
 
 	app.cards = mergeCards(app.cards, data.hand);
-
-	// set declarable suits
-	// TODO: make this computed?
-	if (data.status == 'dealing') {
-		var numCardsNeeded = 1;
-		if (data.declaration) {
-			numCardsNeeded = data.declaration.cards.length + 1;
-		}
-		var numTrumpInSuits = {};
-		data.hand.forEach(function(el) {
-			if (el.value == data.trump_value) {
-				if (el.suit in numTrumpInSuits) {
-					numTrumpInSuits[el.suit]++;
-				} else {
-					numTrumpInSuits[el.suit] = 1;
-				}
-			}
-		});
-		declarableSuits = {};
-		for(var suit in numTrumpInSuits) {
-			if (numTrumpInSuits[suit] >= numCardsNeeded) {
-				declarableSuits[suit] = true;
-			}
-		}
-		app.declarableSuits = declarableSuits;
-	} else {
-		app.declarableSuits = {};
-	}
 });

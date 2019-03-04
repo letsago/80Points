@@ -77,6 +77,7 @@ var app = new Vue({
 		},
 
 		status: 'disconnected',
+		game_id: null,
 		player: -1,
 		cards: [],
 		trumpSuit: '',
@@ -111,6 +112,9 @@ var app = new Vue({
 		canSelectNewCards: function() {
 			return !(this.canSetBottom && this.selectedCards.length >= this.bottomSize);
 		},
+		isObserver: function() {
+			return this.player == null;
+		},
 	},
 	methods: {
 		register: function(name) {
@@ -124,6 +128,9 @@ var app = new Vue({
 		},
 		joinGame: function(gameId) {
 			socket.emit('join', gameId);
+		},
+		joinGameAs: function(gameId, playerIdx) {
+			socket.emit('join_as', gameId, playerIdx);
 		},
 		clearSelectedCards: function() {
 			app.cards.forEach(function(el) {
@@ -207,6 +214,7 @@ socket.on('game_list', function(data) {
 
 socket.on('lobby', function (data) {
 	app.mode = 'game';
+	app.game_id = data.game_id;
 	app.players = data.players;
 	app.player = data.playerIndex;
 });

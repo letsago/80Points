@@ -1,7 +1,7 @@
 import unittest
 from model import Card, CARD_VALUES
 from tractor import *
-from parameterized import parameterized_class
+from parameterized import parameterized_class, parameterized
 
 def Many(suit, value, rank=1, length=1):
 	cards = []
@@ -182,6 +182,43 @@ class TestTractorMisc(unittest.TestCase):
 			flush2 = Flush(cards_to_tractors(cards2, trick_suit, trump_card))
 			self.assertFalse(flush1 > flush2 or flush2 > flush1 or flush1 < flush2 or flush2 < flush1)
 			self.assertTrue(flush1 == flush2)
+
+	@parameterized.expand([
+		[
+			'same rank and length', 
+			[TractorMetadata(3, 2)], 
+			TractorMetadata(3, 2), 
+			[]
+		],
+		[
+			'same rank, different length', 
+			[TractorMetadata(2, 2)], 
+			TractorMetadata(2, 1), 
+			[TractorMetadata(2, 1)], 
+		],
+		[
+			'different rank, same length', 
+			[TractorMetadata(3, 1)], 
+			TractorMetadata(2, 1), 
+			[TractorMetadata(1, 1)], 
+		],
+		[
+			'different rank and length', 
+			[TractorMetadata(3, 2)], 
+			TractorMetadata(1, 1), 
+			[TractorMetadata(3, 1), TractorMetadata(2, 1)], 
+		],
+		[
+			'different rank and length, multiple (1, 1) tractor decomposition', 
+			[TractorMetadata(3, 3)], 
+			TractorMetadata(2, 2),
+			[TractorMetadata(3, 1), TractorMetadata(1, 1), TractorMetadata(1, 1)], 
+		],
+	])
+
+	# data_to_remove rank and length is asserted to be less than or equal to at least one data element in data_array 
+	def testUpdateTractorDataArray(self, name, data_array, data_to_remove, expected_output):
+		self.assertEqual(update_data_array(data_array, data_to_remove), expected_output)
 
 if __name__ == '__main__':
 	unittest.main()

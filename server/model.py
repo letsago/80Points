@@ -355,7 +355,6 @@ class RoundState(object):
 		'''
 		view = {
 			'player': player,
-			'hand': [card.dict for card in display_sorted(self.player_hands[player], self.trump_card)],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
 			'status': self.status,
@@ -363,6 +362,11 @@ class RoundState(object):
 			'trump_suit': self.trump_card.suit,
 			'bottom_size': BOTTOM_SIZE[self.num_players],
 		}
+
+		if player is not None:
+			view['hand'] = [card.dict for card in display_sorted(self.player_hands[player], self.trump_card)]
+		else:
+			view['hand'] = []
 
 		view['board'] = []
 		for cards in self.board:
@@ -471,6 +475,9 @@ class Round(object):
 		Begin passing events on this Round to the provided RoundListener.
 		'''
 		self.listeners.append(listener)
+
+	def remove_listener(self, listener):
+		self.listeners.remove(listener)
 
 	def _fire(self, f):
 		for listener in self.listeners:

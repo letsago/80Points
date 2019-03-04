@@ -24,9 +24,10 @@ class User(object):
 		self.left = False
 
 class GamePlayer(object):
-	def __init__(self, user, game, idx):
+	def __init__(self, user, game, observer=False, idx=None):
 		self.user = user
 		self.game = game
+		self.observer = observer
 		self.idx = idx
 		self.ready = False
 		self.listener = None
@@ -44,11 +45,8 @@ class Game(model.RoundListener):
 		self.players = [None] * num_players
 		self.round = None
 
-	def _get_player_from_user(self, user):
-		for i, player in enumerate(self.players):
-			if player.user == user:
-				return (i, player)
-		return (None, None)
+		# players observing this game, sid->GamePlayer
+		self.observers = {}
 
 	# Return index of an empty slot, or None if no such slot.
 	def _find_empty_slot(self):
@@ -57,10 +55,13 @@ class Game(model.RoundListener):
 				return i
 		return None
 
+	def _send_lobby(self, player):
+		self.sio.emit('lobby', self.lobby_dict(player.idx), room=player.user.sid)
+
 	def _broadcast_lobby(self):
-		for i, player in enumerate(self.players):
+		for player in self.players + self.observers.values():
 			if player is not None:
-				self.sio.emit('lobby', self.lobby_dict(i), room=player.user.sid)
+				self._send_lobby(player)
 
 	def join(self, user):
 		if self.status != STATUS_LOBBY:
@@ -69,7 +70,7 @@ class Game(model.RoundListener):
 		if empty_slot_idx is None:
 			raise GameException('this game is full')
 
-		player = GamePlayer(user, self, empty_slot_idx)
+		player = GamePlayer(user, self, idx=empty_slot_idx)
 		self.players[empty_slot_idx] = player
 		user.game_player = player
 		self._broadcast_lobby()
@@ -90,39 +91,50 @@ class Game(model.RoundListener):
 		if player.listener is not None:
 			player.listener.send_state(self.round)
 
+	def add_observer(self, user):
+		player = GamePlayer(user, self, observer=True)
+		user.game_player = player
+		self.observers[user.sid] = player
+		if self.round is not None:
+			player.listener = server_utils.ForwardToGamePlayer(sio, player)
+			self.round.add_listener(player.listener)
+		self._send_lobby(player)
+
 	def is_full(self):
 		for player in self.players:
 			if player is None:
 				return False
 		return True
 
-	def set_ready(self, user):
+	def set_ready(self, player):
 		if self.status != STATUS_SCORE:
 			raise GameException('the game is not in scoring')
-		idx, player = self._get_player_from_user(user)
-		if player is None:
-			raise GameException('you are not in this game')
 		player.ready = True
 
 	def start_round(self, sio):
 		if self.status == STATUS_ROUND:
 			raise GameException('this game already started')
-		self.listeners = []
-		for player in self.players:
+		listeners = []
+		for player in self.players + self.observers.values():
 			player.listener = server_utils.ForwardToGamePlayer(sio, player)
-			self.listeners.append(player.listener)
+			listeners.append(player.listener)
 		self.round = model.Round(len(self.players),
-		                         listeners=[self, server_utils.TimedActionListener(args.speed)] + self.listeners,
+		                         listeners=[self, server_utils.TimedActionListener(args.speed)] + listeners,
 								 deck_name=args.deck_name)
 
 	def ended(self, r, player_scores, next_player):
-		for player in self.players:
+		for player in self.players + self.observers.values():
 			player.ready = False
 			player.listener = None
 		self.round = None
 		self.status = STATUS_SCORE
 
-	def user_left(self, user):
+	def player_left(self, player):
+		if player.listener is not None:
+			self.round.remove_listener(player.listener)
+			player.listener = None
+		if player.observer:
+			del self.observers[player.user.sid]
 		self._broadcast_lobby()
 
 	@property
@@ -215,19 +227,24 @@ def create(user, name, num_players):
 	games[game_id] = game
 	game.join(user)
 
-def do_join(user, game_id, player_name=None):
+def do_join(user, game_id, player_idx=None):
 	if game_id not in games:
 		sio.emit('error', 'no such game', room=user.sid)
 		return
 	game = games[game_id]
 	try:
-		if player_name is None:
-			game.join(user)
+		if player_idx is not None:
+			print('[server] user {} re-joining game {}, idx={}'.format(user.sid, game_id, player_idx))
+			game.join_as(user, player_idx)
+		elif game.is_full():
+			print('[server] user {} joining game {} as an observer'.format(user.sid, game_id))
+			game.add_observer(user)
 		else:
-			game.join_as(user, player_name)
+			print('[server] user {} joining game {}'.format(user.sid, game_id))
+			game.join(user)
 	except GameException as e:
+		print('[server] user {} join error: {}'.format(user.sid, e.message))
 		sio.emit('error', e.message, room=user.sid)
-		return
 
 @sio.on('join')
 @process_user
@@ -236,13 +253,16 @@ def join(user, game_id):
 
 @sio.on('join_as')
 @process_user
-def join_as(user, player_name):
-	do_join(user, list(games.keys())[0], player_name=player_name)
+def join_as(user, player_idx):
+	do_join(user, list(games.keys())[0], player_idx=player_idx)
 
 def process_game_player(func):
 	def func_wrapper(user, *args):
 		if user.game_player is None:
 			sio.emit('error', 'you are not currently in a game', room=user.sid)
+			return
+		elif user.game_player.observer:
+			sio.emit('error', 'you are an observer', room=user.sid)
 			return
 		func(user.game_player, *args)
 	return func_wrapper
@@ -291,7 +311,7 @@ def on_disconnect(sid):
 	user.left = True
 	del users[sid]
 	if user.game_player is not None:
-		user.game_player.game.user_left(user)
+		user.game_player.game.player_left(user.game_player)
 
 if __name__ == '__main__':
 	app = socketio.Middleware(sio, app)

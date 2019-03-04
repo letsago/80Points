@@ -158,7 +158,12 @@ var app = new Vue({
 			// Even though the elements are always listed with index 0 first
 			// in the HTML, the CSS grid ignores order of the element and goes
 			// strictly based on the CSS class.
-			return this.playerPositions[(index - this.player + 4) % 4];
+			var bottomIndex = this.player;
+			if(bottomIndex === null) {
+				// observer, put arbitrary player at the bottom
+				bottomIndex = 0;
+			}
+			return this.playerPositions[(index - bottomIndex + 4) % 4];
 		},
 	},
 })

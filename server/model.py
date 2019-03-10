@@ -333,9 +333,7 @@ class RoundState(object):
 
 	def determine_winner(self):
 		first_player = (self.turn + 1) % self.num_players
-		trick_suit = self.board[first_player][0].suit
-		if trick_suit == 'joker':
-			trick_suit = self.trump_card.suit
+		trick_suit = self.board[first_player][0].get_normalized_suit()
 		first_tractors = cards_to_tractors(self.board[first_player], trick_suit, self.trump_card)
 		winning_player = first_player
 		winning_flush = Flush(first_tractors)
@@ -376,7 +374,7 @@ class RoundState(object):
 
 		return view
 
-	def get_suit_tractors_from_hand(self, player, trick_card):
+	def get_suit_tractors_from_hand(self, player, trick_suit):
 		'''
 		This function returns a list of all tractor plays that are of the trick card's
 		suit within a specified player's hand. If trick suit is trump then, a list of all
@@ -384,15 +382,15 @@ class RoundState(object):
 
 		Args:
 			player: int
-			trick_card: Card
+			trick_suit: trick suit, or 'trump'
 		Returns:
 			Tractor []
 		'''
 		suit_cards = []
 		for card in self.player_hands[player]:
-			if card.get_normalized_suit(self.trump_card) == trick_card.get_normalized_suit(self.trump_card):
+			if card.get_normalized_suit(self.trump_card) == trick_suit:
 				suit_cards.append(card)
-		suit_tractors = cards_to_tractors(suit_cards, trick_card.suit, self.trump_card)
+		suit_tractors = cards_to_tractors(suit_cards, trick_suit, self.trump_card)
 		return suit_tractors
 
 	def is_play_valid(self, player, cards):
@@ -406,7 +404,7 @@ class RoundState(object):
 		if self.is_board_empty():
 			self.trick_first_player = player
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
-			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
+			return len(cards_to_tractors(cards, cards[0].get_normalized_suit(self.trump_card), self.trump_card)) == 1
 
 		first_play = self.board[self.trick_first_player]
 		trick_card_count = len(first_play)
@@ -417,10 +415,11 @@ class RoundState(object):
 
 		# grab trick tractor and player hand trick suit tractor rank and length data
 		trick_card = first_play[0]
-		trick_tractors = cards_to_tractors(first_play, trick_card.suit, self.trump_card)
-		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_card)
-		play_suit_cards = [card for card in cards if card.get_normalized_suit(self.trump_card) == trick_card.get_normalized_suit(self.trump_card)]
-		play_suit_tractors = cards_to_tractors(play_suit_cards, trick_card.suit, self.trump_card)
+		trick_suit = trick_card.get_normalized_suit(self.trump_card)
+		trick_tractors = cards_to_tractors(first_play, trick_suit, self.trump_card)
+		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_suit)
+		play_suit_cards = [card for card in cards if card.get_normalized_suit(self.trump_card) == trick_suit]
+		play_suit_tractors = cards_to_tractors(play_suit_cards, trick_suit, self.trump_card)
 		trick_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in trick_tractors]
 		hand_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in hand_suit_tractors]
 		play_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in play_suit_tractors]

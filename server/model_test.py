@@ -26,7 +26,7 @@ class TestCard(unittest.TestCase):
 		     	[Card('h', '3'), Card('s', 'A'), Card('joker', 'big')]
 			),
 
-			(	
+			(
 				Card('joker', '2'),
 				[Card('joker', 'small'), Card('joker', 'big'), Card('h', '3')],
 		     	[Card('h', '3'), Card('joker', 'small'), Card('joker', 'big')]
@@ -62,13 +62,13 @@ class TestCard(unittest.TestCase):
 		     	[Card('s', 'A'), Card('h', '3'), Card('joker', 'big')]
 			),
 
-			(	
+			(
 				Card('s', '3'),
 				[Card('joker', 'big'), Card('s', 'A'), Card('s', '3'), Card('h', '3')],
 		     	[Card('s', 'A'), Card('h', '3'), Card('s', '3'), Card('joker', 'big')]
 			),
 
-			(	
+			(
 				Card('s', '2'),
 				[Card('joker', 'small'), Card('joker', 'big'), Card('h', '3')],
 		     	[Card('h', '3'), Card('joker', 'small'), Card('joker', 'big')]
@@ -117,7 +117,7 @@ class TestRound(unittest.TestCase):
 		round.tick()
 		# After getting the bottom, it should now be the third player's turn.
 		self.assertEqual(round.state.turn, third_player)
-		round.set_bottom(third_player, 
+		round.set_bottom(third_player,
 			[Card('d', '4'), Card('d', '6'), Card('d', '8'), Card('d', '10'),
 			 Card('c', '3'), Card('c', '5'), Card('c', '7'), Card('c', '9')])
 		# After the bottom is set, it should still be the third player's turn.
@@ -130,17 +130,17 @@ class TestRound(unittest.TestCase):
 		for _ in range(len(round.state.deck)):
 			round.tick()
 		# Verify the first few cards in each hand.
-		self.assertEqual(round.state.player_hands[0][:3], 
+		self.assertEqual(round.state.player_hands[0][:3],
 			[Card('d', '2'), Card('d', '3'), Card('d', '4')])
-		self.assertEqual(round.state.player_hands[1][:3], 
+		self.assertEqual(round.state.player_hands[1][:3],
 			[Card('h', '2'), Card('h', '2'), Card('h', '3')])
-		self.assertEqual(round.state.player_hands[2][:3], 
+		self.assertEqual(round.state.player_hands[2][:3],
 			[Card('s', '2'), Card('s', '2'), Card('s', '3')])
-		self.assertEqual(round.state.player_hands[3][:3], 
+		self.assertEqual(round.state.player_hands[3][:3],
 			[Card('c', '2'), Card('c', '2'), Card('c', '3')])
 		# Verify the bottom is set properly.
 		self.assertEqual(round.state.bottom,
-			[Card('c', 'A'), Card('s', 'A'), Card('h', 'A'), Card('d', 'A'), 
+			[Card('c', 'A'), Card('s', 'A'), Card('h', 'A'), Card('d', 'A'),
 			 Card('joker', 'small'), Card('joker', 'small'), Card('joker', 'big'), Card('joker', 'big')])
 
 class TestRoundState(unittest.TestCase):
@@ -180,7 +180,7 @@ class TestRoundState(unittest.TestCase):
 			{'rank': 1, 'length': 1, 'power_card': Card('h', '3'), 'suit_type': SUIT_TRUMP}]
 		],
 	])
-	
+
 	def testSuitTractorsFromHandNonJokerTrump(self, suit_name, trick_card, suit_tractor_data):
 		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
 		self.assertEqual(self.round_state.get_suit_tractors_from_hand(self.second_player, trick_card), suit_tractors)
@@ -210,7 +210,7 @@ class TestRoundState(unittest.TestCase):
 			{'rank': 1, 'length': 1, 'power_card': Card('h', '3'), 'suit_type': SUIT_TRUMP}]
 		],
 	])
-	
+
 	def testSuitTractorsFromHandJokerTrump(self, suit_name, trick_card, suit_tractor_data):
 		self.round_state.trump_card = Card('joker', '3')
 		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
@@ -225,34 +225,34 @@ class TestRoundState(unittest.TestCase):
 
 		['same suits 2 nonconsecutive pairs', [Card('h', '2'), Card('h', '2'), Card('h', '6'), Card('h', '6')]],
 
-		['different suits 2 consecutive pairs + single', 
+		['different suits 2 consecutive pairs + single',
 			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('c', '5')]],
 
-		['different suits 2 nonconsecutive pairs', 
+		['different suits 2 nonconsecutive pairs',
 			[Card('d', '4'), Card('d', '4'), Card('h', '5'), Card('h', '5')]],
-			
-		['different suits 2 consecutive pairs + pair', 
+
+		['different suits 2 consecutive pairs + pair',
 			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('s', '7'), Card('s', '7')]],
 	])
 
 	def testInvalidFirstPlays(self, name, play):
 		self.assertFalse(self.round_state.is_play_valid(self.first_player, play))
-	
+
 	@parameterized.expand([
 		['1 single', [Card('h', '2')]],
 
 		['same suit 1 pair', [Card('s', '2'), Card('s', '2')]],
 
-		['same suit 2 consecutive pairs considering trump value', 
+		['same suit 2 consecutive pairs considering trump value',
 			[Card('c', '2'), Card('c', '2'), Card('c', '4'), Card('c', '4')]],
 
-		['same suit 2 consecutive pairs', 
+		['same suit 2 consecutive pairs',
 			[Card('c', '4'), Card('c', '4'), Card('c', '5'), Card('c', '5')]],
 
-		['same suit 3 consecutive pairs considering trump value', 
+		['same suit 3 consecutive pairs considering trump value',
 			[Card('d', '2'), Card('d', '2'), Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5')]],
 
-		['same suit 3 consecutive pairs', 
+		['same suit 3 consecutive pairs',
 			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('d', '6'), Card('d', '6')]],
 	])
 
@@ -277,13 +277,13 @@ class TestRoundState(unittest.TestCase):
 
 		['cards do not have the same suit', 0, [Card('s', '3'), Card('d', '3')], []],
 
-		['equal length to most recent declaration', 0, [Card('s', '3')], 
+		['equal length to most recent declaration', 0, [Card('s', '3')],
 			[Declaration(1, [Card('d', '3')])]],
 
-		['smaller length than most recent declaration', 0, [Card('s', '3')], 
+		['smaller length than most recent declaration', 0, [Card('s', '3')],
 			[Declaration(1, [Card('d', '3')]), Declaration(1, [Card('d', '3'), Card('d', '3')])]],
 
-		['suit does not match previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+		['suit does not match previous declaration', 0, [Card('s', '3'), Card('s', '3')],
 			[Declaration(0, [Card('d', '3')])]],
 	])
 
@@ -297,16 +297,16 @@ class TestRoundState(unittest.TestCase):
 
 		['initial play with a pair', 0, [Card('s', '3'), Card('s', '3')], []],
 
-		['overturn another declaration', 0, [Card('s', '3'), Card('s', '3')], 
+		['overturn another declaration', 0, [Card('s', '3'), Card('s', '3')],
 			[Declaration(1, [Card('d', '3')])]],
 
-		['overturn another declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+		['overturn another declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')],
 			[Declaration(1, [Card('d', '3')])]],
 
-		['defend previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+		['defend previous declaration', 0, [Card('s', '3'), Card('s', '3')],
 			[Declaration(0, [Card('s', '3')])]],
 
-		['defend previous declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+		['defend previous declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')],
 			[Declaration(0, [Card('s', '3')])]],
 	])
 

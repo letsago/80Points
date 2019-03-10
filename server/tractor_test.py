@@ -35,7 +35,7 @@ class TestCardsToTractors(unittest.TestCase):
 		trump_card = Card('s', '8')
 		want = tractor_generator(self.s_8_trump_tractor_data, trump_card)
 		self.assertEqual(cards_to_tractors(self.test_cards, self.trick_suit, trump_card), want)
-	
+
 	def testJokerTrump(self):
 		# Card('joker', '8') object represents the trump suit and value, not an actual card
 		trump_card = Card('joker', '8')
@@ -138,8 +138,8 @@ class TestTractorMatchForm(unittest.TestCase):
 				# player2 plays quadruple, triple in trump suit
 				Many('d', '2', rank=3) + Double('d', '4') + Double('d', '6'),
 				Many('s', '2', rank=4) + Many('s', '4', rank=3),
-				[Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP), 
-				 Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP), 
+				[Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
+				 Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
 				 Tractor(3, 1, Card('s', '4').suit_power(trump_card), SUIT_TRUMP)],
 			), (
 				# player1 plays triple, double, double in trick suit
@@ -170,9 +170,9 @@ class TestTractorMatchForm(unittest.TestCase):
 				 Tractor(2, 1, Card('s', '4').suit_power(trump_card), SUIT_TRUMP),
 				 Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
 				 Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)],
-			), 
+			),
 	])
-	
+
 	def testCardsToTractorsWithForm(self, start_cards, cur_cards, want_tractors):
 		trick_suit = 'd'
 		target_form = cards_to_tractors(start_cards, trick_suit, TestTractorMatchForm.trump_card)
@@ -199,38 +199,38 @@ class TestTractorMisc(unittest.TestCase):
 
 	@parameterized.expand([
 		[
-			'same rank and length', 
-			[TractorMetadata(3, 2)], 
-			TractorMetadata(3, 2), 
+			'same rank and length',
+			[TractorMetadata(3, 2)],
+			TractorMetadata(3, 2),
 			[]
 		],
 		[
-			'same rank, different length', 
-			[TractorMetadata(2, 2)], 
-			TractorMetadata(2, 1), 
-			[TractorMetadata(2, 1)], 
+			'same rank, different length',
+			[TractorMetadata(2, 2)],
+			TractorMetadata(2, 1),
+			[TractorMetadata(2, 1)],
 		],
 		[
-			'different rank, same length', 
-			[TractorMetadata(3, 1)], 
-			TractorMetadata(2, 1), 
-			[TractorMetadata(1, 1)], 
+			'different rank, same length',
+			[TractorMetadata(3, 1)],
+			TractorMetadata(2, 1),
+			[TractorMetadata(1, 1)],
 		],
 		[
-			'different rank and length', 
-			[TractorMetadata(3, 2)], 
-			TractorMetadata(1, 1), 
-			[TractorMetadata(3, 1), TractorMetadata(2, 1)], 
+			'different rank and length',
+			[TractorMetadata(3, 2)],
+			TractorMetadata(1, 1),
+			[TractorMetadata(3, 1), TractorMetadata(2, 1)],
 		],
 		[
-			'different rank and length, multiple (1, 1) tractor decomposition', 
-			[TractorMetadata(3, 3)], 
+			'different rank and length, multiple (1, 1) tractor decomposition',
+			[TractorMetadata(3, 3)],
 			TractorMetadata(2, 2),
-			[TractorMetadata(3, 1), TractorMetadata(1, 1), TractorMetadata(1, 1)], 
+			[TractorMetadata(3, 1), TractorMetadata(1, 1), TractorMetadata(1, 1)],
 		],
 	])
 
-	# data_to_remove rank and length is asserted to be less than or equal to at least one data element in data_array 
+	# data_to_remove rank and length is asserted to be less than or equal to at least one data element in data_array
 	def testUpdateTractorDataArray(self, name, data_array, data_to_remove, expected_output):
 		self.assertEqual(update_data_array(data_array, data_to_remove), expected_output)
 

@@ -29,13 +29,18 @@ class GamePlayer(object):
 		self.idx = idx
 		self.ready = False
 		self.listener = None
+
+		# we record name of self.user as an additional field so that we can display the names
+		#  of users who left the game while the game was in progress
+		# if a player re-joins as a player who left, the name is updated to reflect the new
+		#  player's name
+		# if a player leaves before the game starts, we do not retain their name
 		self.name = None
 		self.set_user(user)
 
 	def set_user(self, user):
 		self.user = user
 
-		# we copy the user name so that we can display the names of users who left the game
 		if user is not None:
 			self.name = user.name
 
@@ -106,12 +111,14 @@ class Game(model.RoundListener):
 		self.round.add_listener(player.listener)
 		player.listener.send_state(self.round)
 
+	# Join while game is in lobby (before game starts) in the first empty slot.
 	def join(self, user):
 		empty_slot_idx = self._find_empty_slot()
 		if empty_slot_idx is None:
 			raise GameException('this game is full')
 		self.join_as(user, empty_slot_idx)
 
+	# Join the game at a specific player index.
 	def join_as(self, user, player_idx):
 		if player_idx < 0 or player_idx >= len(self.players):
 			raise GameException('slot {} is not valid'.format(player_idx))

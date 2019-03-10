@@ -477,6 +477,9 @@ class Round(object):
 		self.listeners.append(listener)
 
 	def remove_listener(self, listener):
+		'''
+		Stop passing events to the specified RoundListener.
+		'''
 		self.listeners.remove(listener)
 
 	def _fire(self, f):

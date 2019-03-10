@@ -1,22 +1,8 @@
 import unittest
 from model import Card, CARD_VALUES
 from tractor import *
+from test_utils import Many, Straight, Double
 from parameterized import parameterized_class, parameterized
-
-def Many(suit, value, rank=1, length=1):
-	cards = []
-	initial = CARD_VALUES.index(value)
-	for i in range(length):
-		cards.extend(rank * [Card(suit, CARD_VALUES[initial + i])])
-	return cards
-
-def Straight(suit, value, length):
-	return Many(suit, value, length=length)
-
-def Double(suit, value):
-	if suit == 'joker':
-		return 2 * [Card(suit, value)]
-	return Many(suit, value, rank=2)
 
 from tractor_test_data import cards_to_tractors_test_data
 

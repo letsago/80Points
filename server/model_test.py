@@ -2,9 +2,10 @@ import unittest
 import mock
 from model import *
 from parameterized import parameterized
-from model_test_data import follow_suit_validity_test_data
+import model_test_data
 from tractor_test import tractor_generator
-from tractor import SUIT_LOWEST, SUIT_TRICK, SUIT_TRUMP 
+from tractor import SUIT_LOWEST, SUIT_TRICK, SUIT_TRUMP
+import test_utils
 
 class TestCard(unittest.TestCase):
 	def testIsTrump(self):
@@ -149,6 +150,7 @@ class TestRoundState(unittest.TestCase):
 		self.num_players = 6
 		self.first_player = 0
 		self.second_player = 1
+		self.third_player = 2
 		self.round_state = RoundState(self.num_players)
 		self.round_state.trump_card = Card('c', '3')
 		self.round_state.player_hands[self.second_player] = [
@@ -258,13 +260,24 @@ class TestRoundState(unittest.TestCase):
 
 	def testValidFirstPlays(self, name, play):
 		self.assertTrue(self.round_state.is_play_valid(self.first_player, play))
-		
-	@parameterized.expand(follow_suit_validity_test_data)
+
+	@parameterized.expand(model_test_data.follow_suit_validity_test_data)
 
 	def testFollowSuitValidity(self, name, first_play, invalid_play, valid_play):
 		self.round_state.board[0] = first_play
 		self.assertFalse(self.round_state.is_play_valid(self.second_player, invalid_play))
 		self.assertTrue(self.round_state.is_play_valid(self.second_player, valid_play))
+
+	@parameterized.expand(model_test_data.follow_suit_validity_custom_hand_test_data)
+
+	def testFollowSuitValidityWithCustomHand(self, name, first_play, hand, invalid_play, valid_play):
+		first_play, hand, invalid_play, valid_play = test_utils.apply_cards_from_str(first_play, hand, invalid_play, valid_play)
+		self.round_state.board[0] = first_play
+		self.round_state.player_hands[self.third_player] = hand
+		if invalid_play is not None:
+			self.assertFalse(self.round_state.is_play_valid(self.third_player, invalid_play))
+		if valid_play is not None:
+			self.assertTrue(self.round_state.is_play_valid(self.third_player, valid_play))
 
 	@parameterized.expand([
 		['no play', 0, [], []],

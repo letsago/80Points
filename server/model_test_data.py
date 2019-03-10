@@ -58,16 +58,41 @@ follow_suit_validity_test_data = [
     ],
 
     [
-        'must break in-hand 2 consecutive pairs if no other pairs', 
-        [Card('d', '3'), Card('d', '3')], 
+        'must break in-hand 2 consecutive pairs if no other pairs',
+        [Card('d', '3'), Card('d', '3')],
         [Card('h', '3'), Card('joker', 'small')],
         [Card('s', '3'), Card('s', '3')]
     ],
-    
+
     [
         'must break longer length tractor if shorter length, same rank tractor is played',
         [Card('c', '6'), Card('c', '6'), Card('c', '7'), Card('c', '7')],
         [Card('c', '8'), Card('c', '8'), Card('s', '3'), Card('s', '3')],
         [Card('c', '3'), Card('c', '3'), Card('joker', 'small'), Card('joker', 'small')]
+    ],
+
+    [
+        'flush of 3 singles - must match suit',
+        [Card('s', 'A'), Card('s', 'K'), Card('s', 'Q')],
+        [Card('s', '5'), Card('s', '5'), Card('h', '5')],
+        [Card('s', '4'), Card('s', '5'), Card('s', 'K')],
+    ],
+]
+
+follow_suit_validity_custom_hand_test_data = [
+    [
+        'flush of 2 consecutive pairs and one double - must play tractor',
+        '10s 10s Ks Ks As As',
+        '2s 2s 5s 5s 7s 7s 8s 8s',
+        '7s 7s 2s 2s 5s 5s',
+        '5s 5s 7s 7s 8s 8s',
+    ],
+
+    [
+        'flush of 2 tractors, each a 2-length consecutive pair, and player plays one 4-length tractor',
+        '10s 10s Js Js Ks Ks As As',
+        '6s 6s 7s 7s 8s 8s 9s 9s',
+        None,
+        '6s 6s 7s 7s 8s 8s 9s 9s',
     ],
 ]

@@ -95,25 +95,13 @@
 					</div>
 				</div>
 			</div>
-			<template v-if="status == 'dealing'">
-				<div>
-					<span>
-						<span class="heading">Declare a Suit:</span>
-						<span v-for="(suitName, suit) in suits">
-							<button
-								v-on:click="declareSuit(suit)"
-								:disabled="!(suit in declarableSuits)"
-								>
-								{{ suitName }}
-							</button>&nbsp;
-						</span>
-					</span>
-				</div>
-			</template>
 			<template v-if="cards.length > 0">
 				<div class="playerHand">
 					<span>
 						<span class="heading">Hand</span>&nbsp;
+						<template v-if="status == 'dealing'">
+							<button v-on:click="declare" :disabled="selectedCards.length == 0">Declare</button>
+						</template>
 						<template v-if="canSetBottom">
 							<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
 						</template>

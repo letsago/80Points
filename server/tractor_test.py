@@ -1,7 +1,7 @@
 import unittest
 from model import Card, CARD_VALUES
 from tractor import *
-from parameterized import parameterized_class
+from parameterized import parameterized_class, parameterized
 
 def Many(suit, value, rank=1, length=1):
 	cards = []
@@ -89,7 +89,7 @@ class TestFlushStrengthOrder(unittest.TestCase):
 		greater_flush = Flush(cards_to_tractors(self.h_A_trump_flush_order['greater'], self.trick_suit, trump_card))
 		self.assertLess(lesser_flush, greater_flush)
 
-	def testNonJokerTrump(self):
+	def testJokerTrump(self):
 		trump_card = Card('joker', 'A')
 		lesser_flush = Flush(cards_to_tractors(self.joker_A_trump_flush_order['lesser'], self.trick_suit, trump_card))
 		greater_flush = Flush(cards_to_tractors(self.joker_A_trump_flush_order['greater'], self.trick_suit, trump_card))
@@ -122,50 +122,64 @@ class TestEqualFlush(unittest.TestCase):
 		flush_2 = Flush(cards_to_tractors(self.h_A_trump_flush_data['flush_2'], self.trick_suit, trump_card))
 		self.assertEqual(flush_1 == flush_2, self.h_A_trump_flush_data['is_equal'])
 
-	def testNonJokerTrump(self):
+	def testJokerTrump(self):
 		trump_card = Card('joker', 'A')
 		flush_1 = Flush(cards_to_tractors(self.joker_A_trump_flush_data['flush_1'], self.trick_suit, trump_card))
 		flush_2 = Flush(cards_to_tractors(self.joker_A_trump_flush_data['flush_2'], self.trick_suit, trump_card))
 		self.assertEqual(flush_1 == flush_2, self.joker_A_trump_flush_data['is_equal'])
 
-class TestTractorMisc(unittest.TestCase):
-	def testCardsToTractorsWithForm(self):
-		# trick suit always 'd', trump suit always 's'
-		trump_card = Card('s', 'A')
-		tests = [
+class TestTractorMatchForm(unittest.TestCase):
+	trump_card = Card('s', 'A')
+
+	# trick suit always 'd', trump suit always 's'
+	@parameterized.expand([
 			(
 				# player1 plays triple, double, double in trick suit
 				# player2 plays quadruple, triple in trump suit
 				Many('d', '2', rank=3) + Double('d', '4') + Double('d', '6'),
 				Many('s', '2', rank=4) + Many('s', '4', rank=3),
-				True,
+				[Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP), 
+				 Tractor(2, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP), 
+				 Tractor(3, 1, Card('s', '4').suit_power(trump_card), SUIT_TRUMP)],
 			), (
 				# player1 plays triple, double, double in trick suit
 				# player2 plays triple, triple, single in trump suit
 				Many('d', '2', rank=3) + Double('d', '4') + Double('d', '6'),
 				Many('s', '2', rank=3) + Many('s', '4', rank=3) + [Card('s', '6')],
-				False,
+				None,
 			), (
 				#player1 plays double,double,double; triple,triple; triple in trick suit
 				#player2 plays triple,triple,triple; double,double,double in trump suit
 				Many('d', '2', rank=2, length=3) + Many('d', '6', rank=3, length=2) + Many('d', '9', rank=3, length=1),
 				Many('s', '2', rank=3, length=3) + Many('s', '6', rank=2, length=3),
-				True,
+				[Tractor(2, 3, Card('s', '6').suit_power(trump_card), SUIT_TRUMP),
+				 Tractor(3, 1, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
+				 Tractor(3, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)],
 			), (
 				#player1 plays double,double,double; triple,triple; triple in trick suit
 				#player2 plays triple,triple,triple; triple,triple in trump suit
 				Many('d', '2', rank=2, length=3) + Many('d', '6', rank=3, length=2) + Many('d', '9', rank=3, length=1),
 				Many('s', '2', rank=3, length=3) + Many('s', '6', rank=3, length=2),
-				False,
-			),
-		]
+				None,
+			), (
+				#player1 plays double,double; double;double; double; double in trick suit
+				#player2 plays quadruple;quadruple;quadruple in trump suit
+				Many('d', '2', rank=2, length=2) + Many('d', '5', rank=2, length=2) + Double('d', '8') + Double('d', 'J'),
+				Many('s', '2', rank=4, length=3),
+				[Tractor(2, 1, Card('s', '4').suit_power(trump_card), SUIT_TRUMP),
+				 Tractor(2, 1, Card('s', '4').suit_power(trump_card), SUIT_TRUMP),
+				 Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP),
+				 Tractor(2, 2, Card('s', '2').suit_power(trump_card), SUIT_TRUMP)],
+			), 
+	])
+	
+	def testCardsToTractorsWithForm(self, start_cards, cur_cards, want_tractors):
+		trick_suit = 'd'
+		target_form = cards_to_tractors(start_cards, trick_suit, TestTractorMatchForm.trump_card)
+		got_tractors = cards_to_tractors(cur_cards, trick_suit, TestTractorMatchForm.trump_card, target_form=target_form)
+		self.assertEqual(got_tractors, want_tractors)
 
-		for test in tests:
-			start_cards, cur_cards, want = test
-			target_form = cards_to_tractors(start_cards, 'd', trump_card)
-			okay = cards_to_tractors(cur_cards, 'd', trump_card, target_form=target_form) is not None
-			self.assertEqual(okay, want)
-
+class TestTractorMisc(unittest.TestCase):
 	# this test added due to broken flush comparator in python2.7
 	def testFlushComparators(self):
 		trick_suit = 's'
@@ -182,6 +196,43 @@ class TestTractorMisc(unittest.TestCase):
 			flush2 = Flush(cards_to_tractors(cards2, trick_suit, trump_card))
 			self.assertFalse(flush1 > flush2 or flush2 > flush1 or flush1 < flush2 or flush2 < flush1)
 			self.assertTrue(flush1 == flush2)
+
+	@parameterized.expand([
+		[
+			'same rank and length', 
+			[TractorMetadata(3, 2)], 
+			TractorMetadata(3, 2), 
+			[]
+		],
+		[
+			'same rank, different length', 
+			[TractorMetadata(2, 2)], 
+			TractorMetadata(2, 1), 
+			[TractorMetadata(2, 1)], 
+		],
+		[
+			'different rank, same length', 
+			[TractorMetadata(3, 1)], 
+			TractorMetadata(2, 1), 
+			[TractorMetadata(1, 1)], 
+		],
+		[
+			'different rank and length', 
+			[TractorMetadata(3, 2)], 
+			TractorMetadata(1, 1), 
+			[TractorMetadata(3, 1), TractorMetadata(2, 1)], 
+		],
+		[
+			'different rank and length, multiple (1, 1) tractor decomposition', 
+			[TractorMetadata(3, 3)], 
+			TractorMetadata(2, 2),
+			[TractorMetadata(3, 1), TractorMetadata(1, 1), TractorMetadata(1, 1)], 
+		],
+	])
+
+	# data_to_remove rank and length is asserted to be less than or equal to at least one data element in data_array 
+	def testUpdateTractorDataArray(self, name, data_array, data_to_remove, expected_output):
+		self.assertEqual(update_data_array(data_array, data_to_remove), expected_output)
 
 if __name__ == '__main__':
 	unittest.main()

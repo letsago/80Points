@@ -203,7 +203,7 @@ class Declaration(object):
 			'cards': [card.dict for card in self.cards],
 		}
 
-from tractor import Flush, cards_to_tractors, card_to_suit_type, SUIT_TRICK, SUIT_TRUMP
+from tractor import *
 
 class RoundState(object):
 	def __init__(self, num_players, deck_name=None):
@@ -220,6 +220,7 @@ class RoundState(object):
 		# Card object that represents the trump suit and value, not an actual card used in play
 		self.trump_card = Card(None, '2')
 		self.num_decks = num_players // 2
+		self.trick_first_player = 0
 
 		# list of cards in each player's hand
 		self.player_hands = [[] for i in range(num_players)]
@@ -399,16 +400,71 @@ class RoundState(object):
 		return suit_tractors
 
 	def is_play_valid(self, player, cards):
-		if not cards:
+		'''
+		This function checks if player's cards, aka play, is valid. In order for a play to be valid, the play
+		must follow suit and form of the trick's first play. Otherwise, the appropriate form is calculated
+		and used to determine whether or not the play is valid given the trick's first play.
+
+		Args:
+			player: int 
+			cards: Card [] 
+		Returns:
+			bool
+		'''
+		play_card_count = len(cards)
+		# number of cards must be nonzero
+		if play_card_count == 0:
 			return False
 
-		# for now, prevent playing multiple tractors at once for first play
 		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
-		if self.is_board_empty():
+		# for now, first play must be one tractor
+		if player == self.trick_first_player:
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
 			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
+		
+		first_play = self.board[self.trick_first_player]
+		trick_card_count = len(first_play)
+				
+		# number of cards played must match number of cards in trick
+		if play_card_count != trick_card_count:
+			return False
+		
+		# grab trick tractor and player hand trick suit tractor rank and length data
+		trick_card = first_play[0]
+		trick_tractors = cards_to_tractors(first_play, trick_card.suit, self.trump_card)
+		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_card)
 
-		# TODO(workitem0005): must follow first play's suit if board is not empty
+		# if hand doesn't have any trick suit cards then player can play cards of any suit as long as 
+		# play_card_count equals trick_card_count (case already handled above)
+		if not hand_suit_tractors:
+			return True
+		
+		trick_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in trick_tractors]
+		hand_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in hand_suit_tractors]
+		
+		# find hand data (rank, length) that matches trick data, add it to priority_data_array, and update trick_data 
+		# and hand_data accordingly by removing that data from both arrays
+		priority_data_array = []
+		while trick_data_array and hand_data_array:
+			i = find_matching_data_index(hand_data_array, trick_data_array[0])
+			min_data = get_min_data(trick_data_array[0], hand_data_array[i])
+			priority_data_array.append(min_data)
+			trick_data_array = update_data_array(trick_data_array, min_data)
+			hand_data_array = update_data_array(hand_data_array, min_data)
+
+		# number of played tractors must be at least the number of priority tractors
+		play_tractors = cards_to_tractors(cards, trick_card.suit, self.trump_card)
+		if len(play_tractors) < len(priority_data_array):
+			return False
+
+		trick_suit_type = card_to_suit_type(trick_card, trick_card.suit, self.trump_card)
+		# all sorted priority (rank, length) data must match sorted played tractor data by rank, length, and trick suit_type
+		for i in range(len(priority_data_array)):
+			priority_rank = priority_data_array[i].rank
+			priority_length = priority_data_array[i].length
+			if play_tractors[i].rank != priority_rank or play_tractors[i].length != priority_length or play_tractors[i].suit_type != trick_suit_type:
+				return False
+
 		return True
 
 class RoundListener(object):
@@ -544,6 +600,11 @@ class Round(object):
 		# if starting new play, clear previous one
 		if self.state.is_board_full():
 			self.state.clear_board()
+
+		# if board is empty, including the first play of the round, where board is not previously cleared,
+		# then set trick first player to player 
+		if self.state.is_board_empty():
+			self.state.trick_first_player = player
 
 		# checks if play is invalid
 		if not self.state.is_play_valid(player, cards):

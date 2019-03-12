@@ -49,17 +49,17 @@ class Card(object):
 
 		# handles Trump suit
 		return self.suit == trump_card.suit
-	
+
 	def get_normalized_suit(self, trump_card):
 		'''
 		Normally returns a card's suit. However, if the card is trump, then this
 		function will return a different suit called 'trump'.
 
 		Args:
-			trump_card: Card 
+			trump_card: Card
 		Returns:
 			string
-		''' 
+		'''
 		if self.is_trump(trump_card):
 			return 'trump'
 		return self.suit
@@ -78,12 +78,12 @@ class Card(object):
 			return len(CARD_VALUES) + 1
 		# handles case where joker is trump suit and all trump values are at equal power level
 		elif (trump_card.suit == 'joker' or self.suit == trump_card.suit) and self.value == trump_card.value:
-			return len(CARD_VALUES)	
+			return len(CARD_VALUES)
 		# start with len(CARD_VALUES) - 1 due to power level shift caused by trump value's greater priority
 		elif self.value == trump_card.value:
 			return len(CARD_VALUES) - 1
 		# handles nonjoker, nonvalue trump and nontrump power levels
-		# note that separate suit_type parameter not shown here gives priority to trump power levels by design 
+		# note that separate suit_type parameter not shown here gives priority to trump power levels by design
 		else:
 			# handles power level cases like 2,2,4,4 being tractor if 3 is trump value
 			if CARD_VALUES.index(self.value) > CARD_VALUES.index(trump_card.value):
@@ -261,12 +261,12 @@ class RoundState(object):
 		self.turn = (self.turn + 1) % self.num_players
 
 	def is_declaration_valid(self, player, cards):
-		'''	
+		'''
 		This function determines whether a declaration is valid based on the
 		history of any previous declarations in this round.
 
 		Args:
-			player: int 
+			player: int
 			cards: Card []
 		Returns:
 			bool
@@ -323,7 +323,7 @@ class RoundState(object):
 
 	def is_board_full(self):
 		return all([len(cards) > 0 for cards in self.board])
-	
+
 	def is_board_empty(self):
 		return all([len(cards) == 0 for cards in self.board])
 
@@ -356,7 +356,6 @@ class RoundState(object):
 		'''
 		view = {
 			'player': player,
-			'hand': [card.dict for card in display_sorted(self.player_hands[player], self.trump_card)],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
 			'status': self.status,
@@ -364,6 +363,11 @@ class RoundState(object):
 			'trump_suit': self.trump_card.suit,
 			'bottom_size': BOTTOM_SIZE[self.num_players],
 		}
+
+		if player is not None:
+			view['hand'] = [card.dict for card in display_sorted(self.player_hands[player], self.trump_card)]
+		else:
+			view['hand'] = []
 
 		view['board'] = []
 		for cards in self.board:
@@ -375,16 +379,16 @@ class RoundState(object):
 			view['declaration'] = self.declaration.dict
 
 		return view
-	
+
 	def get_suit_tractors_from_hand(self, player, trick_card):
-		'''	
-		This function returns a list of all tractor plays that are of the trick card's 
-		suit within a specified player's hand. If trick suit is trump then, a list of all 
+		'''
+		This function returns a list of all tractor plays that are of the trick card's
+		suit within a specified player's hand. If trick suit is trump then, a list of all
 		trump tractor plays within a player's hand will be returned.
 
 		Args:
-			player: int 
-			trick_card: Card 
+			player: int
+			trick_card: Card
 		Returns:
 			Tractor []
 		'''
@@ -528,6 +532,12 @@ class Round(object):
 		'''
 		self.listeners.append(listener)
 
+	def remove_listener(self, listener):
+		'''
+		Stop passing events to the specified RoundListener.
+		'''
+		self.listeners.remove(listener)
+
 	def _fire(self, f):
 		for listener in self.listeners:
 			f(listener)
@@ -599,7 +609,7 @@ class Round(object):
 		# checks if play is invalid
 		if not self.state.is_play_valid(player, cards):
 			raise RoundException("invalid play")
-		
+
 		self.state.board[player] = cards
 		self.state.remove_cards_from_hand(player, cards)
 

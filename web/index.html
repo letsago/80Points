@@ -69,8 +69,20 @@
 			</div>
 			<div class="playerInfoContainer">
 				<div :class="['playerInfo', playerPosition(index)]" v-for="(player, index) in players">
-					<p :class="turn == index ? 'em' : ''">
-						{{ player }}
+					<p
+						class="playerName"
+						:class="{
+							turn: turn == index,
+							left: player.left,
+						}">
+						<template v-if="player.left && isObserver">
+							<a href="#" v-on:click="joinGameAs(game_id, index)">
+								{{ player.name }}
+							</a>
+						</template>
+						<template v-else>
+							{{ player.name }}
+						</template>
 					</p>
 					<div class="playingCards fourColours">
 						<ul class="hand">

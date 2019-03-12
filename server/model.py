@@ -354,7 +354,6 @@ class RoundState(object):
 		'''
 		view = {
 			'player': player,
-			'hand': [card.dict for card in display_sorted(self.player_hands[player], self.trump_card)],
 			'player_hands': [len(hand) for hand in self.player_hands],
 			'turn': self.turn,
 			'status': self.status,
@@ -362,6 +361,11 @@ class RoundState(object):
 			'trump_suit': self.trump_card.suit,
 			'bottom_size': BOTTOM_SIZE[self.num_players],
 		}
+
+		if player is not None:
+			view['hand'] = [card.dict for card in display_sorted(self.player_hands[player], self.trump_card)]
+		else:
+			view['hand'] = []
 
 		view['board'] = []
 		for cards in self.board:
@@ -394,6 +398,17 @@ class RoundState(object):
 		return suit_tractors
 
 	def is_play_valid(self, player, cards):
+		'''
+		This function checks if player's cards, aka play, is valid. In order for a play to be valid, the play
+		must follow suit and form of the trick's first play. Otherwise, the appropriate form is calculated
+		and used to determine whether or not the play is valid given the trick's first play.
+
+		Args:
+			player: int 
+			cards: Card [] 
+		Returns:
+			bool
+		'''
 		play_card_count = len(cards)
 		# number of cards must be nonzero
 		if play_card_count == 0:
@@ -401,31 +416,36 @@ class RoundState(object):
 
 		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
 		# for now, first play must be one tractor
-		if self.is_board_empty():
-			self.trick_first_player = player
+		if player == self.trick_first_player:
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
-			return len(cards_to_tractors(cards, cards[0].get_normalized_suit(self.trump_card), self.trump_card)) == 1
-
+			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
+		
 		first_play = self.board[self.trick_first_player]
 		trick_card_count = len(first_play)
-
+				
 		# number of cards played must match number of cards in trick
 		if play_card_count != trick_card_count:
 			return False
-
+		
 		# grab trick tractor and player hand trick suit tractor rank and length data
 		trick_card = first_play[0]
 		trick_suit = trick_card.get_normalized_suit(self.trump_card)
-		trick_tractors = cards_to_tractors(first_play, trick_suit, self.trump_card)
+		trick_tractors = cards_to_tractors(first_play, trick_card.suit, self.trump_card)
 		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_suit)
+
+		# if hand doesn't have any trick suit cards then player can play cards of any suit as long as 
+		# play_card_count equals trick_card_count (case already handled above)
+		if not hand_suit_tractors:
+			return True
+
 		play_suit_cards = [card for card in cards if card.get_normalized_suit(self.trump_card) == trick_suit]
 		play_suit_tractors = cards_to_tractors(play_suit_cards, trick_suit, self.trump_card)
 		trick_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in trick_tractors]
 		hand_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in hand_suit_tractors]
 		play_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in play_suit_tractors]
-
+		
 		# find hand data (rank, length) that matches trick data, and make sure play contains
-		#  tractor with at least that rank and length.
+		# tractor with at least that rank and length.
 		# then, update trick/hand/play data by removing the matched data.
 		while trick_data_array and hand_data_array:
 			hand_idx = find_matching_data_index(hand_data_array, trick_data_array[0])
@@ -446,9 +466,9 @@ class RoundState(object):
 		return True
 
 class RoundListener(object):
-	def timed_action(self, r, delay):
+	def round_started(self, r):
 		'''
-		A timed action should be performed after the specified delay.
+		A round has started.
 		'''
 		pass
 
@@ -482,6 +502,12 @@ class RoundListener(object):
 		'''
 		pass
 
+	def send_state(self, r):
+		'''
+		Refresh game state if an action happened that wasn't initiated by a player.
+		'''
+		pass
+
 	def ended(self, r, player_scores, next_player):
 		'''
 		The round ended.
@@ -502,7 +528,7 @@ class Round(object):
 			listeners = []
 		self.state = RoundState(num_players, deck_name=deck_name)
 		self.listeners = list(listeners)
-		self._fire(lambda listener: listener.timed_action(self, 1))
+		self._fire(lambda listener: listener.round_started(self))
 
 	def add_listener(self, listener):
 		'''
@@ -510,35 +536,47 @@ class Round(object):
 		'''
 		self.listeners.append(listener)
 
+	def remove_listener(self, listener):
+		'''
+		Stop passing events to the specified RoundListener.
+		'''
+		self.listeners.remove(listener)
+
 	def _fire(self, f):
 		for listener in self.listeners:
 			f(listener)
-
-	def tick(self):
+		
+	def finalize_declaration(self):
 		'''
-		Execute the next timed action (e.g. dealing cards).
+		Called after the cards are dealt, only when the declaration should be
+		finalized, i.e. after any overturn timers or if the declaration is maximum
+		possible already.
 		'''
-		if self.state.status == STATUS_DEALING:
-			if len(self.state.deck) > 0:
-				card = self.state.deal_card_to_player(self.state.turn)
-				self._fire(lambda listener: listener.card_dealt(self, self.state.turn, card))
-				self.state.increment_turn()
+		# Someone declared in this case, so we give them the bottom.
+		if self.state.declaration is not None:
+			bottom_player = self.state.declaration.player
+		# No one declared in this case, so we set the trump card suit to 'joker'.
+		else:
+			# TODO(workitem0023): This should be pre-determined on subsequent rounds.
+			bottom_player = 0
+			# Add a dummy declaration so that this (and only this) player can set the bottom.
+			self.state.declarations.append(Declaration(bottom_player, []))
+			self.state.trump_card.suit = 'joker'
+		bottom_cards = self.state.give_bottom_to_player(bottom_player)
+		self.state.status = STATUS_BOTTOM
+		self._fire(lambda listener: listener.player_given_bottom(self, bottom_player, bottom_cards))
 
-				# notify about the next timed action, which is either to deal the
-				# next card or to advance to STATUS_BOTTOM
-				if len(self.state.deck) > 0:
-					self._fire(lambda listener: listener.timed_action(self, 1))
-				elif self.state.declaration is not None:
-					self._fire(lambda listener: listener.timed_action(self, 5))
-			elif self.state.declaration is not None:
-				# advance to STATUS_BOTTOM by adding the bottom to the player who declared
-				# TODO(workitem0024): handle case where no player declared within the time limit
-				# TODO(workitem0025): the 10 second time limit above should be shorter if a player has declared
-				# and longer if no player has declared yet
-				bottom_player = self.state.declaration.player
-				bottom_cards = self.state.give_bottom_to_player(bottom_player)
-				self.state.status = STATUS_BOTTOM
-				self._fire(lambda listener: listener.player_given_bottom(self, bottom_player, bottom_cards))
+	def deal_card(self):
+		'''
+		Deals the next card to the next player.
+		'''
+		if self.state.status != STATUS_DEALING:
+			raise RoundException("the round is not currently in the dealing stage")
+		if len(self.state.deck) == 0:
+			raise RoundException("no more cards to deal")
+		card = self.state.deal_card_to_player(self.state.turn)
+		self._fire(lambda listener: listener.card_dealt(self, self.state.turn, card))
+		self.state.increment_turn()
 
 	def declare(self, player, cards):
 		'''
@@ -552,9 +590,6 @@ class Round(object):
 
 		self.state.declare(player, cards)
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
-
-		if len(self.state.deck) == 0:
-			self._fire(lambda listener: listener.timed_action(self, 5))
 
 	def play(self, player, cards):
 		'''
@@ -572,6 +607,11 @@ class Round(object):
 		# if starting new play, clear previous one
 		if self.state.is_board_full():
 			self.state.clear_board()
+
+		# if board is empty, including the first play of the round, where board is not previously cleared,
+		# then set trick first player to player 
+		if self.state.is_board_empty():
+			self.state.trick_first_player = player
 
 		# checks if play is invalid
 		if not self.state.is_play_valid(player, cards):

@@ -179,20 +179,20 @@ class TractorMetadata(object):
 
 def get_min_data(tractor_data_1, tractor_data_2):
 	'''
-	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a
+	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a 
 	new TractorMetadata (min_rank, min_length).
 
 	Args:
 		tractor_data_1: TractorMetadata
 		tractor_data_2: TractorMetadata
-
+	
 	Returns:
 		TractorMetadata
 	'''
 	min_rank = min(tractor_data_1.rank, tractor_data_2.rank)
 	min_length = min(tractor_data_1.length, tractor_data_2.length)
 	return TractorMetadata(min_rank, min_length)
-
+	
 def find_matching_data_index(data_array, target_data):
 	'''
 	Returns the index to the first data from a reverse sorted data array corresponding to at least a target

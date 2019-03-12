@@ -25,7 +25,7 @@ h1, h2, h3 {
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	grid-template-rows: 1fr 1fr 1fr 1fr;
-	grid-template-areas: 
+	grid-template-areas:
     	". top ."
     	"left top right"
     	"left bottom right"
@@ -67,6 +67,10 @@ h1, h2, h3 {
 	font-size: 20px;
 }
 
-.em {
+.playerName.turn {
+	font-weight: bold;
+}
+
+.playerName.left {
 	font-style: italic;
 }

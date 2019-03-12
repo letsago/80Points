@@ -77,6 +77,7 @@ var app = new Vue({
 		},
 
 		status: 'disconnected',
+		game_id: null,
 		player: -1,
 		cards: [],
 		trumpSuit: '',
@@ -88,6 +89,7 @@ var app = new Vue({
 			'd': 'Diamonds',
 			'h': 'Hearts',
 			's': 'Spades',
+			'joker': 'Joker',
 		},
 		ranks: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'],
 		playerPositions: ['bottomPlayer', 'leftPlayer', 'topPlayer', 'rightPlayer'],
@@ -110,6 +112,9 @@ var app = new Vue({
 		canSelectNewCards: function() {
 			return !(this.canSetBottom && this.selectedCards.length >= this.bottomSize);
 		},
+		isObserver: function() {
+			return this.player == null;
+		},
 	},
 	methods: {
 		register: function(name) {
@@ -123,6 +128,9 @@ var app = new Vue({
 		},
 		joinGame: function(gameId) {
 			socket.emit('join', gameId);
+		},
+		joinGameAs: function(gameId, playerIdx) {
+			socket.emit('join_as', gameId, playerIdx);
 		},
 		clearSelectedCards: function() {
 			app.cards.forEach(function(el) {
@@ -153,9 +161,14 @@ var app = new Vue({
 			// When 'index' == 'this.player', this expression is 0, which maps
 			// to the bottom player's position in 'this.playerPositions'.
 			// Even though the elements are always listed with index 0 first
-			// in the HTML, the CSS grid ignores order of the element and goes 
+			// in the HTML, the CSS grid ignores order of the element and goes
 			// strictly based on the CSS class.
-			return this.playerPositions[(index - this.player + 4) % 4];
+			var bottomIndex = this.player;
+			if(bottomIndex === null) {
+				// observer, put arbitrary player at the bottom
+				bottomIndex = 0;
+			}
+			return this.playerPositions[(index - bottomIndex + 4) % 4];
 		},
 	},
 })
@@ -199,7 +212,8 @@ socket.on('game_list', function(data) {
 
 socket.on('lobby', function (data) {
 	app.mode = 'game';
-	app.players = data.names;
+	app.game_id = data.game_id;
+	app.players = data.players;
 	app.player = data.playerIndex;
 });
 

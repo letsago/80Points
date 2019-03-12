@@ -97,38 +97,45 @@ class TestCard(unittest.TestCase):
 			self.assertEqual(display_sorted(test_list, trump_card), want)
 
 class TestRound(unittest.TestCase):
+	def setUp(self):
+		self.num_players = 4
+		self.num_decks = 2
+		self.first_player = 0
+		self.third_player = 2
+		self.full_hand_size = 25
+		bottom_size = 8
+		self.full_hand_with_bottom_size = self.full_hand_size + bottom_size
+		self.declaration_bottom_cards = [
+			Card('joker', 'big'), Card('joker', 'big'), Card('joker', 'small'), Card('joker', 'small'),
+			Card('d', 'A'), Card('h', 'A'), Card('s', 'A'), Card('c', 'A')
+		]
+
 	def testFirstPlayerSetToBottomPlayer(self):
-		num_players = 4
-		num_decks = 2
-		first_player = 0
-		third_player = 2
 		# Mock model.create_random_deck to use a deterministic deck.
-		with mock.patch('model.create_random_deck', return_value=create_deck(num_decks)):
-			round = Round(num_players)
-		self.assertEqual(round.state.turn, first_player)
+		with mock.patch('model.create_random_deck', return_value=create_deck(self.num_decks)):
+			round = Round(self.num_players)
+		self.assertEqual(round.state.turn, self.first_player)
 		# Deal out all cards.
 		for _ in range(len(round.state.deck)):
-			round.tick()
+			round.deal_card()
 		# After dealing out all cards, the turn should return to the first player.
-		self.assertEqual(round.state.turn, first_player)
+		self.assertEqual(round.state.turn, self.first_player)
 		# Have the third player declare the 2 of diamonds.
-		round.declare(third_player, [Card('d', '2')])
-		# This tick allows for the player to receive the bottom cards.
-		round.tick()
+		round.declare(self.third_player, [Card('d', '2')])
+		round.finalize_declaration()
 		# After getting the bottom, it should now be the third player's turn.
-		self.assertEqual(round.state.turn, third_player)
-		round.set_bottom(third_player, 
+		self.assertEqual(round.state.turn, self.third_player)
+		round.set_bottom(self.third_player, 
 			[Card('d', '4'), Card('d', '6'), Card('d', '8'), Card('d', '10'),
 			 Card('c', '3'), Card('c', '5'), Card('c', '7'), Card('c', '9')])
 		# After the bottom is set, it should still be the third player's turn.
-		self.assertEqual(round.state.turn, third_player)
+		self.assertEqual(round.state.turn, self.third_player)
 
 	def testCreateDeckFromFile(self):
-		num_players = 4
-		round = Round(num_players, deck_name='declaration')
+		round = Round(self.num_players, deck_name='declaration')
 		# Deal out all cards.
 		for _ in range(len(round.state.deck)):
-			round.tick()
+			round.deal_card()
 		# Verify the first few cards in each hand.
 		self.assertEqual(round.state.player_hands[0][:3], 
 			[Card('d', '2'), Card('d', '3'), Card('d', '4')])
@@ -142,6 +149,81 @@ class TestRound(unittest.TestCase):
 		self.assertEqual(round.state.bottom,
 			[Card('c', 'A'), Card('s', 'A'), Card('h', 'A'), Card('d', 'A'), 
 			 Card('joker', 'small'), Card('joker', 'small'), Card('joker', 'big'), Card('joker', 'big')])
+
+	def testDeclaration(self):
+		round = Round(self.num_players, deck_name='declaration')
+		self.assertEqual(round.state.trump_card.suit, None)
+		round.deal_card()
+		# Have the first player declare the 2 of diamonds.
+		round.declare(self.first_player, [Card('d', '2')])
+		# Deal out the remaining cards.
+		for _ in range(len(round.state.deck)):
+			round.deal_card()
+		# Verify the bottom hasn't been given yet.
+		self.assertEqual(len(round.state.player_hands[self.first_player]), self.full_hand_size)
+		round.finalize_declaration()
+		# Verify the bottom was given.
+		self.assertEqual(len(round.state.player_hands[self.first_player]), self.full_hand_with_bottom_size)
+		round.set_bottom(self.first_player, self.declaration_bottom_cards)
+		# Verify the round status is now playing and the trump suit is correct.
+		self.assertEqual(round.state.status, STATUS_PLAYING)
+		self.assertEqual(round.state.trump_card.suit, 'd')
+
+	def testDeclarationOverturning(self):
+		round = Round(self.num_players, deck_name='declaration')
+		round.deal_card()
+		# Have the first player declare the 2 of diamonds.
+		round.declare(self.first_player, [Card('d', '2')])
+		# Deal enough cards so the other players have trump values in their hands.
+		for _ in range(20):
+			round.deal_card()
+		round.declare(self.third_player, [Card('s', '2'), Card('s', '2')])
+		# Deal out the remaining cards.
+		for _ in range(len(round.state.deck)):
+			round.deal_card()
+		self.assertEqual(len(round.state.player_hands[self.third_player]), self.full_hand_size)
+		round.finalize_declaration()
+		self.assertEqual(len(round.state.player_hands[self.third_player]), self.full_hand_with_bottom_size)
+		round.set_bottom(self.third_player, self.declaration_bottom_cards)
+		# Verify the round status is now playing and the trump suit is correct.
+		self.assertEqual(round.state.status, STATUS_PLAYING)
+		self.assertEqual(round.state.trump_card.suit, 's')
+
+	def testDeclarationDefending(self):
+		round = Round(self.num_players, deck_name='declaration')
+		# Deal enough cards so the third player has one 2 of spades.
+		for _ in range(4):
+			round.deal_card()
+		round.declare(self.third_player, [Card('s', '2')])
+		# Deal enough cards so the third player has two 2 of spades.
+		for _ in range(20):
+			round.deal_card()
+		round.declare(self.third_player, [Card('s', '2'), Card('s', '2')])
+		# Deal out the remaining cards.
+		for _ in range(len(round.state.deck)):
+			round.deal_card()
+		self.assertEqual(len(round.state.player_hands[self.third_player]), self.full_hand_size)
+		round.finalize_declaration()
+		self.assertEqual(len(round.state.player_hands[self.third_player]), self.full_hand_with_bottom_size)
+		round.set_bottom(self.third_player, self.declaration_bottom_cards)
+		# Verify the round status is now playing and the trump suit is correct.
+		self.assertEqual(round.state.status, STATUS_PLAYING)
+		self.assertEqual(round.state.trump_card.suit, 's')
+
+	def testNoDeclaration(self):
+		round = Round(self.num_players, deck_name='declaration')
+		self.assertEqual(round.state.trump_card.suit, None)
+		# Deal out the remaining cards.
+		for _ in range(len(round.state.deck)):
+			round.deal_card()
+		self.assertEqual(round.state.trump_card.suit, None)
+		self.assertEqual(len(round.state.player_hands[self.first_player]), self.full_hand_size)
+		round.finalize_declaration()
+		self.assertEqual(len(round.state.player_hands[self.first_player]), self.full_hand_with_bottom_size)
+		round.set_bottom(self.first_player, self.declaration_bottom_cards)
+		# Verify the round status is now playing and the trump suit is correct.
+		self.assertEqual(round.state.status, STATUS_PLAYING)
+		self.assertEqual(round.state.trump_card.suit, 'joker')
 
 class TestRoundState(unittest.TestCase):
 	# TODO(workitem0028): will add flush validation tests once flush capability is integrated

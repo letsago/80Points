@@ -468,9 +468,9 @@ class RoundState(object):
 		return True
 
 class RoundListener(object):
-	def timed_action(self, r, delay):
+	def round_started(self, r):
 		'''
-		A timed action should be performed after the specified delay.
+		A round has started.
 		'''
 		pass
 
@@ -504,6 +504,12 @@ class RoundListener(object):
 		'''
 		pass
 
+	def send_state(self, r):
+		'''
+		Refresh game state if an action happened that wasn't initiated by a player.
+		'''
+		pass
+
 	def ended(self, r, player_scores, next_player):
 		'''
 		The round ended.
@@ -524,7 +530,7 @@ class Round(object):
 			listeners = []
 		self.state = RoundState(num_players, deck_name=deck_name)
 		self.listeners = list(listeners)
-		self._fire(lambda listener: listener.timed_action(self, 1))
+		self._fire(lambda listener: listener.round_started(self))
 
 	def add_listener(self, listener):
 		'''
@@ -541,32 +547,38 @@ class Round(object):
 	def _fire(self, f):
 		for listener in self.listeners:
 			f(listener)
-
-	def tick(self):
+		
+	def finalize_declaration(self):
 		'''
-		Execute the next timed action (e.g. dealing cards).
+		Called after the cards are dealt, only when the declaration should be
+		finalized, i.e. after any overturn timers or if the declaration is maximum
+		possible already.
 		'''
-		if self.state.status == STATUS_DEALING:
-			if len(self.state.deck) > 0:
-				card = self.state.deal_card_to_player(self.state.turn)
-				self._fire(lambda listener: listener.card_dealt(self, self.state.turn, card))
-				self.state.increment_turn()
+		# Someone declared in this case, so we give them the bottom.
+		if self.state.declaration is not None:
+			bottom_player = self.state.declaration.player
+		# No one declared in this case, so we set the trump card suit to 'joker'.
+		else:
+			# TODO(workitem0023): This should be pre-determined on subsequent rounds.
+			bottom_player = 0
+			# Add a dummy declaration so that this (and only this) player can set the bottom.
+			self.state.declarations.append(Declaration(bottom_player, []))
+			self.state.trump_card.suit = 'joker'
+		bottom_cards = self.state.give_bottom_to_player(bottom_player)
+		self.state.status = STATUS_BOTTOM
+		self._fire(lambda listener: listener.player_given_bottom(self, bottom_player, bottom_cards))
 
-				# notify about the next timed action, which is either to deal the
-				# next card or to advance to STATUS_BOTTOM
-				if len(self.state.deck) > 0:
-					self._fire(lambda listener: listener.timed_action(self, 1))
-				elif self.state.declaration is not None:
-					self._fire(lambda listener: listener.timed_action(self, 5))
-			elif self.state.declaration is not None:
-				# advance to STATUS_BOTTOM by adding the bottom to the player who declared
-				# TODO(workitem0024): handle case where no player declared within the time limit
-				# TODO(workitem0025): the 10 second time limit above should be shorter if a player has declared
-				# and longer if no player has declared yet
-				bottom_player = self.state.declaration.player
-				bottom_cards = self.state.give_bottom_to_player(bottom_player)
-				self.state.status = STATUS_BOTTOM
-				self._fire(lambda listener: listener.player_given_bottom(self, bottom_player, bottom_cards))
+	def deal_card(self):
+		'''
+		Deals the next card to the next player.
+		'''
+		if self.state.status != STATUS_DEALING:
+			raise RoundException("the round is not currently in the dealing stage")
+		if len(self.state.deck) == 0:
+			raise RoundException("no more cards to deal")
+		card = self.state.deal_card_to_player(self.state.turn)
+		self._fire(lambda listener: listener.card_dealt(self, self.state.turn, card))
+		self.state.increment_turn()
 
 	def declare(self, player, cards):
 		'''
@@ -580,9 +592,6 @@ class Round(object):
 
 		self.state.declare(player, cards)
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
-
-		if len(self.state.deck) == 0:
-			self._fire(lambda listener: listener.timed_action(self, 5))
 
 	def play(self, player, cards):
 		'''

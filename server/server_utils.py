@@ -4,22 +4,45 @@ import model
 class TimedActionListener(model.RoundListener):
 	def __init__(self, speed):
 		self.speed = speed
-		self.pending_tick = None
+		self.pending_declaration_finalization = None
+	
+	def round_started(self, r):
+		# Start dealing the cards.
+		r.deal_card()
 
-	def timed_action(self, r, delay):
-		'''
-		Run tick on the round after the given delay.
+	def card_dealt(self, r, player, card):
+		# When there are no more cards we can finalize the declaration.
+		if len(r.state.deck) == 0:
+			self.finalize_declaration(r)
+			return
 
-		If there is already a queued tick, we should cancel that tick and reschedule
-		it. This may happen if another action was performed on the Round before the
-		timed action.
-		'''
-		def run_action():
-			r.tick()
-			self.pending_tick = None
-		if self.pending_tick is not None:
-			self.pending_tick.cancel()
-		self.pending_tick = eventlet.spawn_after(float(delay) / self.speed, run_action)
+		# Deal faster if the declaration is maximum possible already.
+		delay = 1
+		if r.state.declaration is not None and len(r.state.declaration.cards) == r.state.num_decks:
+			delay = 0.1
+		eventlet.spawn_after(float(delay) / self.speed, r.deal_card)
+	
+	def player_declared(self, r, player, cards):
+		# If there are no more cards in the deck, then we try to finalize
+		# declaration. This either resets the overturn timer or finalizes
+		# the declaration directly if it's the max possible.
+		if len(r.state.deck) == 0:
+			self.finalize_declaration(r)
+
+	def finalize_declaration(self, r):
+		# If there is already a queued finalization, we should cancel it and reschedule it.
+		# For example, this can happen if a person overturns when a finalization is scheduled
+		# but has not executed.
+		if self.pending_declaration_finalization is not None:
+			self.pending_declaration_finalization.cancel()
+
+		# If the declaration is the maximum possible already, we finalize immediately.
+		if r.state.declaration is not None and len(r.state.declaration.cards) == r.state.num_decks:
+			r.finalize_declaration()
+		# Otherwise, we schedule for finalization to happen in the future, to allow for potential
+		# overturning / defending even after all the cards are dealt.
+		else:
+			self.pending_declaration_finalization = eventlet.spawn_after(100.0 / self.speed, r.finalize_declaration)
 
 class ForwardToGamePlayer(model.RoundListener):
 	'''

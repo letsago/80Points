@@ -104,9 +104,9 @@ cards_to_tractors_test_data = [
 				{'rank': 1, 'length': 1, 'power_card': Card('joker', 'big'), 'suit_type': SUIT_TRUMP},
 			],
 			[
+				{'rank': 1, 'length': 1, 'power_card': Card('joker', 'big'), 'suit_type': SUIT_TRUMP},
 				{'rank': 2, 'length': 2, 'power_card': Card('s', '2'), 'suit_type': SUIT_LOWEST},
 				{'rank': 2, 'length': 1, 'power_card': Card('s', '9'), 'suit_type': SUIT_LOWEST},
-				{'rank': 1, 'length': 1, 'power_card': Card('joker', 'big'), 'suit_type': SUIT_TRUMP},
 			],
 		),
 

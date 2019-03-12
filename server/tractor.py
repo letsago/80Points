@@ -39,12 +39,12 @@ class Tractor(object):
 		'''
 		Returns whether self is less than other.
 		'''
+		if self.suit_type != other.suit_type:
+			return self.suit_type < other.suit_type
 		if self.rank != other.rank:
 			return self.rank < other.rank
 		if self.length != other.length:
 			return self.length < other.length
-		if self.suit_type != other.suit_type:
-			return self.suit_type < other.suit_type
 		return self.power < other.power
 
 def card_to_suit_type(card, trick_suit, trump_card):
@@ -164,6 +164,22 @@ class TractorMetadata(object):
 		if self.rank != other.rank:
 			return self.rank < other.rank
 		return self.length < other.length
+
+def get_min_data(tractor_data_1, tractor_data_2):
+	'''
+	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a 
+	new TractorMetadata (min_rank, min_length).
+
+	Args:
+		tractor_data_1: TractorMetadata
+		tractor_data_2: TractorMetadata
+	
+	Returns:
+		TractorMetadata
+	'''
+	min_rank = min(tractor_data_1.rank, tractor_data_2.rank)
+	min_length = min(tractor_data_1.length, tractor_data_2.length)
+	return TractorMetadata(min_rank, min_length)
 	
 def find_matching_data_index(data_array, target_data):
 	'''

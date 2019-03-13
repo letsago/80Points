@@ -342,8 +342,9 @@ def round_play(r, player, cards):
 	print('player {} playing {}'.format(player, cards))
 	try:
 		r.play(player, cards)
-	except model.RoundException:
-		sio.emit('play_invalid')
+	except model.RoundException as e:
+		if e.message == 'invalid play':
+			sio.emit('play_invalid')
 
 @sio.on('disconnect')
 def on_disconnect(sid):

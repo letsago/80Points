@@ -239,6 +239,97 @@ class TestRoundState(unittest.TestCase):
 			Card('c', '8'), Card('c', '8'), Card('c', '8'), Card('h', '3'), Card('s', '3'), Card('s', '3'),
 			Card('c', '3'), Card('c', '3'), Card('joker', 'small'), Card('joker', 'small')
 		]
+	
+	@parameterized.expand([
+		[
+			'one trick - no points',
+			[
+				[
+					[Card('d', '7'), Card('d', '7')],
+					[Card('d', '8'), Card('d', '3')],
+					[Card('d', 'A'), Card('d', '3')],
+					[Card('d', '9'), Card('d', '9')],
+					[Card('d', 'Q'), Card('d', 'Q')],
+					[Card('d', '4'), Card('d', 'J')],
+				],
+			],
+			[[0, 0, 0, 0, 0, 0]]
+		],
+		[
+			'one trick - points',
+			[
+				[
+					[Card('d', '7'), Card('d', '7')],
+					[Card('d', '10'), Card('d', '2')],
+					[Card('d', '5'), Card('d', '2')],
+					[Card('d', '9'), Card('d', '9')],
+					[Card('d', 'K'), Card('d', 'K')],
+					[Card('d', '10'), Card('d', 'J')],
+				],
+			],
+			[[0, 0, 0, 0, 45, 0]]
+		],
+		[
+			'multiple tricks - different player wins points',
+			[
+				[
+					[Card('d', '7'), Card('d', '7')],
+					[Card('d', '10'), Card('d', '2')],
+					[Card('d', '5'), Card('d', '2')],
+					[Card('d', '9'), Card('d', '9')],
+					[Card('d', 'K'), Card('d', 'K')],
+					[Card('d', '10'), Card('d', 'J')],
+				],
+				[
+					[Card('s', '5')],
+					[Card('s', 'A')],
+					[Card('s', '10')],
+					[Card('s', '2')],
+					[Card('s', 'K')],
+					[Card('s', '2')],
+				],
+			],
+			[[0, 0, 0, 0, 45, 0], [0, 25, 0, 0, 45, 0]]
+		],
+		[
+			'multiple tricks - same player wins points',
+			[
+				[
+					[Card('d', '7'), Card('d', '7')],
+					[Card('d', '10'), Card('s', '2')],
+					[Card('d', '5'), Card('d', '2')],
+					[Card('d', '9'), Card('d', '9')],
+					[Card('d', 'K'), Card('d', 'K')],
+					[Card('h', '10'), Card('c', 'J')],
+				],
+				[
+					[Card('s', '5')],
+					[Card('s', 'K')],
+					[Card('s', '10')],
+					[Card('s', '2')],
+					[Card('s', 'A')],
+					[Card('s', '2')],
+				],
+			],
+			[[0, 0, 0, 0, 45, 0], [0, 0, 0, 0, 70, 0]]
+		],
+	])
+	
+	def testPlayerPoints(self, name, trick_plays, cumulative_player_points):
+		for i, trick in enumerate(trick_plays):
+			self.round_state.board = trick
+			self.round_state.determine_winner()
+			self.assertEqual(self.round_state.player_points, cumulative_player_points[i])
+	
+	@parameterized.expand([
+		['even number of players - attacking team given first player bottom', 0, [1, 3, 5]], 
+		['even number of players - attacking team given second player bottom', 1, [0, 2, 4]],
+	])
+	
+	def testSetAttackingPlayers(self, name, bottom_player, expected_attacking_team):
+		self.round_state.bottom_player = bottom_player
+		self.round_state.set_attacking_players()
+		self.assertEqual(self.round_state.attacking_players, expected_attacking_team)
 
 	@parameterized.expand([
 		['diamonds', Card('d', '2'), []],

@@ -96,6 +96,7 @@ var app = new Vue({
 		players: [],
 		declaration: null,
 		board: [],
+		isPlayInvalid: false,
 	},
 	computed: {
 		selectedCards: function() {
@@ -139,6 +140,9 @@ var app = new Vue({
 		},
 		performCardsAction: function(actionName) {
 			socket.emit(actionName, this.selectedCards);
+			socket.on('play_invalid', function() {
+				app.isPlayInvalid = true;
+			});
 			this.clearSelectedCards();
 		},
 		declare: function () {
@@ -226,6 +230,7 @@ socket.on('state', function(data) {
 	app.declaration = data.declaration;
 	app.board = data.board;
 	app.bottomSize = data.bottom_size;
+	app.isPlayInvalid = false;
 
 	app.cards = mergeCards(app.cards, data.hand);
 });

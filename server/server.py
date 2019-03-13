@@ -340,7 +340,10 @@ def round_set_bottom(r, player, cards):
 def round_play(r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
 	print('player {} playing {}'.format(player, cards))
-	r.play(player, cards)
+	try:
+		r.play(player, cards)
+	except model.RoundException:
+		sio.emit('play_invalid')
 
 @sio.on('disconnect')
 def on_disconnect(sid):

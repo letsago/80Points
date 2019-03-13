@@ -221,6 +221,11 @@ class RoundState(object):
 		self.trump_card = Card(None, '2')
 		self.num_decks = num_players // 2
 		self.trick_first_player = 0
+		self.bottom_player = 0
+		self.attacking_players = []
+
+		# points each player has earned
+		self.player_points = [0 for i in range(num_players)]
 
 		# list of cards in each player's hand
 		self.player_hands = [[] for i in range(num_players)]
@@ -312,7 +317,16 @@ class RoundState(object):
 		bottom_cards = self.bottom
 		self.bottom = []
 		self.player_hands[player].extend(bottom_cards)
+		self.bottom_player = player
 		return bottom_cards
+	
+	def set_attacking_players(self):
+		# TODO(workitem0055): insert logic for odd number player games
+		# once odd number player games are supported, assert will be removed
+		assert(self.num_players % 2 == 0)
+		attacking_team = (self.bottom_player + 1) % 2
+		num_teams = self.num_players // 2
+		self.attacking_players = [i * 2 + attacking_team for i in range(num_teams)]
 
 	def remove_cards_from_hand(self, player, cards):
 		'''
@@ -330,6 +344,16 @@ class RoundState(object):
 	def clear_board(self):
 		for i in range(len(self.board)):
 			self.board[i] = []
+	
+	def get_trick_points(self):
+		points = 0
+		for cards in self.board:
+			for card in cards:
+				if card.value == '5':
+					points += 5
+				if card.value == '10' or card.value == 'K':
+					points += 10
+		return points
 
 	def determine_winner(self):
 		first_player = (self.turn + 1) % self.num_players
@@ -348,6 +372,9 @@ class RoundState(object):
 			if flush > winning_flush:
 				winning_player = player
 				winning_flush = flush
+		# update winning player's point count and set turn to be winning player's
+		self.player_points[winning_player] += self.get_trick_points()
+		self.set_turn(winning_player)
 		return winning_player
 
 	def get_player_view(self, player):
@@ -627,7 +654,6 @@ class Round(object):
 		if self.state.is_board_full():
 			if len(self.state.player_hands[0]) > 0:
 				winner = self.state.determine_winner()
-				self.state.set_turn(winner)
 			else:
 				self._end()
 		else:
@@ -665,10 +691,8 @@ class Round(object):
 	def _end(self):
 		'''
 		Called after the last trick is finished.
-
-		We should accumulate points and then notify listeners about the result
-		of this round.
 		'''
+		# TODO(workitem0057): Accumulate attacking team's player points and notify listeners about the round result.
 		self.state.status = STATUS_ENDED
 		player_scores = [0] * self.state.num_players
 		player_scores[0] = 1

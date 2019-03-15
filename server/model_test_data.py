@@ -111,7 +111,9 @@ follow_suit_validity_custom_hand_test_data = [
         '6s 6s 7s 8s 9s',
         '6s 6s 7s 7s 9s',
     ],
+]
 
+failed_flush_tests = [
     [
         'flush of 2-length consecutive pair + single, player must play 2-length consecutive pair',
         '10s 10s Js Js 10s',

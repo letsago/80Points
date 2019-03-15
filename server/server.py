@@ -316,6 +316,8 @@ def process_round(func):
 			func(game_player.game.round, game_player.idx, *args)
 		except model.RoundException as e:
 			sio.emit('error', e.message, room=game_player.user.sid)
+		except model.InvalidPlayException:
+			sio.emit('play_invalid', room=game_player.user.sid)
 	return func_wrapper
 
 def process_user_round(func):
@@ -340,11 +342,7 @@ def round_set_bottom(r, player, cards):
 def round_play(r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
 	print('player {} playing {}'.format(player, cards))
-	try:
-		r.play(player, cards)
-	except model.RoundException as e:
-		if e.message == 'invalid play':
-			sio.emit('play_invalid')
+	r.play(player, cards)
 
 @sio.on('disconnect')
 def on_disconnect(sid):

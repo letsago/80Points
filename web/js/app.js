@@ -97,6 +97,8 @@ var app = new Vue({
 		declaration: null,
 		board: [],
 		isPlayInvalid: false,
+		playerPoints: [],
+		attackingPlayers: [],
 	},
 	computed: {
 		selectedCards: function() {
@@ -116,6 +118,9 @@ var app = new Vue({
 		isObserver: function() {
 			return this.player == null;
 		},
+		attackingPoints: function() {
+			return this.attackingPlayers.map(x => this.playerPoints[x]).reduce((total, val) => total + val, 0);
+		}
 	},
 	methods: {
 		register: function(name) {
@@ -231,6 +236,8 @@ socket.on('state', function(data) {
 	app.board = data.board;
 	app.bottomSize = data.bottom_size;
 	app.isPlayInvalid = false;
+	app.playerPoints = data.player_points;
+	app.attackingPlayers = data.attacking_players;
 
 	app.cards = mergeCards(app.cards, data.hand);
 });

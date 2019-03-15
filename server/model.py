@@ -387,6 +387,8 @@ class RoundState(object):
 			'trump_value': self.trump_card.value,
 			'trump_suit': self.trump_card.suit,
 			'bottom_size': BOTTOM_SIZE[self.num_players],
+			'player_points': self.player_points,
+			'attacking_players': self.attacking_players,
 		}
 
 		if player is not None:
@@ -590,6 +592,7 @@ class Round(object):
 			self.state.declarations.append(Declaration(bottom_player, []))
 			self.state.trump_card.suit = 'joker'
 		bottom_cards = self.state.give_bottom_to_player(bottom_player)
+		self.state.set_attacking_players()
 		self.state.status = STATUS_BOTTOM
 		self._fire(lambda listener: listener.player_given_bottom(self, bottom_player, bottom_cards))
 

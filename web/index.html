@@ -63,6 +63,9 @@
 				<div>
 					<b>Trump Rank: </b>{{ trumpRank }}
 				</div>
+				<div v-if="attackingPlayers.length > 0">
+					<b>Attacking Team Points: </b>{{ attackingPoints }}
+				</div>
 				<span>
 					You are: <span class="heading">{{ playerName }}</span>
 				</span>
@@ -84,6 +87,9 @@
 							{{ player.name }}
 						</template>
 					</p>
+					<template v-if="attackingPlayers.length == 0">
+						<div>Points: {{ playerPoints[index] }}</div>
+					</template>
 					<div class="playingCards fourColours">
 						<ul class="hand">
 							<li v-for="card in board[index]">

@@ -357,7 +357,7 @@ class RoundState(object):
 
 	def determine_winner(self):
 		first_player = (self.turn + 1) % self.num_players
-		trick_suit = self.board[first_player][0].get_normalized_suit()
+		trick_suit = self.board[first_player][0].get_normalized_suit(self.trump_card)
 		first_tractors = cards_to_tractors(self.board[first_player], trick_suit, self.trump_card)
 		winning_player = first_player
 		winning_flush = Flush(first_tractors)

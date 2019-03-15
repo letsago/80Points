@@ -95,4 +95,36 @@ follow_suit_validity_custom_hand_test_data = [
         None,
         '6s 6s 7s 7s 8s 8s 9s 9s',
     ],
+
+    [
+        'flush of triple and single, player must play at least one pair',
+        '10s 10s 10s Js',
+        '6s 6s 7s 7s 8s 9s',
+        '6s 7s 8s 9s',
+        '6s 6s 7s 7s',
+    ],
+
+    [
+        'flush of triple and pair, player must play 2 pairs',
+        '10s 10s 10s Js Js',
+        '6s 6s 7s 7s 8s 9s 9s',
+        '6s 6s 7s 8s 9s',
+        '6s 6s 7s 7s 9s',
+    ],
+
+    [
+        'flush of 2-length consecutive pair + single, player must play 2-length consecutive pair',
+        '10s 10s Js Js 10s',
+        '6s 6s 7s 7s 9s 9s',
+        '6s 6s 7s 9s 9s',
+        '6s 6s 7s 7s 9s',
+    ],
+
+    [
+        'flush of triple and 2-length consecutive pair, player must play 2-length consecutive pair and pair',
+        '10s 10s 10s Qs Qs Ks Ks',
+        '6s 6s 7s 7s 8s 8s 9s 9s Js',
+        '6s 6s 7s 8s 8s 9s Js',
+        '6s 6s 7s 7s 9s 9s Js',
+    ],
 ]

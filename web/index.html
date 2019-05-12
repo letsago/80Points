@@ -115,8 +115,8 @@
 					</span>
 				</div>
 			</template>
-			<template v-if="isPlayInvalid">  
-				<p> Invalid play. Please follow suit. </p>
+			<template v-if="isError">
+				<p> {{errorMsg}} </p>
 			</template>
 			<div class="playingCards fourColours">
 				<ul class="hand">

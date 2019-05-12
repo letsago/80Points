@@ -96,7 +96,8 @@ var app = new Vue({
 		players: [],
 		declaration: null,
 		board: [],
-		isPlayInvalid: false,
+		isError: false,
+		errorMsg: '',
 		playerPoints: [],
 		attackingPlayers: [],
 	},
@@ -232,13 +233,15 @@ socket.on('state', function(data) {
 	app.declaration = data.declaration;
 	app.board = data.board;
 	app.bottomSize = data.bottom_size;
-	app.isPlayInvalid = false;
+	app.isError = false;
+	app.errorMsg = '';
 	app.playerPoints = data.player_points;
 	app.attackingPlayers = data.attacking_players;
 
 	app.cards = mergeCards(app.cards, data.hand);
 });
 
-socket.on('play_invalid', function() {
-	app.isPlayInvalid = true;
+socket.on('error', function(text) {
+	app.isError = true;
+	app.errorMsg = text;
 });

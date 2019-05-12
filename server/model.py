@@ -647,7 +647,7 @@ class Round(object):
 
 		# checks if play is invalid
 		if not self.state.is_play_valid(player, cards):
-			raise InvalidPlayException("invalid play")
+			raise RoundException("Invalid play. Please follow suit.")
 
 		self.state.board[player] = cards
 		self.state.remove_cards_from_hand(player, cards)
@@ -702,7 +702,4 @@ class Round(object):
 		self._fire(lambda listener: listener.end(self, player_scores, 0))
 
 class RoundException(Exception):
-	pass
-
-class InvalidPlayException(Exception):
 	pass

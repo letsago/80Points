@@ -316,8 +316,6 @@ def process_round(func):
 			func(game_player.game.round, game_player.idx, *args)
 		except model.RoundException as e:
 			sio.emit('error', e.message, room=game_player.user.sid)
-		except model.InvalidPlayException:
-			sio.emit('play_invalid', room=game_player.user.sid)
 	return func_wrapper
 
 def process_user_round(func):

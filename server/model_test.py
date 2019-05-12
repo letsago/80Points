@@ -440,53 +440,92 @@ class TestRoundState(unittest.TestCase):
 		self.assertTrue(self.round_state.is_play_valid(self.second_player, valid_play))
 
 	@parameterized.expand([
-		['no play', 0, [], []],
+		['no play', [], []],
 
-		['too many cards', 0, [Card('s', '3'), Card('s', '3'), Card('s', '4')], []],
+		['too many cards', [Card('s', '3'), Card('s', '3'), Card('s', '4')], []],
 
-		['cards not in player hand', 0, [Card('h', '3')], []],
+		['cards not in player hand', [Card('h', '3')], []],
 
-		['card value does not match trump value', 0, [Card('s', '4')], []],
+		['card value does not match trump value', [Card('s', '4')], []],
 
-		['cards do not have the same suit', 0, [Card('s', '3'), Card('d', '3')], []],
+		['cards do not have the same suit', [Card('s', '3'), Card('d', '3')], []],
 
-		['equal length to most recent declaration', 0, [Card('s', '3')], 
+		['equal length to most recent declaration', [Card('s', '3')], 
 			[Declaration(1, [Card('d', '3')])]],
 
-		['smaller length than most recent declaration', 0, [Card('s', '3')], 
+		['smaller length than most recent declaration', [Card('s', '3')], 
 			[Declaration(1, [Card('d', '3')]), Declaration(1, [Card('d', '3'), Card('d', '3')])]],
 
-		['suit does not match previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+		['suit does not match previous declaration', [Card('s', '3'), Card('s', '3')], 
 			[Declaration(0, [Card('d', '3')])]],
+
+		['one joker', [Card('joker', 'big')], []],
+
+		['overturning themselves with jokers', [Card('joker', 'big'), Card('joker', 'big')],
+		  [Declaration(0, [Card('d', '3')])]],
+
+		['overturning two small cards with big / small joker combo', [Card('joker', 'small'), Card('joker', 'big')],
+		  [Declaration(1, [Card('d', '3'), Card('d', '3')])]],
+
+		['two small jokers overturning two big jokers', [Card('joker', 'small'), Card('joker', 'small')],
+		  [Declaration(1, [Card('joker', 'big'), Card('joker', 'big')])]],
+
+		['two big jokers overturning two big jokers', [Card('joker', 'big'), Card('joker', 'big')],
+		  [Declaration(1, [Card('joker', 'big'), Card('joker', 'big')])]],
 	])
 
-	def testInvalidDeclarations(self, name, player, cards, declarations):
+	def testInvalidDeclarations(self, name, cards, declarations):
+		player = 0
 		self.round_state.declarations = declarations
-		self.round_state.player_hands[0] = [Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('d', '3')]
+		self.round_state.player_hands[player] = [
+			Card('s', '4'), Card('s', '3'), Card('s', '3'),
+			Card('d', '3'), Card('joker', 'small'), Card('joker', 'small'),
+			Card('joker', 'big'), Card('joker', 'big'),
+		]
 		self.assertFalse(self.round_state.is_declaration_valid(player, cards))
 
 	@parameterized.expand([
-		['initial play with a single', 0, [Card('s', '3')], []],
+		['initial play with a single', [Card('s', '3')], []],
 
-		['initial play with a pair', 0, [Card('s', '3'), Card('s', '3')], []],
+		['initial play with a pair', [Card('s', '3'), Card('s', '3')], []],
 
-		['overturn another declaration', 0, [Card('s', '3'), Card('s', '3')], 
+		['overturn another declaration', [Card('s', '3'), Card('s', '3')], 
 			[Declaration(1, [Card('d', '3')])]],
 
-		['overturn another declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+		['overturn another declaration with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
 			[Declaration(1, [Card('d', '3')])]],
 
-		['defend previous declaration', 0, [Card('s', '3'), Card('s', '3')], 
+		['defend previous declaration', [Card('s', '3'), Card('s', '3')], 
 			[Declaration(0, [Card('s', '3')])]],
 
-		['defend previous declaration with rank 3', 0, [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+		['defend previous declaration with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
 			[Declaration(0, [Card('s', '3')])]],
+
+		['start with two jokers', [Card('joker', 'big'), Card('joker', 'big')], []],
+
+		['overturning someone else with jokers', [Card('joker', 'big'), Card('joker', 'big')],
+		  [Declaration(1, [Card('d', '3')])]],
+
+		['overturning pair with jokers', [Card('joker', 'big'), Card('joker', 'big')],
+		  [Declaration(1, [Card('d', '3'), Card('d', '3')])]],
+	
+		['overturning small jokers with big jokers', [Card('joker', 'big'), Card('joker', 'big')],
+		  [Declaration(1, [Card('joker', 'small'), Card('joker', 'small')])]],
+
+		['overturning with jokers after declaring once already', [Card('joker', 'big'), Card('joker', 'big')],
+		  [Declaration(0, [Card('s', '3')]), Declaration(1, [Card('h', '3'), Card('h', '3')])]],
+
+		['overturn two big jokers with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+			[Declaration(1, [Card('joker', 'big'), Card('joker', 'big')])]],
 	])
 
-	def testValidDeclarations(self, name, player, cards, declarations):
+	def testValidDeclarations(self, name, cards, declarations):
+		player = 0
 		self.round_state.declarations = declarations
-		self.round_state.player_hands[0] = [
-			Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('s', '3'), Card('d', '3')]
+		self.round_state.player_hands[player] = [
+			Card('s', '4'), Card('s', '3'), Card('s', '3'), Card('s', '3'),
+			Card('d', '3'), Card('joker', 'big'), Card('joker', 'big'),
+		]
 		self.assertTrue(self.round_state.is_declaration_valid(player, cards))
 
 if __name__ == '__main__':

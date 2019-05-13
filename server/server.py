@@ -296,6 +296,15 @@ def join(user, game_id):
 def join_as(user, game_id, player_idx):
 	do_join(user, game_id, player_idx=player_idx)
 
+@sio.on('leave')
+@process_user
+def leave(user):
+	if user.game_player is None:
+		return
+	user.game_player.game.player_left(user.game_player)
+	user.game_player = None
+	sio.emit('left', '', room=user.sid)
+
 def process_game_player(func):
 	def func_wrapper(user, *args):
 		if user.game_player is None:

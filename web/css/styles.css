@@ -5,6 +5,8 @@ body {
 	font-size: 18px;
 	color: #444;
 	padding: 0 10px;
+	font-family: 'Roboto', sans-serif;
+	background-color: #ccc;
 }
 
 h1, h2, h3 {
@@ -12,9 +14,7 @@ h1, h2, h3 {
 }
 
 .playingCards .card.trump {
-    -moz-box-shadow: .2em .2em .5em #ff02c7;
-    -webkit-box-shadow: .2em .2em .5em #ff02c7;
-    box-shadow: .2em .2em .5em #ff02c7;
+	background-color: #fff4ac;
 }
 
 .playingCards .card.selected {
@@ -22,6 +22,7 @@ h1, h2, h3 {
 }
 
 .playerInfoContainer {
+	margin: 0 auto;
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	grid-template-rows: 1fr 1fr 1fr 1fr;
@@ -49,8 +50,7 @@ h1, h2, h3 {
 }
 
 .playerInfo {
-	width: 50%;
-	float: left;
+	text-align: center;
 }
 
 .gameInfo div {

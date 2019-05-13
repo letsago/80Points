@@ -42,7 +42,7 @@ Vue.component('card', {
 		classObj: function() {
 			let c = {
 				card: true,
-				trump: this.isTrump && !this.selected,
+				trump: this.isTrump,
 				selected: this.selected,
 			};
 			c[this.rankClass] = true;

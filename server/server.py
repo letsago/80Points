@@ -303,7 +303,7 @@ def leave(user):
 		return
 	user.game_player.game.player_left(user.game_player)
 	user.game_player = None
-	sio.emit('left', '', room=user.sid)
+	sio.emit('left', room=user.sid)
 
 def process_game_player(func):
 	def func_wrapper(user, *args):

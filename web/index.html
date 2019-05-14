@@ -39,8 +39,6 @@
 				<input v-model="createGameOptions.name" placeholder="game name">
 				<select v-model="createGameOptions.numPlayers">
 					<option>4</option>
-					<option>5</option>
-					<option>6</option>
 				</select>
 				<button v-on:click="createGame(createGameOptions.name, createGameOptions.numPlayers)">Create</button>
 			</div>
@@ -116,6 +114,9 @@
 						</template>
 					</span>
 				</div>
+			</template>
+			<template v-if="isError">
+				<p> {{errorMsg}} </p>
 			</template>
 			<div class="playingCards fourColours">
 				<ul class="hand">

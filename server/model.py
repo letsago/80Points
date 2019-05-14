@@ -685,7 +685,7 @@ class Round(object):
 
 		# checks if play is invalid
 		if not self.state.is_play_valid(player, cards):
-			raise RoundException("invalid play")
+			raise RoundException("Invalid play")
 
 		self.state.board[player] = cards
 		self.state.remove_cards_from_hand(player, cards)

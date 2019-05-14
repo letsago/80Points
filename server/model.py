@@ -641,9 +641,9 @@ class Round(object):
 		Deals the next card to the next player.
 		'''
 		if self.state.status != STATUS_DEALING:
-			raise RoundException("the round is not currently in the dealing stage")
+			raise RoundException("The round is not currently in the dealing stage")
 		if len(self.state.deck) == 0:
-			raise RoundException("no more cards to deal")
+			raise RoundException("No more cards to deal")
 		card = self.state.deal_card_to_player(self.state.turn)
 		self._fire(lambda listener: listener.card_dealt(self, self.state.turn, card))
 		self.state.increment_turn()
@@ -653,10 +653,10 @@ class Round(object):
 		Declare the cards.
 		'''
 		if self.state.status != STATUS_DEALING:
-			raise RoundException("the trump suit has already been decided")
+			raise RoundException("The trump suit has already been decided")
 
 		if not self.state.is_declaration_valid(player, cards):
-			raise RoundException("invalid declaration")
+			raise RoundException("Invalid declaration")
 
 		self.state.declare(player, cards)
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
@@ -666,13 +666,13 @@ class Round(object):
 		Play the cards.
 		'''
 		if self.state.status != STATUS_PLAYING:
-			raise RoundException("the round is not in progress")
+			raise RoundException("The round is not in progress")
 		elif self.state.turn != player:
-			raise RoundException("it's not your turn")
+			raise RoundException("It's not your turn")
 
 		player_hand = self.state.player_hands[player]
 		if not is_cards_contained_in(cards, player_hand):
-			raise RoundException("invalid cards")
+			raise RoundException("Invalid cards")
 
 		# if starting new play, clear previous one
 		if self.state.is_board_full():
@@ -707,15 +707,15 @@ class Round(object):
 		Set the bottom.
 		'''
 		if self.state.status != STATUS_BOTTOM:
-			raise RoundException("the bottom has already been set")
+			raise RoundException("The bottom has already been set")
 		elif self.state.declaration.player != player:
-			raise RoundException("you did not have the bottom")
+			raise RoundException("You did not have the bottom")
 		elif len(cards) != BOTTOM_SIZE[self.state.num_players]:
-			raise RoundException("the bottom must be {} cards".format(BOTTOM_SIZE[self.state.num_players]))
+			raise RoundException("The bottom must be {} cards".format(BOTTOM_SIZE[self.state.num_players]))
 
 		player_hand = self.state.player_hands[player]
 		if not is_cards_contained_in(cards, player_hand):
-			raise RoundException("invalid cards")
+			raise RoundException("Invalid cards")
 
 		self.state.remove_cards_from_hand(player, cards)
 		# Clear board to remove any declared cards from the board.

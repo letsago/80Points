@@ -54,6 +54,9 @@
 			</ul>
 		</div>
 		<div id="modeGame" v-if="mode == 'game'">
+			<div>
+				<button v-on:click="leaveGame()">Leave Game</button>
+			</div>
 			<div class="gameInfo">
 				<div>
 					<b>Trump Suit: </b>{{ suits[trumpSuit] }}

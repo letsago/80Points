@@ -139,6 +139,9 @@ var app = new Vue({
 		joinGameAs: function(gameId, playerIdx) {
 			socket.emit('join_as', gameId, playerIdx);
 		},
+		leaveGame: function() {
+			socket.emit('leave');
+		},
 		clearSelectedCards: function() {
 			app.cards.forEach(function(el) {
 				el.selected = false;
@@ -222,6 +225,11 @@ socket.on('lobby', function (data) {
 	app.game_id = data.game_id;
 	app.players = data.players;
 	app.player = data.playerIndex;
+});
+
+socket.on('left', function() {
+	app.mode = 'list';
+	app.refreshGameList();
 });
 
 socket.on('state', function(data) {

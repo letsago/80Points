@@ -6,7 +6,13 @@ body {
 	color: #444;
 	padding: 0 10px;
 	font-family: 'Roboto', sans-serif;
-	background-color: #ccc;
+	background-color: #033301;
+}
+
+#app {
+	background-color: #eee;
+    padding: 30px;
+    border-radius: 10px;
 }
 
 h1, h2, h3 {
@@ -17,8 +23,16 @@ h1, h2, h3 {
 	background-color: #fff4ac;
 }
 
+.inHand .card {
+    transition: 0.2s;
+}
+
+.inHand .card:hover {
+	transform: translateY(-0.4em);
+}
+
 .playingCards .card.selected {
-    top: -1em;
+	transform: translateY(-1em);
 }
 
 .playerInfoContainer {

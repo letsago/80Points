@@ -19,7 +19,7 @@ Vue.component('card', {
 		},
 		rankDisplay: function () {
 			if (this.rank == 'big' || this.rank == 'small') {
-				return '-';
+				return '';
 			}
 			return this.rank;
 		},

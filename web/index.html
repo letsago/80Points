@@ -68,9 +68,7 @@
 				<div v-if="attackingPlayers.length > 0">
 					<b>Attacking Team Points: </b>{{ attackingPoints }}
 				</div>
-				<span>
-					You are: <span class="heading">{{ playerName }}</span>
-				</span>
+				hello
 			</div>
 			<div class="playerInfoContainer">
 				<div :class="['playerInfo', playerPosition(index)]" v-for="(player, index) in players">
@@ -119,7 +117,7 @@
 					</span>
 				</div>
 			</template>
-			<div class="playingCards fourColours">
+			<div class="playingCards fourColours inHand">
 				<ul class="hand">
 					<li v-for="card in cards">
 						<card :suit="card.suit" :rank="card.value"

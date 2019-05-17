@@ -60,15 +60,11 @@
 		<div id="modeGame" v-if="mode == 'game'">
 			<div class="gameInfo">
 				<div>
-					<b>Trump Suit: </b>{{ suits[trumpSuit] }}
+					<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }} 
 				</div>
-				<div>
-					<b>Trump Rank: </b>{{ trumpRank }}
+				<div class="points">
+					<b>Points: </b>{{ attackingPoints }}
 				</div>
-				<div v-if="attackingPlayers.length > 0">
-					<b>Attacking Team Points: </b>{{ attackingPoints }}
-				</div>
-				hello
 			</div>
 			<div class="playerInfoContainer">
 				<div :class="['playerInfo', playerPosition(index)]" v-for="(player, index) in players">

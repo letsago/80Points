@@ -67,13 +67,16 @@ h1, h2, h3 {
 	text-align: center;
 }
 
-.gameInfo div {
-	width: 50%;
-	float: left;
+.gameInfo {
+	display: flex;
 }
 
-.playerHand {
-	clear: left;
+.gameInfo div {
+	flex: 0 1 50%;
+}
+
+.points {
+	text-align: right;
 }
 
 .heading {

@@ -96,6 +96,8 @@ var app = new Vue({
 		players: [],
 		declaration: null,
 		board: [],
+		isError: false,
+		errorMsg: '',
 		playerPoints: [],
 		attackingPlayers: [],
 	},
@@ -136,6 +138,9 @@ var app = new Vue({
 		},
 		joinGameAs: function(gameId, playerIdx) {
 			socket.emit('join_as', gameId, playerIdx);
+		},
+		leaveGame: function() {
+			socket.emit('leave');
 		},
 		clearSelectedCards: function() {
 			app.cards.forEach(function(el) {
@@ -222,6 +227,11 @@ socket.on('lobby', function (data) {
 	app.player = data.playerIndex;
 });
 
+socket.on('left', function() {
+	app.mode = 'list';
+	app.refreshGameList();
+});
+
 socket.on('state', function(data) {
 	app.status = data.status;
 	app.player = data.player;
@@ -231,8 +241,15 @@ socket.on('state', function(data) {
 	app.declaration = data.declaration;
 	app.board = data.board;
 	app.bottomSize = data.bottom_size;
+	app.isError = false;
+	app.errorMsg = '';
 	app.playerPoints = data.player_points;
 	app.attackingPlayers = data.attacking_players;
 
 	app.cards = mergeCards(app.cards, data.hand);
+});
+
+socket.on('error', function(text) {
+	app.isError = true;
+	app.errorMsg = text;
 });

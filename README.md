@@ -2,6 +2,8 @@
 
 A trick-based game where teams of players earn points to advance their levels.
 
+Rules: https://en.wikipedia.org/wiki/Sheng_ji
+
 ## Setup 
 
 ```bash

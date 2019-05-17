@@ -97,7 +97,7 @@ class Game(model.RoundListener):
 		self.sio.emit('lobby', self.lobby_dict(player.idx), room=player.user.sid)
 
 	def _broadcast_lobby(self):
-		for player in self.players + self.observers.values():
+		for player in self.players + list(self.observers.values()):
 			self._send_lobby(player)
 
 	def _ensure_listener(self, player):
@@ -162,7 +162,7 @@ class Game(model.RoundListener):
 			raise GameException('this game already started')
 		self.status = STATUS_ROUND
 		listeners = []
-		for player in self.players + self.observers.values():
+		for player in self.players + list(self.observers.values()):
 			player.listener = server_utils.ForwardToGamePlayer(sio, player)
 			listeners.append(player.listener)
 		self.round = model.Round(len(self.players),
@@ -170,7 +170,7 @@ class Game(model.RoundListener):
 								 deck_name=args.deck_name)
 
 	def ended(self, r, player_scores, next_player):
-		for player in self.players + self.observers.values():
+		for player in self.players + list(self.observers.values()):
 			player.ready = False
 			player.listener = None
 		self.round = None
@@ -295,6 +295,15 @@ def join(user, game_id):
 @process_user
 def join_as(user, game_id, player_idx):
 	do_join(user, game_id, player_idx=player_idx)
+
+@sio.on('leave')
+@process_user
+def leave(user):
+	if user.game_player is None:
+		return
+	user.game_player.game.player_left(user.game_player)
+	user.game_player = None
+	sio.emit('left', room=user.sid)
 
 def process_game_player(func):
 	def func_wrapper(user, *args):

@@ -265,6 +265,20 @@ class RoundState(object):
 	def increment_turn(self):
 		self.turn = (self.turn + 1) % self.num_players
 
+	def at_max_declaration(self):
+		'''
+		This function determines whether the latest declaration is the
+		maximum declaration possible.
+
+		Returns:
+			bool
+		'''
+		if self.declaration is None:
+			return False
+		if len(self.declaration.cards) != self.num_decks:
+			return False
+		return self.declaration.cards[0] == Card('joker', 'big')
+
 	def is_declaration_valid(self, player, cards):
 		'''
 		This function determines whether a declaration is valid based on the
@@ -282,24 +296,48 @@ class RoundState(object):
 		# Player can't declare with cards they don't have.
 		if not is_cards_contained_in(cards, self.player_hands[player]):
 			return False
-		# All cards must have the same value as the trump card.
-		for card in cards:
-			if card.value != self.trump_card.value:
-				return False
+		# All cards must have the same value.
+		if len({card.value for card in cards}) != 1:
+			return False
 		# All cards must have the same suit.
 		if len({card.suit for card in cards}) != 1:
 			return False
+		# All cards must have the same value as the trump card or be a joker.
+		for card in cards:
+			if card.value != self.trump_card.value and card.suit != 'joker':
+				return False
+		# A single joker is not allowed.
+		if len(cards) == 1 and cards[0].suit == 'joker':
+			return False
+
 		# No previous declarations, so this declaration is fine.
 		if self.declaration is None:
 			return True
 
-		# Must use more cards than most recent declaration.
-		if len(cards) <= len(self.declaration.cards):
+		# If there are less cards than the most recent declaration, it's invalid.
+		if len(cards) < len(self.declaration.cards):
 			return False
-		# If the player previously declared, they must use the same suit as before.
-		for declaration in self.declarations:
-			if player == declaration.player and declaration.cards[0].suit != cards[0].suit:
+		# Otherwise, the rules depend on whether the cards are jokers or not.
+		if cards[0].suit != 'joker':
+			# Having the same amount to declare is not enough when using trump values.
+			if len(cards) == len(self.declaration.cards):
 				return False
+			# If the player previously declared, they must use the same suit as before.
+			for declaration in self.declarations:
+				if player == declaration.player and declaration.cards[0].suit != cards[0].suit:
+					return False
+		# Dealing with jokers.
+		else:
+			# If the previous suit is not a joker, the player can't overturn themselves.
+			if self.declaration.cards[0].suit != 'joker' and player == self.declaration.player:
+				return False
+			if len(cards) == len(self.declaration.cards):
+				# If the current cards are small jokers, then the last declaration must not be jokers.
+				if cards[0].value == 'small' and self.declaration.cards[0].suit == 'joker':
+					return False
+				# If the current cards are big jokers, then the last declaration must not be big jokers.
+				if cards[0].value == 'big' and self.declaration.cards[0].value == 'big':
+					return False
 
 		return True
 
@@ -601,9 +639,9 @@ class Round(object):
 		Deals the next card to the next player.
 		'''
 		if self.state.status != STATUS_DEALING:
-			raise RoundException("the round is not currently in the dealing stage")
+			raise RoundException("The round is not currently in the dealing stage")
 		if len(self.state.deck) == 0:
-			raise RoundException("no more cards to deal")
+			raise RoundException("No more cards to deal")
 		card = self.state.deal_card_to_player(self.state.turn)
 		self._fire(lambda listener: listener.card_dealt(self, self.state.turn, card))
 		self.state.increment_turn()
@@ -613,10 +651,10 @@ class Round(object):
 		Declare the cards.
 		'''
 		if self.state.status != STATUS_DEALING:
-			raise RoundException("the trump suit has already been decided")
+			raise RoundException("The trump suit has already been decided")
 
 		if not self.state.is_declaration_valid(player, cards):
-			raise RoundException("invalid declaration")
+			raise RoundException("Invalid declaration")
 
 		self.state.declare(player, cards)
 		self._fire(lambda listener: listener.player_declared(self, player, cards))
@@ -626,13 +664,13 @@ class Round(object):
 		Play the cards.
 		'''
 		if self.state.status != STATUS_PLAYING:
-			raise RoundException("the round is not in progress")
+			raise RoundException("The round is not in progress")
 		elif self.state.turn != player:
-			raise RoundException("it's not your turn")
+			raise RoundException("It's not your turn")
 
 		player_hand = self.state.player_hands[player]
 		if not is_cards_contained_in(cards, player_hand):
-			raise RoundException("invalid cards")
+			raise RoundException("Invalid cards")
 
 		# if starting new play, clear previous one
 		if self.state.is_board_full():
@@ -645,7 +683,7 @@ class Round(object):
 
 		# checks if play is invalid
 		if not self.state.is_play_valid(player, cards):
-			raise RoundException("invalid play")
+			raise RoundException("Invalid play")
 
 		self.state.board[player] = cards
 		self.state.remove_cards_from_hand(player, cards)
@@ -667,15 +705,15 @@ class Round(object):
 		Set the bottom.
 		'''
 		if self.state.status != STATUS_BOTTOM:
-			raise RoundException("the bottom has already been set")
+			raise RoundException("The bottom has already been set")
 		elif self.state.declaration.player != player:
-			raise RoundException("you did not have the bottom")
+			raise RoundException("You did not have the bottom")
 		elif len(cards) != BOTTOM_SIZE[self.state.num_players]:
-			raise RoundException("the bottom must be {} cards".format(BOTTOM_SIZE[self.state.num_players]))
+			raise RoundException("The bottom must be {} cards".format(BOTTOM_SIZE[self.state.num_players]))
 
 		player_hand = self.state.player_hands[player]
 		if not is_cards_contained_in(cards, player_hand):
-			raise RoundException("invalid cards")
+			raise RoundException("Invalid cards")
 
 		self.state.remove_cards_from_hand(player, cards)
 		# Clear board to remove any declared cards from the board.

@@ -18,7 +18,7 @@ class TimedActionListener(model.RoundListener):
 
 		# Deal faster if the declaration is maximum possible already.
 		delay = 1
-		if r.state.declaration is not None and len(r.state.declaration.cards) == r.state.num_decks:
+		if r.state.at_max_declaration():
 			delay = 0.1
 		eventlet.spawn_after(float(delay) / self.speed, r.deal_card)
 	
@@ -37,7 +37,7 @@ class TimedActionListener(model.RoundListener):
 			self.pending_declaration_finalization.cancel()
 
 		# If the declaration is the maximum possible already, we finalize immediately.
-		if r.state.declaration is not None and len(r.state.declaration.cards) == r.state.num_decks:
+		if r.state.at_max_declaration():
 			r.finalize_declaration()
 		# Otherwise, we schedule for finalization to happen in the future, to allow for potential
 		# overturning / defending even after all the cards are dealt.

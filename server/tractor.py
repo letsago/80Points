@@ -98,16 +98,28 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 	"""
 	Returns a list of Tractors corresponding to a set of played Cards.
 	cards: an iterable of played Cards
-	trick_suit: the suit played by the first player in this trick
+	trick_suit: the suit played by the first player in this trick, or 'trump' if it was trump suit
 	trump_card: card defining the trump suit/value of this round
 
 	target_form: a list of Tractors; the rank and length of returned tractors must
 		match the rank and length of tractors in target_form. We return None if
 		there is no way to match.
 	"""
-	# group equal cards into length 1 Tractors
-	counter = collections.Counter(cards)
+	# non trick/trump become l-1,r-1 tractors
+	low_cards = []
+	high_cards = []
+	for card in cards:
+		if card_to_suit_type(card, trick_suit, trump_card) == SUIT_LOWEST:
+			low_cards.append(card)
+		else:
+			high_cards.append(card)
+
 	tractors = []
+	for card in low_cards:
+		tractors.append(Tractor(1, 1, card.suit_power(trump_card), SUIT_LOWEST))
+
+	# group equal trick/trump cards into length 1 Tractors
+	counter = collections.Counter(high_cards)
 	for card, count in counter.items():
 		suit_type = card_to_suit_type(card, trick_suit, trump_card)
 		tractors.append(Tractor(count, 1, card.suit_power(trump_card), suit_type))
@@ -115,7 +127,7 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 
 	# merge consecutive rank > 1, length 1 Tractors of the same rank into multi-length Tractors
 	i = 0
-	while i < len(tractors) - 1:
+	while i < len(tractors) - 1 and tractors[i+1].suit_type > SUIT_LOWEST:
 		tractor1, tractor2 = tractors[i], tractors[i+1]
 		if tractor1.rank > 1 and tractor1.rank == tractor2.rank and tractor1.suit_type == tractor2.suit_type and abs(tractor1.power - tractor2.power) == 1:
 			assert tractor2.length == 1
@@ -124,11 +136,11 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 		else:
 			i += 1
 
-	# sorting is necessary after merging so that tractors are guaranteed to be 
+	# sorting is necessary after merging so that tractors are guaranteed to be
 	# sorted by rank, length, suit_type, and then power in that priority order
 	# that way, it will make play validation easier as the tractors will already be sorted based on play priority order
 	tractors = sorted(tractors, reverse=True)
-	
+
 	if target_form is not None:
 		# try to adjust tractors to match target_form
 		tractors = match_form(tractors, target_form)
@@ -140,17 +152,17 @@ class TractorMetadata(object):
 	TractorMetadata represents only the rank and length of a particular tractor play.
 	This object is primarily used in play validation where rank and length are most relevant to consider.
 	'''
-	
+
 	def __init__(self, rank, length):
 		self.rank = rank
 		self.length = length
-	
+
 	def __str__(self):
 		return '(r: %s l: %s)' % (self.rank, self.length)
 
 	def __repr__(self):
 		return self.__str__()
-	
+
 	def __eq__(self, other):
 		'''
 		Returns whether self and other are equal.
@@ -183,8 +195,8 @@ def get_min_data(tractor_data_1, tractor_data_2):
 	
 def find_matching_data_index(data_array, target_data):
 	'''
-	Returns the index to the first data from a reverse sorted data array corresponding to at least a target 
-	data's rank and length. If data is not found, then by default the first index will be returned 
+	Returns the index to the first data from a reverse sorted data array corresponding to at least a target
+	data's rank and length. If data is not found, then by default the first index will be returned
 	as it corresponds with max data within the reverse sorted data array input. This function is used in both
 	update_data_array, where it is guaranteed that matching data index is found, and in the is_play_valid function,
 	where it is not guaranteed that matching data index is found.
@@ -192,7 +204,7 @@ def find_matching_data_index(data_array, target_data):
 	Args:
 		data_array: TractorMetadata []
 		target_data: TractorMetadata
-	
+
 	Returns:
 		int
 	'''
@@ -200,7 +212,7 @@ def find_matching_data_index(data_array, target_data):
 		# succeeds in finding matching data
 		if data.rank >= target_data.rank and data.length >= target_data.length:
 			return i
-	# fails to find matching data so defaults to first index of data_array, which corresponds to max data, 
+	# fails to find matching data so defaults to first index of data_array, which corresponds to max data,
 	# if data_array is empty, return None
 	if data_array:
 		return 0
@@ -208,17 +220,17 @@ def find_matching_data_index(data_array, target_data):
 
 def update_data_array(data_array, data_to_remove):
 	'''
-	Returns an updated reverse sorted rank, length data array after removing data_to_remove from 
-	data array. This function is used primarily in play validation to accurately update the trick and hand data 
-	arrays for subsequent priority play matching. Since you cannot remove greater data from lesser data, assertions 
-	are made to check that there exists at least one TractorMetadata in data_array that is greater than data_to_remove. 
-	In the play validation logic, before being passed into the function, data_to_remove is calculated to have a rank 
+	Returns an updated reverse sorted rank, length data array after removing data_to_remove from
+	data array. This function is used primarily in play validation to accurately update the trick and hand data
+	arrays for subsequent priority play matching. Since you cannot remove greater data from lesser data, assertions
+	are made to check that there exists at least one TractorMetadata in data_array that is greater than data_to_remove.
+	In the play validation logic, before being passed into the function, data_to_remove is calculated to have a rank
 	and length less than at least one element in data_array.
 
 	Args:
 		data_array: TractorMetadata []
 		data_to_remove: TractorMetadata
-	
+
 	Returns:
 		TractorMetadata []
 	'''

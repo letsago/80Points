@@ -395,9 +395,7 @@ class RoundState(object):
 
 	def determine_winner(self):
 		first_player = (self.turn + 1) % self.num_players
-		trick_suit = self.board[first_player][0].suit
-		if trick_suit == 'joker':
-			trick_suit = self.trump_card.suit
+		trick_suit = self.board[first_player][0].get_normalized_suit(self.trump_card)
 		first_tractors = cards_to_tractors(self.board[first_player], trick_suit, self.trump_card)
 		winning_player = first_player
 		winning_flush = Flush(first_tractors)
@@ -447,7 +445,7 @@ class RoundState(object):
 
 		return view
 
-	def get_suit_tractors_from_hand(self, player, trick_card):
+	def get_suit_tractors_from_hand(self, player, trick_suit):
 		'''
 		This function returns a list of all tractor plays that are of the trick card's
 		suit within a specified player's hand. If trick suit is trump then, a list of all
@@ -455,15 +453,15 @@ class RoundState(object):
 
 		Args:
 			player: int
-			trick_card: Card
+			trick_suit: trick suit, or 'trump'
 		Returns:
 			Tractor []
 		'''
 		suit_cards = []
 		for card in self.player_hands[player]:
-			if card.get_normalized_suit(self.trump_card) == trick_card.get_normalized_suit(self.trump_card):
+			if card.get_normalized_suit(self.trump_card) == trick_suit:
 				suit_cards.append(card)
-		suit_tractors = cards_to_tractors(suit_cards, trick_card.suit, self.trump_card)
+		suit_tractors = cards_to_tractors(suit_cards, trick_suit, self.trump_card)
 		return suit_tractors
 
 	def is_play_valid(self, player, cards):
@@ -498,39 +496,39 @@ class RoundState(object):
 		
 		# grab trick tractor and player hand trick suit tractor rank and length data
 		trick_card = first_play[0]
+		trick_suit = trick_card.get_normalized_suit(self.trump_card)
 		trick_tractors = cards_to_tractors(first_play, trick_card.suit, self.trump_card)
-		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_card)
+		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_suit)
 
 		# if hand doesn't have any trick suit cards then player can play cards of any suit as long as 
 		# play_card_count equals trick_card_count (case already handled above)
 		if not hand_suit_tractors:
 			return True
-		
+
+		play_suit_cards = [card for card in cards if card.get_normalized_suit(self.trump_card) == trick_suit]
+		play_suit_tractors = cards_to_tractors(play_suit_cards, trick_suit, self.trump_card)
 		trick_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in trick_tractors]
 		hand_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in hand_suit_tractors]
+		play_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in play_suit_tractors]
 		
-		# find hand data (rank, length) that matches trick data, add it to priority_data_array, and update trick_data 
-		# and hand_data accordingly by removing that data from both arrays
-		priority_data_array = []
+		# find hand data (rank, length) that matches trick data, and make sure play contains
+		# tractor with at least that rank and length.
+		# then, update trick/hand/play data by removing the matched data.
 		while trick_data_array and hand_data_array:
-			i = find_matching_data_index(hand_data_array, trick_data_array[0])
-			min_data = get_min_data(trick_data_array[0], hand_data_array[i])
-			priority_data_array.append(min_data)
-			trick_data_array = update_data_array(trick_data_array, min_data)
-			hand_data_array = update_data_array(hand_data_array, min_data)
+			hand_idx = find_matching_data_index(hand_data_array, trick_data_array[0])
+			hand_min_data = get_min_data(trick_data_array[0], hand_data_array[hand_idx])
 
-		# number of played tractors must be at least the number of priority tractors
-		play_tractors = cards_to_tractors(cards, trick_card.suit, self.trump_card)
-		if len(play_tractors) < len(priority_data_array):
-			return False
-
-		trick_suit_type = card_to_suit_type(trick_card, trick_card.suit, self.trump_card)
-		# all sorted priority (rank, length) data must match sorted played tractor data by rank, length, and trick suit_type
-		for i in range(len(priority_data_array)):
-			priority_rank = priority_data_array[i].rank
-			priority_length = priority_data_array[i].length
-			if play_tractors[i].rank != priority_rank or play_tractors[i].length != priority_length or play_tractors[i].suit_type != trick_suit_type:
+			play_idx = find_matching_data_index(play_data_array, trick_data_array[0])
+			if play_idx is None:
 				return False
+
+			play_min_data = get_min_data(trick_data_array[0], play_data_array[play_idx])
+			if play_min_data < hand_min_data:
+				return False
+
+			trick_data_array = update_data_array(trick_data_array, hand_min_data)
+			hand_data_array = update_data_array(hand_data_array, hand_min_data)
+			play_data_array = update_data_array(play_data_array, hand_min_data)
 
 		return True
 

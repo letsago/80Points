@@ -180,6 +180,18 @@ def is_cards_contained_in(cards, hand):
 			return False
 	return True
 
+def get_points(cards):
+	'''
+	Returns the total points in the provided card list.
+	'''
+	points = 0
+	for card in cards:
+		if card.value == '5':
+			points += 5
+		if card.value == '10' or card.value == 'K':
+			points += 10
+	return points
+
 STATUS_DEALING = 'dealing'
 STATUS_BOTTOM = 'bottom'
 STATUS_PLAYING = 'playing'
@@ -357,7 +369,7 @@ class RoundState(object):
 		self.player_hands[player].extend(bottom_cards)
 		self.bottom_player = player
 		return bottom_cards
-	
+
 	def set_attacking_players(self):
 		# TODO(workitem0055): insert logic for odd number player games
 		# once odd number player games are supported, assert will be removed
@@ -382,19 +394,15 @@ class RoundState(object):
 	def clear_board(self):
 		for i in range(len(self.board)):
 			self.board[i] = []
-	
+
 	def get_trick_points(self):
 		points = 0
 		for cards in self.board:
-			for card in cards:
-				if card.value == '5':
-					points += 5
-				if card.value == '10' or card.value == 'K':
-					points += 10
+			points += get_points(cards)
 		return points
 
 	def determine_winner(self):
-		first_player = (self.turn + 1) % self.num_players
+		first_player = self.trick_first_player
 		trick_suit = self.board[first_player][0].get_normalized_suit(self.trump_card)
 		first_tractors = cards_to_tractors(self.board[first_player], trick_suit, self.trump_card)
 		winning_player = first_player
@@ -408,10 +416,13 @@ class RoundState(object):
 			if flush > winning_flush:
 				winning_player = player
 				winning_flush = flush
+		return winning_player, winning_flush
+
+	def end_trick(self):
+		winner, _ = self.determine_winner()
 		# update winning player's point count and set turn to be winning player's
-		self.player_points[winning_player] += self.get_trick_points()
-		self.set_turn(winning_player)
-		return winning_player
+		self.player_points[winner] += self.get_trick_points()
+		self.set_turn(winner)
 
 	def get_player_view(self, player):
 		'''
@@ -445,20 +456,20 @@ class RoundState(object):
 
 		return view
 
-	def get_suit_tractors_from_hand(self, player, trick_suit):
+	def get_suit_tractors_from_cards(self, cards, trick_suit):
 		'''
 		This function returns a list of all tractor plays that are of the trick card's
-		suit within a specified player's hand. If trick suit is trump then, a list of all
-		trump tractor plays within a player's hand will be returned.
+		suit within the specified card list. If trick suit is trump then, a list of all
+		trump tractor plays within the card list will be returned.
 
 		Args:
-			player: int
+			cards: Card []
 			trick_suit: trick suit, or 'trump'
 		Returns:
 			Tractor []
 		'''
 		suit_cards = []
-		for card in self.player_hands[player]:
+		for card in cards:
 			if card.get_normalized_suit(self.trump_card) == trick_suit:
 				suit_cards.append(card)
 		suit_tractors = cards_to_tractors(suit_cards, trick_suit, self.trump_card)
@@ -471,8 +482,8 @@ class RoundState(object):
 		and used to determine whether or not the play is valid given the trick's first play.
 
 		Args:
-			player: int 
-			cards: Card [] 
+			player: int
+			cards: Card []
 		Returns:
 			bool
 		'''
@@ -486,21 +497,21 @@ class RoundState(object):
 		if player == self.trick_first_player:
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
 			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
-		
+
 		first_play = self.board[self.trick_first_player]
 		trick_card_count = len(first_play)
-				
+
 		# number of cards played must match number of cards in trick
 		if play_card_count != trick_card_count:
 			return False
-		
+
 		# grab trick tractor and player hand trick suit tractor rank and length data
 		trick_card = first_play[0]
 		trick_suit = trick_card.get_normalized_suit(self.trump_card)
 		trick_tractors = cards_to_tractors(first_play, trick_card.suit, self.trump_card)
-		hand_suit_tractors = self.get_suit_tractors_from_hand(player, trick_suit)
+		hand_suit_tractors = self.get_suit_tractors_from_cards(self.player_hands[player], trick_suit)
 
-		# if hand doesn't have any trick suit cards then player can play cards of any suit as long as 
+		# if hand doesn't have any trick suit cards then player can play cards of any suit as long as
 		# play_card_count equals trick_card_count (case already handled above)
 		if not hand_suit_tractors:
 			return True
@@ -510,7 +521,7 @@ class RoundState(object):
 		trick_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in trick_tractors]
 		hand_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in hand_suit_tractors]
 		play_data_array = [TractorMetadata(tractor.rank, tractor.length) for tractor in play_suit_tractors]
-		
+
 		# find hand data (rank, length) that matches trick data, and make sure play contains
 		# tractor with at least that rank and length.
 		# then, update trick/hand/play data by removing the matched data.
@@ -612,7 +623,7 @@ class Round(object):
 	def _fire(self, f):
 		for listener in self.listeners:
 			f(listener)
-		
+
 	def finalize_declaration(self):
 		'''
 		Called after the cards are dealt, only when the declaration should be
@@ -677,7 +688,7 @@ class Round(object):
 			self.state.clear_board()
 
 		# if board is empty, including the first play of the round, where board is not previously cleared,
-		# then set trick first player to player 
+		# then set trick first player to player
 		if self.state.is_board_empty():
 			self.state.trick_first_player = player
 
@@ -692,7 +703,7 @@ class Round(object):
 		# otherwise, we can just increment it
 		if self.state.is_board_full():
 			if len(self.state.player_hands[0]) > 0:
-				winner = self.state.determine_winner()
+				self.state.end_trick()
 			else:
 				self._end()
 		else:

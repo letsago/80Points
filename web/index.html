@@ -115,6 +115,9 @@
 						<template v-if="canPlay">
 							<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>
 						</template>
+						<template v-if="canPlay">
+							<button v-on:click="getSuggestedPlay">Suggest</button>
+						</template>
 					</span>
 				</div>
 			</template>

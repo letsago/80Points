@@ -320,7 +320,7 @@ class TestRoundState(unittest.TestCase):
 	def testPlayerPoints(self, name, trick_plays, cumulative_player_points):
 		for i, trick in enumerate(trick_plays):
 			self.round_state.board = trick
-			self.round_state.determine_winner()
+			self.round_state.end_trick()
 			self.assertEqual(self.round_state.player_points, cumulative_player_points[i])
 
 	@parameterized.expand([
@@ -358,8 +358,9 @@ class TestRoundState(unittest.TestCase):
 
 	def testSuitTractorsFromHandNonJokerTrump(self, suit_name, trick_card, suit_tractor_data):
 		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
+		hand = self.round_state.player_hands[self.second_player]
 		trick_suit = trick_card.get_normalized_suit(self.round_state.trump_card)
-		self.assertEqual(self.round_state.get_suit_tractors_from_hand(self.second_player, trick_suit), suit_tractors)
+		self.assertEqual(self.round_state.get_suit_tractors_from_cards(hand, trick_suit), suit_tractors)
 
 	@parameterized.expand([
 		['diamonds', Card('d', '2'), []],
@@ -390,8 +391,9 @@ class TestRoundState(unittest.TestCase):
 	def testSuitTractorsFromHandJokerTrump(self, suit_name, trick_card, suit_tractor_data):
 		self.round_state.trump_card = Card('joker', '3')
 		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
+		hand = self.round_state.player_hands[self.second_player]
 		trick_suit = trick_card.get_normalized_suit(self.round_state.trump_card)
-		self.assertEqual(self.round_state.get_suit_tractors_from_hand(self.second_player, trick_suit), suit_tractors)
+		self.assertEqual(self.round_state.get_suit_tractors_from_cards(hand, trick_suit), suit_tractors)
 
 	@parameterized.expand([
 		['no play', []],

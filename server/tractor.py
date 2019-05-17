@@ -35,6 +35,9 @@ class Tractor(object):
 		'''
 		return self.rank == other.rank and self.length == other.length and self.power == other.power and self.suit_type == other.suit_type
 
+	def __ne__(self, other):
+		return not self == other
+
 	def __lt__(self, other):
 		'''
 		Returns whether self is less than other.
@@ -50,7 +53,7 @@ class Tractor(object):
 def card_to_suit_type(card, trick_suit, trump_card):
 	if card.is_trump(trump_card):
 		return SUIT_TRUMP
-	if card.suit == trick_suit:
+	if card.suit == trick_suit or trick_suit is None:
 		return SUIT_TRICK
 	return SUIT_LOWEST
 
@@ -99,11 +102,17 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 	Returns a list of Tractors corresponding to a set of played Cards.
 	cards: an iterable of played Cards
 	trick_suit: the suit played by the first player in this trick, or 'trump' if it was trump suit
+		if trick_suit is None, all cards are treated as part of the trick suit
 	trump_card: card defining the trump suit/value of this round
 
 	target_form: a list of Tractors; the rank and length of returned tractors must
 		match the rank and length of tractors in target_form. We return None if
 		there is no way to match.
+
+	If target_form is None, we annotate the generated tractors with an orig_cards
+	attribute, a Card [][] subset of cards corresponding to the tractor.
+	This orig_cards list has tractor.rank elements, and orig_cards[i] contains the
+	tractor's cards at power tractor.power+i.
 	"""
 	# non trick/trump become l-1,r-1 tractors
 	low_cards = []
@@ -116,13 +125,17 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 
 	tractors = []
 	for card in low_cards:
-		tractors.append(Tractor(1, 1, card.suit_power(trump_card), SUIT_LOWEST))
+		tractor = Tractor(1, 1, card.suit_power(trump_card), SUIT_LOWEST)
+		tractor.orig_cards = [[card]]
+		tractors.append(tractor)
 
 	# group equal trick/trump cards into length 1 Tractors
 	counter = collections.Counter(high_cards)
 	for card, count in counter.items():
 		suit_type = card_to_suit_type(card, trick_suit, trump_card)
-		tractors.append(Tractor(count, 1, card.suit_power(trump_card), suit_type))
+		tractor = Tractor(count, 1, card.suit_power(trump_card), suit_type)
+		tractor.orig_cards = [[card] * count]
+		tractors.append(tractor)
 	tractors = sorted(tractors, reverse=True)
 
 	# merge consecutive rank > 1, length 1 Tractors of the same rank into multi-length Tractors
@@ -131,7 +144,9 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 		tractor1, tractor2 = tractors[i], tractors[i+1]
 		if tractor1.rank > 1 and tractor1.rank == tractor2.rank and tractor1.suit_type == tractor2.suit_type and abs(tractor1.power - tractor2.power) == 1:
 			assert tractor2.length == 1
-			tractors[i] = Tractor(tractor1.rank, tractor1.length + tractor2.length, tractor2.power, tractor1.suit_type)
+			tractor = Tractor(tractor1.rank, tractor1.length + tractor2.length, tractor2.power, tractor1.suit_type)
+			tractor.orig_cards = tractor2.orig_cards + tractor1.orig_cards
+			tractors[i] = tractor
 			del tractors[i+1]
 		else:
 			i += 1
@@ -179,20 +194,20 @@ class TractorMetadata(object):
 
 def get_min_data(tractor_data_1, tractor_data_2):
 	'''
-	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a 
+	Finds minimum rank and length between tractor_data_1 and tractor_data_2 and returns as a
 	new TractorMetadata (min_rank, min_length).
 
 	Args:
 		tractor_data_1: TractorMetadata
 		tractor_data_2: TractorMetadata
-	
+
 	Returns:
 		TractorMetadata
 	'''
 	min_rank = min(tractor_data_1.rank, tractor_data_2.rank)
 	min_length = min(tractor_data_1.length, tractor_data_2.length)
 	return TractorMetadata(min_rank, min_length)
-	
+
 def find_matching_data_index(data_array, target_data):
 	'''
 	Returns the index to the first data from a reverse sorted data array corresponding to at least a target

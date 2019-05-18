@@ -87,12 +87,18 @@
 						<div>Points: {{ playerPoints[index] }}</div>
 					</template>
 					<div class="playingCards fourColours">
+							<!-- :style="{ -->
+								<!-- width: (80*board[index].size) + 'px'}"  -->
 						<ul class="hand">
-							<li v-for="card in board[index]">
-								<card :suit="card.suit" :rank="card.value"
-									:trump-suit="trumpSuit" :trump-rank="trumpRank">
-								</card>
-							</li>
+							<transition name="fade">
+								<div v-if="board[index] && board[index].length > 0">
+									<li v-for="card in board[index]">
+										<card :suit="card.suit" :rank="card.value"
+											:trump-suit="trumpSuit" :trump-rank="trumpRank">
+										</card>
+									</li>
+								</div>
+							</transition>
 						</ul>
 					</div>
 				</div>
@@ -115,13 +121,15 @@
 			</template>
 			<div class="playingCards fourColours inHand">
 				<ul class="hand">
-					<li v-for="card in cards">
-						<card :suit="card.suit" :rank="card.value"
-							:selected="card.selected" v-on:update-selected="val => card.selected = val"
-							:selectable="canSelectNewCards"
-							:trump-suit="trumpSuit" :trump-rank="trumpRank">
-						</card>
-					</li>
+					<transition-group name="list">
+						<li v-for="card in cards" v-bind:key="card.key">
+							<card :suit="card.suit" :rank="card.value"
+								:selected="card.selected" v-on:update-selected="val => card.selected = val"
+								:selectable="canSelectNewCards"
+								:trump-suit="trumpSuit" :trump-rank="trumpRank">
+							</card>
+						</li>
+					</transition-group>
 				</ul>
 			</div>
 		</div>

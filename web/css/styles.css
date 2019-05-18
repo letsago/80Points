@@ -9,6 +9,26 @@ body {
 	background-color: #033301;
 }
 
+.fade-enter-active {
+	transition: opacity .3s;
+}
+
+.fade-leave-active {
+	transition: opacity .2s;
+}
+
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+	opacity: 0;
+}
+
+.list-enter-active, .list-leave-active {
+	transition: all 0.5s;
+}
+.list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
+	opacity: 0.8;
+	transform: translateY(-60px);
+}
+
 #app {
 	background-color: #eee;
     padding: 30px;

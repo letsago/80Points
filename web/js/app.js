@@ -197,6 +197,21 @@ function mergeCards(oldCards, newCards) {
 			selected: false,
 		});
 	});
+	if (merged.length === 0) {
+		return [];
+	}
+	// Compute a unique key for each card so the enter / exit transition happens properly.
+	merged[0].index = 0;
+	for (let i = 1; i < merged.length; i++) {
+		if (merged[i].suit == merged[i-1].suit && merged[i].value == merged[i-1].value) {
+			merged[i].index = merged[i-1].index + 1;
+			continue;
+		}
+		merged[i].index = 0;
+	}
+	for (let i = 0; i < merged.length; i++) {
+		merged[i].key = merged[i].suit + merged[i].value + merged[i].index;
+	}
 	return merged;
 }
 

@@ -17,6 +17,8 @@
 
 	<title>80 Points</title>
 	<meta name="description" content="80 Points">
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
 	<link rel="stylesheet" href="css/cards.css?v=1.0">
 	<link rel="stylesheet" href="css/styles.css?v=1.0">
 </head>
@@ -59,17 +61,11 @@
 			</div>
 			<div class="gameInfo">
 				<div>
-					<b>Trump Suit: </b>{{ suits[trumpSuit] }}
+					<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }} 
 				</div>
-				<div>
-					<b>Trump Rank: </b>{{ trumpRank }}
+				<div class="points">
+					<b>Points: </b>{{ attackingPoints }}
 				</div>
-				<div v-if="attackingPlayers.length > 0">
-					<b>Attacking Team Points: </b>{{ attackingPoints }}
-				</div>
-				<span>
-					You are: <span class="heading">{{ playerName }}</span>
-				</span>
 			</div>
 			<div class="playerInfoContainer">
 				<div :class="['playerInfo', playerPosition(index)]" v-for="(player, index) in players">
@@ -93,11 +89,15 @@
 					</template>
 					<div class="playingCards fourColours">
 						<ul class="hand">
-							<li v-for="card in board[index]">
-								<card :suit="card.suit" :rank="card.value"
-									:trump-suit="trumpSuit" :trump-rank="trumpRank">
-								</card>
-							</li>
+							<transition name="fade">
+								<div v-if="board[index] && board[index].length > 0">
+									<li v-for="card in board[index]">
+										<card :suit="card.suit" :rank="card.value"
+											:trump-suit="trumpSuit" :trump-rank="trumpRank">
+										</card>
+									</li>
+								</div>
+							</transition>
 						</ul>
 					</div>
 				</div>
@@ -124,15 +124,17 @@
 			<template v-if="isError">
 				<p> {{errorMsg}} </p>
 			</template>
-			<div class="playingCards fourColours">
+			<div class="playingCards fourColours inHand">
 				<ul class="hand">
-					<li v-for="card in cards">
-						<card :suit="card.suit" :rank="card.value"
-							:selected="card.selected" v-on:update-selected="val => card.selected = val"
-							:selectable="canSelectNewCards"
-							:trump-suit="trumpSuit" :trump-rank="trumpRank">
-						</card>
-					</li>
+					<transition-group name="list">
+						<li v-for="card in cards" v-bind:key="card.key">
+							<card :suit="card.suit" :rank="card.value"
+								:selected="card.selected" v-on:update-selected="val => card.selected = val"
+								:selectable="canSelectNewCards"
+								:trump-suit="trumpSuit" :trump-rank="trumpRank">
+							</card>
+						</li>
+					</transition-group>
 				</ul>
 			</div>
 		</div>

@@ -2,6 +2,7 @@ import functools
 import itertools
 import os
 import random
+import math
 
 CARD_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 CARD_SUITS = ['c', 'd', 'h', 's']
@@ -218,7 +219,7 @@ class Declaration(object):
 from tractor import *
 
 class RoundState(object):
-	def __init__(self, num_players, deck_name=None):
+	def __init__(self, num_players, trump_rank, bottom_player, deck_name=None):
 		'''
 		Creates a new RoundState for num_players players.
 		'''
@@ -230,10 +231,10 @@ class RoundState(object):
 		self.status = STATUS_DEALING
 		self.turn = 0
 		# Card object that represents the trump suit and value, not an actual card used in play
-		self.trump_card = Card(None, '2')
+		self.trump_card = Card(None, trump_rank)
 		self.num_decks = num_players // 2
-		self.trick_first_player = 0
-		self.bottom_player = 0
+		self.trick_first_player = bottom_player
+		self.bottom_player = bottom_player
 		self.attacking_players = []
 
 		# points each player has earned
@@ -438,6 +439,7 @@ class RoundState(object):
 			'bottom_size': BOTTOM_SIZE[self.num_players],
 			'player_points': self.player_points,
 			'attacking_players': self.attacking_players,
+			'bottom_player': self.bottom_player
 		}
 
 		if player is not None:
@@ -596,7 +598,7 @@ class RoundListener(object):
 		pass
 
 class Round(object):
-	def __init__(self, num_players, listeners=None, deck_name=None):
+	def __init__(self, num_players, trump_rank, bottom_player, is_first_round, listeners=None, deck_name=None):
 		'''
 		Create a new Round instance.
 
@@ -604,8 +606,9 @@ class Round(object):
 		'''
 		if listeners is None:
 			listeners = []
-		self.state = RoundState(num_players, deck_name=deck_name)
+		self.state = RoundState(num_players, trump_rank, bottom_player, deck_name=deck_name)
 		self.listeners = list(listeners)
+		self.is_first_round = is_first_round
 		self._fire(lambda listener: listener.round_started(self))
 
 	def add_listener(self, listener):
@@ -631,19 +634,21 @@ class Round(object):
 		possible already.
 		'''
 		# Someone declared in this case, so we give them the bottom.
-		if self.state.declaration is not None:
-			bottom_player = self.state.declaration.player
-		# No one declared in this case, so we set the trump card suit to 'joker'.
-		else:
-			# TODO(workitem0023): This should be pre-determined on subsequent rounds.
-			bottom_player = 0
+		if self.is_first_round:
+			if self.state.declaration is not None:
+				self.state.bottom_player = self.state.declaration.player
+			# No one declared in this case, so we set the trump card suit to 'joker'.
+			else:
+				# TODO(workitem0023): This should be pre-determined on subsequent rounds.
+				self.state.bottom_player = 0
+		if self.state.declaration is None:
 			# Add a dummy declaration so that this (and only this) player can set the bottom.
-			self.state.declarations.append(Declaration(bottom_player, []))
+			self.state.declarations.append(Declaration(self.state.bottom_player, []))
 			self.state.trump_card.suit = 'joker'
-		bottom_cards = self.state.give_bottom_to_player(bottom_player)
+		bottom_cards = self.state.give_bottom_to_player(self.state.bottom_player)
 		self.state.set_attacking_players()
 		self.state.status = STATUS_BOTTOM
-		self._fire(lambda listener: listener.player_given_bottom(self, bottom_player, bottom_cards))
+		self._fire(lambda listener: listener.player_given_bottom(self, self.state.bottom_player, bottom_cards))
 
 	def deal_card(self):
 		'''
@@ -702,10 +707,10 @@ class Round(object):
 		# if all players have played, then we need to figure out who won to update the turn
 		# otherwise, we can just increment it
 		if self.state.is_board_full():
-			if len(self.state.player_hands[0]) > 0:
-				self.state.end_trick()
-			else:
-				self._end()
+			self.state.end_trick()
+			if len(self.state.player_hands[0]) == 0:
+				winner, winning_flush = self.state.determine_winner()
+				self._end(winner, winning_flush)
 		else:
 			self.state.increment_turn()
 
@@ -717,7 +722,7 @@ class Round(object):
 		'''
 		if self.state.status != STATUS_BOTTOM:
 			raise RoundException("The bottom has already been set")
-		elif self.state.declaration.player != player:
+		elif self.state.bottom_player != player:
 			raise RoundException("You did not have the bottom")
 		elif len(cards) != BOTTOM_SIZE[self.state.num_players]:
 			raise RoundException("The bottom must be {} cards".format(BOTTOM_SIZE[self.state.num_players]))
@@ -738,15 +743,49 @@ class Round(object):
 		'''
 		return self.state
 
-	def _end(self):
+	def _end(self, winner, winning_flush):
 		'''
 		Called after the last trick is finished.
 		'''
 		# TODO(workitem0057): Accumulate attacking team's player points and notify listeners about the round result.
 		self.state.status = STATUS_ENDED
+
+		# update winning player's point count from bottom
+		self.state.player_points[winner] += get_points(self.state.bottom) * 2 * winning_flush.tractors[0].rank
+
+		# accumulate attacking player points
+		attacking_points = 0
+		for player in self.state.attacking_players:
+			attacking_points += self.state.player_points[player]
+
+		# determine how many ranks winning team promotes
+		player_score = int(math.floor(float(attacking_points - (40 * self.state.num_decks)) / (40 * self.state.num_decks // 2)))
+		if attacking_points == 0:
+			player_score -= 1
+
+		# promote winning team the number of winning ranks
+		next_round_first_player = self.state.bottom_player
 		player_scores = [0] * self.state.num_players
-		player_scores[0] = 1
-		self._fire(lambda listener: listener.end(self, player_scores, 0))
+
+		if player_score >= 0:
+			# attacking players won
+			for player in self.state.attacking_players:
+				player_scores[player] = player_score
+			if self.state.bottom_player in self.state.attacking_players:
+				next_round_first_player = (next_round_first_player + 2) % self.state.num_players
+			else:
+				next_round_first_player = (next_round_first_player + 1) % self.state.num_players
+		else:
+			# defending players won
+			for player in self.state.attacking_players:
+				player_scores[(player + 1) % self.state.num_players] = abs(player_score)
+			if self.state.bottom_player in self.state.attacking_players:
+				next_round_first_player = (next_round_first_player + 1) % self.state.num_players
+			else:
+				next_round_first_player = (next_round_first_player + 2) % self.state.num_players
+
+		# next_round_trump_rank = self.player_ranks[next_round_first_player]	
+		self._fire(lambda listener: listener.ended(self, player_scores, next_round_first_player))
 
 class RoundException(Exception):
 	pass

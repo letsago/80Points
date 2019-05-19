@@ -6,6 +6,7 @@ import model_test_data
 from tractor_test import tractor_generator
 from tractor import SUIT_LOWEST, SUIT_TRICK, SUIT_TRUMP
 import test_utils
+from ai import get_ai_move
 
 class TestCard(unittest.TestCase):
 	def testIsTrump(self):
@@ -104,17 +105,36 @@ class TestRound(unittest.TestCase):
 		self.first_player = 0
 		self.third_player = 2
 		self.full_hand_size = 25
+		self.default_rank = '2'
 		bottom_size = 8
+		self.is_first_round = True
 		self.full_hand_with_bottom_size = self.full_hand_size + bottom_size
 		self.declaration_bottom_cards = [
 			Card('joker', 'big'), Card('joker', 'big'), Card('joker', 'small'), Card('joker', 'small'),
 			Card('d', 'A'), Card('h', 'A'), Card('s', 'A'), Card('c', 'A')
 		]
 
+	def testRoundEnd(self):
+		round = Round(self.num_players, self.default_rank, self.first_player, self.is_first_round, deck_name='declaration')
+		for _ in range(len(round.state.deck)):
+			round.deal_card()
+		round.finalize_declaration()
+		round.set_bottom(self.first_player, self.declaration_bottom_cards)
+		trick_player = self.first_player
+		# loop handles round
+		while len(round.state.player_hands[trick_player]) != 0:
+			round.play(trick_player, get_ai_move(round.state, trick_player))
+			if round.state.is_board_full():
+				trick_player, _ = round.state.determine_winner()
+			else:
+				trick_player = (trick_player + 1) % self.num_players
+
+		self.assertEqual(round.state.status, STATUS_ENDED)
+		
 	def testFirstPlayerSetToBottomPlayer(self):
 		# Mock model.create_random_deck to use a deterministic deck.
 		with mock.patch('model.create_random_deck', return_value=create_deck(self.num_decks)):
-			round = Round(self.num_players)
+			round = Round(self.num_players, self.default_rank, self.first_player, self.is_first_round)
 		self.assertEqual(round.state.turn, self.first_player)
 		# Deal out all cards.
 		for _ in range(len(round.state.deck)):
@@ -133,7 +153,7 @@ class TestRound(unittest.TestCase):
 		self.assertEqual(round.state.turn, self.third_player)
 
 	def testCreateDeckFromFile(self):
-		round = Round(self.num_players, deck_name='declaration')
+		round = Round(self.num_players, self.default_rank, self.first_player, self.is_first_round, deck_name='declaration')
 		# Deal out all cards.
 		for _ in range(len(round.state.deck)):
 			round.deal_card()
@@ -152,7 +172,7 @@ class TestRound(unittest.TestCase):
 			 Card('joker', 'small'), Card('joker', 'small'), Card('joker', 'big'), Card('joker', 'big')])
 
 	def testDeclaration(self):
-		round = Round(self.num_players, deck_name='declaration')
+		round = Round(self.num_players, self.default_rank, self.first_player, self.is_first_round, deck_name='declaration')
 		self.assertEqual(round.state.trump_card.suit, None)
 		round.deal_card()
 		# Have the first player declare the 2 of diamonds.
@@ -171,7 +191,7 @@ class TestRound(unittest.TestCase):
 		self.assertEqual(round.state.trump_card.suit, 'd')
 
 	def testDeclarationOverturning(self):
-		round = Round(self.num_players, deck_name='declaration')
+		round = Round(self.num_players, self.default_rank, self.first_player, self.is_first_round, deck_name='declaration')
 		round.deal_card()
 		# Have the first player declare the 2 of diamonds.
 		round.declare(self.first_player, [Card('d', '2')])
@@ -191,7 +211,7 @@ class TestRound(unittest.TestCase):
 		self.assertEqual(round.state.trump_card.suit, 's')
 
 	def testDeclarationDefending(self):
-		round = Round(self.num_players, deck_name='declaration')
+		round = Round(self.num_players, self.default_rank, self.first_player, self.is_first_round, deck_name='declaration')
 		# Deal enough cards so the third player has one 2 of spades.
 		for _ in range(4):
 			round.deal_card()
@@ -212,7 +232,7 @@ class TestRound(unittest.TestCase):
 		self.assertEqual(round.state.trump_card.suit, 's')
 
 	def testNoDeclaration(self):
-		round = Round(self.num_players, deck_name='declaration')
+		round = Round(self.num_players, self.default_rank, self.first_player, self.is_first_round, deck_name='declaration')
 		self.assertEqual(round.state.trump_card.suit, None)
 		# Deal out the remaining cards.
 		for _ in range(len(round.state.deck)):
@@ -233,7 +253,7 @@ class TestRoundState(unittest.TestCase):
 		self.first_player = 0
 		self.second_player = 1
 		self.third_player = 2
-		self.round_state = RoundState(self.num_players)
+		self.round_state = RoundState(self.num_players, '2', self.first_player)
 		self.round_state.trump_card = Card('c', '3')
 		self.round_state.player_hands[self.second_player] = [
 			Card('s', '4'), Card('s', '5'), Card('s', '5'), Card('s', '10'), Card('s', 'K'),

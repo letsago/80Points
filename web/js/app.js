@@ -100,6 +100,7 @@ var app = new Vue({
 		errorMsg: '',
 		playerPoints: [],
 		attackingPlayers: [],
+		bottomPlayer: -1
 	},
 	computed: {
 		selectedCards: function() {
@@ -108,7 +109,7 @@ var app = new Vue({
 			});
 		},
 		canSetBottom: function () {
-			return this.status == 'bottom' && this.player == this.declaration.player;
+			return this.status == 'bottom' && this.player == this.bottomPlayer;
 		},
 		canPlay: function () {
 			return this.status == 'playing' && this.player == this.turn;
@@ -248,6 +249,7 @@ socket.on('state', function(data) {
 	app.errorMsg = '';
 	app.playerPoints = data.player_points;
 	app.attackingPlayers = data.attacking_players;
+	app.bottomPlayer = data.bottom_player;
 
 	app.cards = mergeCards(app.cards, data.hand);
 });

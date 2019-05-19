@@ -77,6 +77,9 @@ class Game(model.RoundListener):
 		self.name = name
 		self.status = STATUS_LOBBY
 		self.players = [GamePlayer(self, idx=idx) for idx in range(num_players)]
+		self.player_ranks = ['2'] * num_players
+		self.bottom_player = 0
+		self.round_rank = self.player_ranks[self.bottom_player]
 		self.round = None
 
 		# players observing this game, sid->GamePlayer
@@ -166,7 +169,8 @@ class Game(model.RoundListener):
 		for player in self.players + list(self.observers.values()):
 			player.listener = server_utils.ForwardToGamePlayer(sio, player)
 			listeners.append(player.listener)
-		self.round = model.Round(len(self.players),
+		round_rank = self.player_ranks[self.bottom_player]
+		self.round = model.Round(len(self.players), round_rank, self.bottom_player, True,
 		                         listeners=[self, server_utils.TimedActionListener(args.speed)] + listeners,
 								 deck_name=args.deck_name)
 
@@ -176,6 +180,9 @@ class Game(model.RoundListener):
 			player.listener = None
 		self.round = None
 		self.status = STATUS_SCORE
+		for i in range(len(player_scores)):
+			self.player_ranks[i] = model.CARD_VALUES[(model.CARD_VALUES.index(self.player_ranks[i]) + player_scores[i]) % len(model.CARD_VALUES)]
+		self.reset_round(self.player_ranks, next_player)
 
 	def player_left(self, player):
 		if player.observer:
@@ -187,6 +194,19 @@ class Game(model.RoundListener):
 		if self.status == STATUS_LOBBY:
 			player.name = None
 		self._broadcast_lobby()
+	
+	def reset_round(self, player_ranks, bottom_player):
+		self.player_ranks = player_ranks
+		self.bottom_player = bottom_player
+		round_rank = self.player_ranks[self.bottom_player]
+		self.status = STATUS_ROUND
+		listeners = []
+		for player in self.players + list(self.observers.values()):
+			player.listener = server_utils.ForwardToGamePlayer(sio, player)
+			listeners.append(player.listener)
+		self.round = model.Round(len(self.players), round_rank, self.bottom_player, False,
+		                         listeners=[self, server_utils.TimedActionListener(args.speed)] + listeners,
+								 deck_name=args.deck_name)
 
 	@property
 	def list_dict(self):

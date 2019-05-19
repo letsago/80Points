@@ -361,14 +361,12 @@ class RoundState(object):
 		self.board[player] = cards
 		self.trump_card.suit = cards[0].suit
 
-	def give_bottom_to_player(self, player):
+	def give_bottom_to_player(self):
 		# Set first player to the player who got the bottom.
-		# TODO(workitem0023): set first player properly for all following rounds, i.e. not the first round.
-		self.set_turn(player)
+		self.set_turn(self.bottom_player)
 		bottom_cards = self.bottom
 		self.bottom = []
-		self.player_hands[player].extend(bottom_cards)
-		self.bottom_player = player
+		self.player_hands[self.bottom_player].extend(bottom_cards)
 		return bottom_cards
 
 	def set_attacking_players(self):
@@ -639,13 +637,12 @@ class Round(object):
 				self.state.bottom_player = self.state.declaration.player
 			# No one declared in this case, so we set the trump card suit to 'joker'.
 			else:
-				# TODO(workitem0023): This should be pre-determined on subsequent rounds.
 				self.state.bottom_player = 0
 		if self.state.declaration is None:
 			# Add a dummy declaration so that this (and only this) player can set the bottom.
 			self.state.declarations.append(Declaration(self.state.bottom_player, []))
 			self.state.trump_card.suit = 'joker'
-		bottom_cards = self.state.give_bottom_to_player(self.state.bottom_player)
+		bottom_cards = self.state.give_bottom_to_player()
 		self.state.set_attacking_players()
 		self.state.status = STATUS_BOTTOM
 		self._fire(lambda listener: listener.player_given_bottom(self, self.state.bottom_player, bottom_cards))
@@ -747,7 +744,6 @@ class Round(object):
 		'''
 		Called after the last trick is finished.
 		'''
-		# TODO(workitem0057): Accumulate attacking team's player points and notify listeners about the round result.
 		self.state.status = STATUS_ENDED
 
 		# update winning player's point count from bottom

@@ -41,8 +41,6 @@
 				<input v-model="createGameOptions.name" placeholder="game name">
 				<select v-model="createGameOptions.numPlayers">
 					<option>4</option>
-					<option>5</option>
-					<option>6</option>
 				</select>
 				<button v-on:click="createGame(createGameOptions.name, createGameOptions.numPlayers)">Create</button>
 			</div>
@@ -58,6 +56,9 @@
 			</ul>
 		</div>
 		<div id="modeGame" v-if="mode == 'game'">
+			<div>
+				<button v-on:click="leaveGame()">Leave Game</button>
+			</div>
 			<div class="gameInfo">
 				<div>
 					<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }} 
@@ -114,8 +115,14 @@
 						<template v-if="canPlay">
 							<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>
 						</template>
+						<template v-if="canPlay">
+							<button v-on:click="getSuggestedPlay">Suggest</button>
+						</template>
 					</span>
 				</div>
+			</template>
+			<template v-if="isError">
+				<p> {{errorMsg}} </p>
 			</template>
 			<div class="playingCards fourColours inHand">
 				<ul class="hand">

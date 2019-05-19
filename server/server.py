@@ -6,6 +6,7 @@ import random
 import socketio
 import uuid
 
+import ai
 import model
 import server_utils
 
@@ -296,6 +297,15 @@ def join(user, game_id):
 def join_as(user, game_id, player_idx):
 	do_join(user, game_id, player_idx=player_idx)
 
+@sio.on('leave')
+@process_user
+def leave(user):
+	if user.game_player is None:
+		return
+	user.game_player.game.player_left(user.game_player)
+	user.game_player = None
+	sio.emit('left', room=user.sid)
+
 def process_game_player(func):
 	def func_wrapper(user, *args):
 		if user.game_player is None:
@@ -304,16 +314,16 @@ def process_game_player(func):
 		elif user.game_player.observer:
 			sio.emit('error', 'you are an observer', room=user.sid)
 			return
-		func(user.game_player, *args)
+		func(user, user.game_player, *args)
 	return func_wrapper
 
 def process_round(func):
-	def func_wrapper(game_player, *args):
+	def func_wrapper(user, game_player, *args):
 		if game_player.game.round is None:
 			sio.emit('error', 'the round has not started yet', room=game_player.user.sid)
 			return
 		try:
-			func(game_player.game.round, game_player.idx, *args)
+			func(user, game_player.game.round, game_player.idx, *args)
 		except model.RoundException as e:
 			sio.emit('error', e.message, room=game_player.user.sid)
 	return func_wrapper
@@ -323,24 +333,31 @@ def process_user_round(func):
 
 @sio.on('round_declare')
 @process_user_round
-def round_declare(r, player, cards):
+def round_declare(user, r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
 	print('declaring {} for {}'.format(cards, player))
 	r.declare(player, cards)
 
 @sio.on('round_set_bottom')
 @process_user_round
-def round_set_bottom(r, player, cards):
+def round_set_bottom(user, r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
 	print('setting bottom to {}'.format(cards))
 	r.set_bottom(player, cards)
 
 @sio.on('round_play')
 @process_user_round
-def round_play(r, player, cards):
+def round_play(user, r, player, cards):
 	cards = [model.card_from_dict(card) for card in cards]
 	print('player {} playing {}'.format(player, cards))
 	r.play(player, cards)
+
+@sio.on('round_suggest')
+@process_user_round
+def round_suggest(user, r, player):
+	cards = ai.get_ai_move(r.state, player)
+	cards = [card.dict for card in cards]
+	sio.emit('suggest', cards, room=user.sid)
 
 @sio.on('disconnect')
 def on_disconnect(sid):

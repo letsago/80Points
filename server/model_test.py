@@ -2,9 +2,10 @@ import unittest
 import mock
 from model import *
 from parameterized import parameterized
-from model_test_data import follow_suit_validity_test_data
+import model_test_data
 from tractor_test import tractor_generator
-from tractor import SUIT_LOWEST, SUIT_TRICK, SUIT_TRUMP 
+from tractor import SUIT_LOWEST, SUIT_TRICK, SUIT_TRUMP
+import test_utils
 
 class TestCard(unittest.TestCase):
 	def testIsTrump(self):
@@ -26,7 +27,7 @@ class TestCard(unittest.TestCase):
 		     	[Card('h', '3'), Card('s', 'A'), Card('joker', 'big')]
 			),
 
-			(	
+			(
 				Card('joker', '2'),
 				[Card('joker', 'small'), Card('joker', 'big'), Card('h', '3')],
 		     	[Card('h', '3'), Card('joker', 'small'), Card('joker', 'big')]
@@ -62,13 +63,13 @@ class TestCard(unittest.TestCase):
 		     	[Card('s', 'A'), Card('h', '3'), Card('joker', 'big')]
 			),
 
-			(	
+			(
 				Card('s', '3'),
 				[Card('joker', 'big'), Card('s', 'A'), Card('s', '3'), Card('h', '3')],
 		     	[Card('s', 'A'), Card('h', '3'), Card('s', '3'), Card('joker', 'big')]
 			),
 
-			(	
+			(
 				Card('s', '2'),
 				[Card('joker', 'small'), Card('joker', 'big'), Card('h', '3')],
 		     	[Card('h', '3'), Card('joker', 'small'), Card('joker', 'big')]
@@ -125,7 +126,7 @@ class TestRound(unittest.TestCase):
 		round.finalize_declaration()
 		# After getting the bottom, it should now be the third player's turn.
 		self.assertEqual(round.state.turn, self.third_player)
-		round.set_bottom(self.third_player, 
+		round.set_bottom(self.third_player,
 			[Card('d', '4'), Card('d', '6'), Card('d', '8'), Card('d', '10'),
 			 Card('c', '3'), Card('c', '5'), Card('c', '7'), Card('c', '9')])
 		# After the bottom is set, it should still be the third player's turn.
@@ -137,17 +138,17 @@ class TestRound(unittest.TestCase):
 		for _ in range(len(round.state.deck)):
 			round.deal_card()
 		# Verify the first few cards in each hand.
-		self.assertEqual(round.state.player_hands[0][:3], 
+		self.assertEqual(round.state.player_hands[0][:3],
 			[Card('d', '2'), Card('d', '3'), Card('d', '4')])
-		self.assertEqual(round.state.player_hands[1][:3], 
+		self.assertEqual(round.state.player_hands[1][:3],
 			[Card('h', '2'), Card('h', '2'), Card('h', '3')])
-		self.assertEqual(round.state.player_hands[2][:3], 
+		self.assertEqual(round.state.player_hands[2][:3],
 			[Card('s', '2'), Card('s', '2'), Card('s', '3')])
-		self.assertEqual(round.state.player_hands[3][:3], 
+		self.assertEqual(round.state.player_hands[3][:3],
 			[Card('c', '2'), Card('c', '2'), Card('c', '3')])
 		# Verify the bottom is set properly.
 		self.assertEqual(round.state.bottom,
-			[Card('c', 'A'), Card('s', 'A'), Card('h', 'A'), Card('d', 'A'), 
+			[Card('c', 'A'), Card('s', 'A'), Card('h', 'A'), Card('d', 'A'),
 			 Card('joker', 'small'), Card('joker', 'small'), Card('joker', 'big'), Card('joker', 'big')])
 
 	def testDeclaration(self):
@@ -231,6 +232,7 @@ class TestRoundState(unittest.TestCase):
 		self.num_players = 6
 		self.first_player = 0
 		self.second_player = 1
+		self.third_player = 2
 		self.round_state = RoundState(self.num_players)
 		self.round_state.trump_card = Card('c', '3')
 		self.round_state.player_hands[self.second_player] = [
@@ -239,7 +241,7 @@ class TestRoundState(unittest.TestCase):
 			Card('c', '8'), Card('c', '8'), Card('c', '8'), Card('h', '3'), Card('s', '3'), Card('s', '3'),
 			Card('c', '3'), Card('c', '3'), Card('joker', 'small'), Card('joker', 'small')
 		]
-	
+
 	@parameterized.expand([
 		[
 			'one trick - no points',
@@ -314,18 +316,18 @@ class TestRoundState(unittest.TestCase):
 			[[0, 0, 0, 0, 45, 0], [0, 0, 0, 0, 70, 0]]
 		],
 	])
-	
+
 	def testPlayerPoints(self, name, trick_plays, cumulative_player_points):
 		for i, trick in enumerate(trick_plays):
 			self.round_state.board = trick
-			self.round_state.determine_winner()
+			self.round_state.end_trick()
 			self.assertEqual(self.round_state.player_points, cumulative_player_points[i])
-	
+
 	@parameterized.expand([
-		['even number of players - attacking team given first player bottom', 0, [1, 3, 5]], 
+		['even number of players - attacking team given first player bottom', 0, [1, 3, 5]],
 		['even number of players - attacking team given second player bottom', 1, [0, 2, 4]],
 	])
-	
+
 	def testSetAttackingPlayers(self, name, bottom_player, expected_attacking_team):
 		self.round_state.bottom_player = bottom_player
 		self.round_state.set_attacking_players()
@@ -353,10 +355,12 @@ class TestRoundState(unittest.TestCase):
 			{'rank': 1, 'length': 1, 'power_card': Card('h', '3'), 'suit_type': SUIT_TRUMP}]
 		],
 	])
-	
+
 	def testSuitTractorsFromHandNonJokerTrump(self, suit_name, trick_card, suit_tractor_data):
 		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
-		self.assertEqual(self.round_state.get_suit_tractors_from_hand(self.second_player, trick_card), suit_tractors)
+		hand = self.round_state.player_hands[self.second_player]
+		trick_suit = trick_card.get_normalized_suit(self.round_state.trump_card)
+		self.assertEqual(self.round_state.get_suit_tractors_from_cards(hand, trick_suit), suit_tractors)
 
 	@parameterized.expand([
 		['diamonds', Card('d', '2'), []],
@@ -383,11 +387,13 @@ class TestRoundState(unittest.TestCase):
 			{'rank': 1, 'length': 1, 'power_card': Card('h', '3'), 'suit_type': SUIT_TRUMP}]
 		],
 	])
-	
+
 	def testSuitTractorsFromHandJokerTrump(self, suit_name, trick_card, suit_tractor_data):
 		self.round_state.trump_card = Card('joker', '3')
 		suit_tractors = tractor_generator(suit_tractor_data, self.round_state.trump_card)
-		self.assertEqual(self.round_state.get_suit_tractors_from_hand(self.second_player, trick_card), suit_tractors)
+		hand = self.round_state.player_hands[self.second_player]
+		trick_suit = trick_card.get_normalized_suit(self.round_state.trump_card)
+		self.assertEqual(self.round_state.get_suit_tractors_from_cards(hand, trick_suit), suit_tractors)
 
 	@parameterized.expand([
 		['no play', []],
@@ -398,46 +404,57 @@ class TestRoundState(unittest.TestCase):
 
 		['same suits 2 nonconsecutive pairs', [Card('h', '2'), Card('h', '2'), Card('h', '6'), Card('h', '6')]],
 
-		['different suits 2 consecutive pairs + single', 
+		['different suits 2 consecutive pairs + single',
 			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('c', '5')]],
 
-		['different suits 2 nonconsecutive pairs', 
+		['different suits 2 nonconsecutive pairs',
 			[Card('d', '4'), Card('d', '4'), Card('h', '5'), Card('h', '5')]],
-			
-		['different suits 2 consecutive pairs + pair', 
+
+		['different suits 2 consecutive pairs + pair',
 			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('s', '7'), Card('s', '7')]],
 	])
 
 	def testInvalidFirstPlays(self, name, play):
 		self.assertFalse(self.round_state.is_play_valid(self.first_player, play))
-	
+
 	@parameterized.expand([
 		['1 single', [Card('h', '2')]],
 
 		['same suit 1 pair', [Card('s', '2'), Card('s', '2')]],
 
-		['same suit 2 consecutive pairs considering trump value', 
+		['same suit 2 consecutive pairs considering trump value',
 			[Card('c', '2'), Card('c', '2'), Card('c', '4'), Card('c', '4')]],
 
-		['same suit 2 consecutive pairs', 
+		['same suit 2 consecutive pairs',
 			[Card('c', '4'), Card('c', '4'), Card('c', '5'), Card('c', '5')]],
 
-		['same suit 3 consecutive pairs considering trump value', 
+		['same suit 3 consecutive pairs considering trump value',
 			[Card('d', '2'), Card('d', '2'), Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5')]],
 
-		['same suit 3 consecutive pairs', 
+		['same suit 3 consecutive pairs',
 			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('d', '6'), Card('d', '6')]],
 	])
 
 	def testValidFirstPlays(self, name, play):
 		self.assertTrue(self.round_state.is_play_valid(self.first_player, play))
-		
-	@parameterized.expand(follow_suit_validity_test_data)
+
+	@parameterized.expand(model_test_data.follow_suit_validity_test_data)
 
 	def testFollowSuitValidity(self, name, first_play, invalid_play, valid_play):
 		self.round_state.board[0] = first_play
 		self.assertFalse(self.round_state.is_play_valid(self.second_player, invalid_play))
 		self.assertTrue(self.round_state.is_play_valid(self.second_player, valid_play))
+
+	@parameterized.expand(model_test_data.follow_suit_validity_custom_hand_test_data)
+
+	def testFollowSuitValidityWithCustomHand(self, name, first_play, hand, invalid_play, valid_play):
+		first_play, hand, invalid_play, valid_play = test_utils.apply_cards_from_str(first_play, hand, invalid_play, valid_play)
+		self.round_state.board[0] = first_play
+		self.round_state.player_hands[self.third_player] = hand
+		if invalid_play is not None:
+			self.assertFalse(self.round_state.is_play_valid(self.third_player, invalid_play))
+		if valid_play is not None:
+			self.assertTrue(self.round_state.is_play_valid(self.third_player, valid_play))
 
 	@parameterized.expand([
 		['no play', [], []],
@@ -450,13 +467,13 @@ class TestRoundState(unittest.TestCase):
 
 		['cards do not have the same suit', [Card('s', '3'), Card('d', '3')], []],
 
-		['equal length to most recent declaration', [Card('s', '3')], 
+		['equal length to most recent declaration', [Card('s', '3')],
 			[Declaration(1, [Card('d', '3')])]],
 
-		['smaller length than most recent declaration', [Card('s', '3')], 
+		['smaller length than most recent declaration', [Card('s', '3')],
 			[Declaration(1, [Card('d', '3')]), Declaration(1, [Card('d', '3'), Card('d', '3')])]],
 
-		['suit does not match previous declaration', [Card('s', '3'), Card('s', '3')], 
+		['suit does not match previous declaration', [Card('s', '3'), Card('s', '3')],
 			[Declaration(0, [Card('d', '3')])]],
 
 		['one joker', [Card('joker', 'big')], []],
@@ -489,16 +506,16 @@ class TestRoundState(unittest.TestCase):
 
 		['initial play with a pair', [Card('s', '3'), Card('s', '3')], []],
 
-		['overturn another declaration', [Card('s', '3'), Card('s', '3')], 
+		['overturn another declaration', [Card('s', '3'), Card('s', '3')],
 			[Declaration(1, [Card('d', '3')])]],
 
-		['overturn another declaration with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+		['overturn another declaration with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')],
 			[Declaration(1, [Card('d', '3')])]],
 
-		['defend previous declaration', [Card('s', '3'), Card('s', '3')], 
+		['defend previous declaration', [Card('s', '3'), Card('s', '3')],
 			[Declaration(0, [Card('s', '3')])]],
 
-		['defend previous declaration with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+		['defend previous declaration with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')],
 			[Declaration(0, [Card('s', '3')])]],
 
 		['start with two jokers', [Card('joker', 'big'), Card('joker', 'big')], []],
@@ -508,14 +525,14 @@ class TestRoundState(unittest.TestCase):
 
 		['overturning pair with jokers', [Card('joker', 'big'), Card('joker', 'big')],
 		  [Declaration(1, [Card('d', '3'), Card('d', '3')])]],
-	
+
 		['overturning small jokers with big jokers', [Card('joker', 'big'), Card('joker', 'big')],
 		  [Declaration(1, [Card('joker', 'small'), Card('joker', 'small')])]],
 
 		['overturning with jokers after declaring once already', [Card('joker', 'big'), Card('joker', 'big')],
 		  [Declaration(0, [Card('s', '3')]), Declaration(1, [Card('h', '3'), Card('h', '3')])]],
 
-		['overturn two big jokers with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')], 
+		['overturn two big jokers with rank 3', [Card('s', '3'), Card('s', '3'), Card('s', '3')],
 			[Declaration(1, [Card('joker', 'big'), Card('joker', 'big')])]],
 	])
 

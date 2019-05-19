@@ -153,6 +153,7 @@
 }
 .playingCards .card.joker .rank:before {
     content: "\2605";
+    background-color: #00000000;
     top: 0;
     left: 0;
 }

@@ -5,6 +5,34 @@ body {
 	font-size: 18px;
 	color: #444;
 	padding: 0 10px;
+	font-family: 'Roboto', sans-serif;
+	background-color: #033301;
+}
+
+.fade-enter-active {
+	transition: opacity .3s;
+}
+
+.fade-leave-active {
+	transition: opacity .2s;
+}
+
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+	opacity: 0;
+}
+
+.list-enter-active, .list-leave-active {
+	transition: all 0.5s;
+}
+.list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
+	opacity: 0.8;
+	transform: translateY(-60px);
+}
+
+#app {
+	background-color: #eee;
+    padding: 30px;
+    border-radius: 10px;
 }
 
 h1, h2, h3 {
@@ -12,16 +40,23 @@ h1, h2, h3 {
 }
 
 .playingCards .card.trump {
-    -moz-box-shadow: .2em .2em .5em #ff02c7;
-    -webkit-box-shadow: .2em .2em .5em #ff02c7;
-    box-shadow: .2em .2em .5em #ff02c7;
+	background-color: #fff4ac;
+}
+
+.inHand .card {
+    transition: 0.2s;
+}
+
+.inHand .card:hover {
+	transform: translateY(-0.4em);
 }
 
 .playingCards .card.selected {
-    top: -1em;
+	transform: translateY(-1em);
 }
 
 .playerInfoContainer {
+	margin: 0 auto;
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	grid-template-rows: 1fr 1fr 1fr 1fr;
@@ -49,17 +84,19 @@ h1, h2, h3 {
 }
 
 .playerInfo {
-	width: 50%;
-	float: left;
+	text-align: center;
+}
+
+.gameInfo {
+	display: flex;
 }
 
 .gameInfo div {
-	width: 50%;
-	float: left;
+	flex: 0 1 50%;
 }
 
-.playerHand {
-	clear: left;
+.points {
+	text-align: right;
 }
 
 .heading {

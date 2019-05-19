@@ -19,7 +19,7 @@ Vue.component('card', {
 		},
 		rankDisplay: function () {
 			if (this.rank == 'big' || this.rank == 'small') {
-				return '-';
+				return '';
 			}
 			return this.rank;
 		},
@@ -42,7 +42,7 @@ Vue.component('card', {
 		classObj: function() {
 			let c = {
 				card: true,
-				trump: this.isTrump && !this.selected,
+				trump: this.isTrump,
 				selected: this.selected,
 			};
 			c[this.rankClass] = true;
@@ -85,11 +85,11 @@ var app = new Vue({
 		turn: -1,
 		bottomSize: -1,
 		suits: {
-			'c': 'Clubs',
-			'd': 'Diamonds',
-			'h': 'Hearts',
-			's': 'Spades',
-			'joker': 'Joker',
+			'c': '♣',
+			'd': '♦',
+			'h': '♥',
+			's': '♠',
+			'joker': '★',
 		},
 		ranks: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'],
 		playerPositions: ['bottomPlayer', 'leftPlayer', 'topPlayer', 'rightPlayer'],
@@ -205,6 +205,21 @@ function mergeCards(oldCards, newCards) {
 			selected: false,
 		});
 	});
+	if (merged.length === 0) {
+		return [];
+	}
+	// Compute a unique key for each card so the enter / exit transition happens properly.
+	merged[0].index = 0;
+	for (let i = 1; i < merged.length; i++) {
+		if (merged[i].suit == merged[i-1].suit && merged[i].value == merged[i-1].value) {
+			merged[i].index = merged[i-1].index + 1;
+			continue;
+		}
+		merged[i].index = 0;
+	}
+	for (let i = 0; i < merged.length; i++) {
+		merged[i].key = merged[i].suit + merged[i].value + merged[i].index;
+	}
 	return merged;
 }
 

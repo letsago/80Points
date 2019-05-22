@@ -23,6 +23,16 @@ pip install -r requirements.txt
 python3 server/server.py
 ```
 
+Or run from an interactive Python shell (useful for debugging):
+
+```import server
+import eventlet, socketio, threading
+app = socketio.Middleware(server.sio, server.app)
+def f():
+	eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
+threading.Thread(target=f).start()
+```
+
 ## Run unit tests
 
 ```bash

@@ -2,7 +2,7 @@ import model
 from tractor import Tractor, TractorMetadata, Flush, card_to_suit_type, cards_to_tractors, SUIT_TRUMP
 from tractor import find_matching_data_index, update_data_array, get_min_data
 
-DEBUG = True
+DEBUG = False
 
 def get_ai_move(state, player_idx):
 	'''
@@ -36,7 +36,6 @@ def get_ai_move(state, player_idx):
 
 	# is an ally currently winning the trick?
 	winning_player, winning_flush = state.determine_winner()
-	print('winning_player={}, allies={}'.format(winning_player, allies))
 	ally_winning = winning_player in allies
 
 	# get our hand and tractors in the first play

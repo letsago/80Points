@@ -259,19 +259,20 @@ cards_to_tractors_test_data = [
 			],
 			[{'rank': 2, 'length': 2, 'power_card': Card('c', '8'), 'suit_type': SUIT_TRUMP}],
 		),
-]
 
-# TODO(workitem0039): bug in cards_to_tractors that merge tractors of different suits if those suits are under same suit_type
-failed_cards_to_tractors_test_data = [
 		(	"different lowest suit consecutive value pairs",
 			Double('h', '2') + Double('d', '3'),
 			[
-				{'rank': 2, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
-				{'rank': 2, 'length': 1, 'power_card': Card('h', '2'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('h', '2'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('h', '2'), 'suit_type': SUIT_LOWEST},
 			],
 			[
-				{'rank': 2, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
-				{'rank': 2, 'length': 1, 'power_card': Card('h', '2'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('d', '3'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('h', '2'), 'suit_type': SUIT_LOWEST},
+				{'rank': 1, 'length': 1, 'power_card': Card('h', '2'), 'suit_type': SUIT_LOWEST},
 			],
 		),
 ]

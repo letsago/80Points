@@ -111,3 +111,9 @@ h1, h2, h3 {
 .playerName.left {
 	font-style: italic;
 }
+
+.title {
+	text-align: center;
+	font-weight: bold;
+	margin: 0px;
+}

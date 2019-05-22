@@ -780,7 +780,6 @@ class Round(object):
 			else:
 				next_round_first_player = (next_round_first_player + 2) % self.state.num_players
 
-		# next_round_trump_rank = self.player_ranks[next_round_first_player]	
 		self._fire(lambda listener: listener.ended(self, player_scores, next_round_first_player))
 
 class RoundException(Exception):

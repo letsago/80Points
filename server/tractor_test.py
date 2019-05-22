@@ -1,10 +1,10 @@
 import unittest
 from model import Card, CARD_VALUES
 from tractor import *
-from test_utils import Many, Straight, Double
+from test_utils import Many, Straight, Double, cards_from_str
 from parameterized import parameterized_class, parameterized
 
-from tractor_test_data import cards_to_tractors_test_data
+from tractor_test_data import cards_to_tractors_test_data, no_trick_test_data
 
 # TODO(workitem0040): test card_to_suit_type function so data['suit_type'] no longer needs to be hardcoded
 # TODO(workitem0042): add tractor sorting tests in order to sort tractors in tractor_generator and reduce common output
@@ -27,6 +27,14 @@ class TestCardsToTractors(unittest.TestCase):
 		trump_card = Card('joker', '8')
 		want = tractor_generator(self.joker_8_trump_tractor_data, trump_card)
 		self.assertEqual(cards_to_tractors(self.test_cards, self.trick_suit, trump_card), want)
+
+@parameterized_class(('test_description', 'test_cards', 'tractor_data'), no_trick_test_data)
+class TestCardsToTractorsNoTrick(unittest.TestCase):
+	def testCardsToTractors(self):
+		trump_card = Card('s', '2')
+		test_cards = cards_from_str(self.test_cards)
+		want = tractor_generator(self.tractor_data, trump_card)
+		self.assertEqual(cards_to_tractors(test_cards, None, trump_card), want)
 
 @parameterized_class(('test_description', 'h_A_trump_flush_order', 'joker_A_trump_flush_order'), [
 		(

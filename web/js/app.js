@@ -162,7 +162,10 @@ var app = new Vue({
 			this.performCardsAction('round_play');
 		},
 		getSuggestedPlay: function () {
-			socket.emit('round_suggest');
+			socket.emit('round_suggest_play');
+		},
+		getSuggestedBottom: function () {
+			socket.emit('round_suggest_bottom');
 		},
 		playerPosition: function(index) {
 			// This function assigns the right CSS class so that the person who
@@ -269,8 +272,8 @@ socket.on('state', function(data) {
 	app.cards = mergeCards(app.cards, data.hand);
 });
 
-// suggested play response
-socket.on('suggest', function(data) {
+// handle suggestion responses
+var selectSuggestedCards = function(data) {
 	var remove = function(x) {
 		var index = null;
 		for(var i = 0; i < data.length; i++) {
@@ -289,7 +292,9 @@ socket.on('suggest', function(data) {
 	app.cards.forEach(function(el) {
 		el.selected = remove(el);
 	});
-});
+};
+socket.on('suggest_play', selectSuggestedCards);
+socket.on('suggest_bottom', selectSuggestedCards);
 
 socket.on('error', function(text) {
 	app.isError = true;

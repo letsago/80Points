@@ -1,6 +1,7 @@
 import model
 from tractor import Tractor, TractorMetadata, Flush, card_to_suit_type, cards_to_tractors, SUIT_TRUMP
 from tractor import find_matching_data_index, update_data_array, get_min_data
+import random
 
 DEBUG = False
 
@@ -236,3 +237,27 @@ def get_ai_first_move(state, player_idx):
 		if best_tractor is None or tractor.power > best_tractor.power:
 			best_tractor = tractor
 	return flatten(best_tractor.orig_cards)
+
+def get_ai_bottom(state, player_idx):
+	'''
+	Automatically set a bottom.
+	'''
+	# select lowest non-trump, non-point single cards
+	# if we don't get enough cards from that, select randomly
+	hand_copy = list(state.player_hands[player_idx])
+	n = len(state.player_hands)
+	num_bottom = len(hand_copy) - len(state.player_hands[(player_idx+1)%n])
+	tractors = cards_to_tractors(hand_copy, None, state.trump_card)
+	selected_cards = []
+	for tractor in tractors:
+		if tractor.rank > 1 or tractor.length > 1 or tractor.suit_type == SUIT_TRUMP:
+			continue
+		card = tractor.orig_cards[0][0]
+		selected_cards.append(card)
+		hand_copy.remove(card)
+	selected_cards.sort(key=lambda card: card.suit_power(state.trump_card))
+	while len(selected_cards) < num_bottom:
+		card = random.choice(hand_copy)
+		selected_cards.append(card)
+		hand_copy.remove(card)
+	return selected_cards[0:num_bottom]

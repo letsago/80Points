@@ -194,7 +194,7 @@ class Game(model.RoundListener):
 		if self.status == STATUS_LOBBY:
 			player.name = None
 		self._broadcast_lobby()
-	
+
 	def reset_round(self, player_ranks, bottom_player):
 		self.player_ranks = player_ranks
 		self.bottom_player = bottom_player
@@ -372,12 +372,19 @@ def round_play(user, r, player, cards):
 	print('player {} playing {}'.format(player, cards))
 	r.play(player, cards)
 
-@sio.on('round_suggest')
+@sio.on('round_suggest_play')
 @process_user_round
-def round_suggest(user, r, player):
+def round_suggest_play(user, r, player):
 	cards = ai.get_ai_move(r.state, player)
 	cards = [card.dict for card in cards]
-	sio.emit('suggest', cards, room=user.sid)
+	sio.emit('suggest_play', cards, room=user.sid)
+
+@sio.on('round_suggest_bottom')
+@process_user_round
+def round_suggest_bottom(user, r, player):
+	cards = ai.get_ai_bottom(r.state, player)
+	cards = [card.dict for card in cards]
+	sio.emit('suggest_bottom', cards, room=user.sid)
 
 @sio.on('disconnect')
 def on_disconnect(sid):

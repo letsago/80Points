@@ -63,7 +63,7 @@
 			</div>
 			<div class="gameInfo">
 				<div>
-					<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }} 
+					<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }}
 				</div>
 				<div class="points">
 					<b>Points: </b>{{ attackingPoints }}
@@ -113,6 +113,9 @@
 						</template>
 						<template v-if="canSetBottom">
 							<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
+						</template>
+						<template v-if="canSetBottom">
+							<button v-on:click="getSuggestedBottom">Suggest</button>
 						</template>
 						<template v-if="canPlay">
 							<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>

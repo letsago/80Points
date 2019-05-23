@@ -1,7 +1,7 @@
 import model
 from tractor import Tractor, TractorMetadata, Flush, card_to_suit_type, cards_to_tractors, SUIT_TRUMP
 from tractor import find_matching_data_index, update_data_array, get_min_data
-import random
+import eventlet, random
 
 DEBUG = False
 
@@ -261,3 +261,39 @@ def get_ai_bottom(state, player_idx):
 		selected_cards.append(card)
 		hand_copy.remove(card)
 	return selected_cards[0:num_bottom]
+
+class AIListener(model.RoundListener):
+	def __init__(self, player_idx):
+		self.player_idx = player_idx
+
+	def card_dealt(self, r, player, card):
+		# TODO: automatically declare if it is trump card
+		pass
+
+	def _play_on_turn(self, r):
+		if r.state.status != model.STATUS_PLAYING:
+			return
+		if r.state.turn != self.player_idx:
+			return
+		def play():
+			cards = get_ai_move(r.state, self.player_idx)
+			r.play(self.player_idx, cards)
+		eventlet.spawn_after(0.1, play)
+
+	def player_given_bottom(self, r, player, cards):
+		if player != self.player_idx:
+			return
+		def set_bottom():
+			cards = get_ai_bottom(r.state, self.player_idx)
+			r.set_bottom(self.player_idx, cards)
+		eventlet.spawn_after(1, set_bottom)
+
+	def send_state(self, r):
+		# TODO: also try to set bottom if we currently have bottom
+		self._play_on_turn(r)
+
+	def player_set_bottom(self, r, player, cards):
+		self._play_on_turn(r)
+
+	def player_played(self, r, player, cards):
+		self._play_on_turn(r)

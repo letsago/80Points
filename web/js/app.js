@@ -187,6 +187,19 @@ var app = new Vue({
 			}
 			return this.playerPositions[(index - bottomIndex + 4) % 4];
 		},
+		handStyle: function(cards) {
+			if (!cards || cards.length === 0) {
+				return {
+					width: 0 + 'em',
+				}
+			}
+			return {
+				// 3.8 is the width of 1 card
+				// 1.2 is the font-size (what em is based on defined in cards.css)
+				// 1.3 is the card offset
+				width: (3.8 * 1.2 + 1.3 * (cards.length - 1)) + 'em',
+			}
+		}
 	},
 })
 

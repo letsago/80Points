@@ -25,8 +25,8 @@
 
 <body>
 	<div id="app">
-		<a href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank">Game Rules</a>
 		<div id="modeRegister" v-if="mode == 'register'">
+			<a href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank">Game Rules</a>
 			<h2 class="title">Welcome to 80 Points</h2>
 			<span class="heading">Login: </span>&nbsp;
 			<input v-model="playerName" placeholder="player name" @keyup.enter="register(playerName)">
@@ -58,89 +58,91 @@
 			</ul>
 		</div>
 		<div id="modeGame" v-if="mode == 'game'">
-			<div>
-				<button v-on:click="leaveGame()">Leave Game</button>
-			</div>
-			<div class="gameInfo">
-				<div>
-					<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }}
-				</div>
-				<div class="points">
-					<b>Points: </b>{{ attackingPoints }}
-				</div>
-			</div>
-			<div class="playerInfoContainer">
-				<div :class="['playerInfo', playerPosition(index)]" v-for="(player, index) in players">
-					<p
-						class="playerName"
-						:class="{
-							turn: turn == index,
-							left: player.left,
-						}">
-						<template v-if="player.left && isObserver">
-							<a href="#" v-on:click="joinGameAs(game_id, index)">
-								{{ player.name }}
-							</a>
-						</template>
-						<template v-else>
-							{{ player.name }}
-						</template>
-					</p>
-					<template v-if="attackingPlayers.length == 0">
-						<div>Points: {{ playerPoints[index] }}</div>
-					</template>
-					<div class="playingCards fourColours">
-						<ul class="hand">
-							<transition name="fade">
-								<div v-if="board[index] && board[index].length > 0">
-									<li v-for="card in board[index]">
-										<card :suit="card.suit" :rank="card.value"
-											:trump-suit="trumpSuit" :trump-rank="trumpRank">
-										</card>
-									</li>
-								</div>
-							</transition>
-						</ul>
+			<div class="game-header">
+				<div class="gameInfo">
+					<div class="trump-info">
+						<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }}
+					</div>
+					<div class="points-info">
+						<b>Points: </b>{{ attackingPoints }}
+					</div>
+					<div class="leave-game">
+						<button v-on:click="leaveGame()">Leave Game</button>
 					</div>
 				</div>
 			</div>
-			<template v-if="cards.length > 0">
-				<div class="playerHand">
-					<span>
-						<span class="heading">Hand</span>&nbsp;
-						<template v-if="status == 'dealing'">
-							<button v-on:click="declare" :disabled="selectedCards.length == 0">Declare</button>
-						</template>
-						<template v-if="canSetBottom">
-							<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
-						</template>
-						<template v-if="canSetBottom">
-							<button v-on:click="getSuggestedBottom">Suggest</button>
-						</template>
-						<template v-if="canPlay">
-							<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>
-						</template>
-						<template v-if="canPlay">
-							<button v-on:click="getSuggestedPlay">Suggest</button>
-						</template>
-					</span>
+			<div class="game-body">
+				<div class="playerInfoContainer">
+					<div :class="['playerInfo', playerPosition(index)]" v-for="(player, index) in players">
+						<p
+							class="playerName"
+							:class="{
+								turn: turn == index,
+								left: player.left,
+							}">
+							<template v-if="player.left && isObserver">
+								<a href="#" v-on:click="joinGameAs(game_id, index)">
+									{{ player.name }}
+								</a>
+							</template>
+							<template v-else>
+								{{ player.name }}
+							</template>
+						</p>
+						<div class="playingCards fourColours">
+							<ul class="hand" :style="handStyle(board[index])">
+								<transition name="fade">
+									<div v-if="board[index] && board[index].length > 0">
+										<li v-for="card in board[index]">
+											<card :suit="card.suit" :rank="card.value"
+												:trump-suit="trumpSuit" :trump-rank="trumpRank">
+											</card>
+										</li>
+									</div>
+								</transition>
+							</ul>
+						</div>
+					</div>
 				</div>
-			</template>
-			<template v-if="isError">
-				<p> {{errorMsg}} </p>
-			</template>
-			<div class="playingCards fourColours inHand">
-				<ul class="hand">
-					<transition-group name="list">
-						<li v-for="card in cards" v-bind:key="card.key">
-							<card :suit="card.suit" :rank="card.value"
-								:selected="card.selected" v-on:update-selected="val => card.selected = val"
-								:selectable="canSelectNewCards"
-								:trump-suit="trumpSuit" :trump-rank="trumpRank">
-							</card>
-						</li>
-					</transition-group>
-				</ul>
+			</div>
+			<div class="game-footer">
+				<template v-if="cards.length > 0">
+					<div class="playerButtons">
+						<span>
+							<template v-if="status == 'dealing'">
+								<button v-on:click="declare" :disabled="selectedCards.length == 0">Declare</button>
+							</template>
+							<template v-if="canSetBottom">
+								<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
+							</template>
+							<template v-if="canSetBottom">
+								<button v-on:click="getSuggestedBottom">Suggest</button>
+							</template>
+							<template v-if="canPlay">
+								<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>
+							</template>
+							<template v-if="canPlay">
+								<button v-on:click="getSuggestedPlay">Suggest</button>
+							</template>
+						</span>
+					</div>
+				</template>
+				<template v-if="isError">
+					<p> {{errorMsg}} </p>
+				</template>
+				<div class="playingCards fourColours inHand">
+					<ul class="hand" :style="handStyle(cards)">
+						<transition-group name="list">
+							<li v-for="card in cards" v-bind:key="card.key">
+								<card :suit="card.suit" :rank="card.value"
+									:selected="card.selected" v-on:update-selected="val => card.selected = val"
+									:selectable="canSelectNewCards"
+									:trump-suit="trumpSuit" :trump-rank="trumpRank">
+								</card>
+							</li>
+						</transition-group>
+					</ul>
+				</div>
 			</div>
 		</div>
 	</div>

@@ -127,6 +127,7 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 	for card in low_cards:
 		tractor = Tractor(1, 1, card.suit_power(trump_card), SUIT_LOWEST)
 		tractor.orig_cards = [[card]]
+		tractor.orig_suit = card.get_normalized_suit(trump_card)
 		tractors.append(tractor)
 
 	# group equal trick/trump cards into length 1 Tractors
@@ -135,17 +136,31 @@ def cards_to_tractors(cards, trick_suit, trump_card, target_form=None):
 		suit_type = card_to_suit_type(card, trick_suit, trump_card)
 		tractor = Tractor(count, 1, card.suit_power(trump_card), suit_type)
 		tractor.orig_cards = [[card] * count]
+		tractor.orig_suit = card.get_normalized_suit(trump_card)
 		tractors.append(tractor)
 	tractors = sorted(tractors, reverse=True)
 
 	# merge consecutive rank > 1, length 1 Tractors of the same rank into multi-length Tractors
+	def should_merge(tractor1, tractor2):
+		if tractor1.rank == 1:
+			return False
+		elif tractor1.rank != tractor2.rank:
+			return False
+		elif tractor1.suit_type != tractor2.suit_type:
+			return False
+		elif abs(tractor1.power - tractor2.power) != 1:
+			return False
+		elif tractor1.orig_suit != tractor2.orig_suit:
+			return False
+		return True
 	i = 0
 	while i < len(tractors) - 1 and tractors[i+1].suit_type > SUIT_LOWEST:
 		tractor1, tractor2 = tractors[i], tractors[i+1]
-		if tractor1.rank > 1 and tractor1.rank == tractor2.rank and tractor1.suit_type == tractor2.suit_type and abs(tractor1.power - tractor2.power) == 1:
+		if should_merge(tractor1, tractor2):
 			assert tractor2.length == 1
 			tractor = Tractor(tractor1.rank, tractor1.length + tractor2.length, tractor2.power, tractor1.suit_type)
 			tractor.orig_cards = tractor2.orig_cards + tractor1.orig_cards
+			tractor.orig_suit = tractor1.orig_suit
 			tractors[i] = tractor
 			del tractors[i+1]
 		else:

@@ -1,8 +1,9 @@
 import model
 from tractor import Tractor, TractorMetadata, Flush, card_to_suit_type, cards_to_tractors, SUIT_TRUMP
 from tractor import find_matching_data_index, update_data_array, get_min_data
+import eventlet, random
 
-DEBUG = True
+DEBUG = False
 
 def get_ai_move(state, player_idx):
 	'''
@@ -36,7 +37,6 @@ def get_ai_move(state, player_idx):
 
 	# is an ally currently winning the trick?
 	winning_player, winning_flush = state.determine_winner()
-	print('winning_player={}, allies={}'.format(winning_player, allies))
 	ally_winning = winning_player in allies
 
 	# get our hand and tractors in the first play
@@ -237,3 +237,63 @@ def get_ai_first_move(state, player_idx):
 		if best_tractor is None or tractor.power > best_tractor.power:
 			best_tractor = tractor
 	return flatten(best_tractor.orig_cards)
+
+def get_ai_bottom(state, player_idx):
+	'''
+	Automatically set a bottom.
+	'''
+	# select lowest non-trump, non-point single cards
+	# if we don't get enough cards from that, select randomly
+	hand_copy = list(state.player_hands[player_idx])
+	n = len(state.player_hands)
+	num_bottom = len(hand_copy) - len(state.player_hands[(player_idx+1)%n])
+	tractors = cards_to_tractors(hand_copy, None, state.trump_card)
+	selected_cards = []
+	for tractor in tractors:
+		if tractor.rank > 1 or tractor.length > 1 or tractor.suit_type == SUIT_TRUMP:
+			continue
+		card = tractor.orig_cards[0][0]
+		selected_cards.append(card)
+		hand_copy.remove(card)
+	selected_cards.sort(key=lambda card: card.suit_power(state.trump_card))
+	while len(selected_cards) < num_bottom:
+		card = random.choice(hand_copy)
+		selected_cards.append(card)
+		hand_copy.remove(card)
+	return selected_cards[0:num_bottom]
+
+class AIListener(model.RoundListener):
+	def __init__(self, player_idx):
+		self.player_idx = player_idx
+
+	def card_dealt(self, r, player, card):
+		# TODO: automatically declare if it is trump card
+		pass
+
+	def _play_on_turn(self, r):
+		if r.state.status != model.STATUS_PLAYING:
+			return
+		if r.state.turn != self.player_idx:
+			return
+		def play():
+			cards = get_ai_move(r.state, self.player_idx)
+			r.play(self.player_idx, cards)
+		eventlet.spawn_after(0.1, play)
+
+	def player_given_bottom(self, r, player, cards):
+		if player != self.player_idx:
+			return
+		def set_bottom():
+			cards = get_ai_bottom(r.state, self.player_idx)
+			r.set_bottom(self.player_idx, cards)
+		eventlet.spawn_after(1, set_bottom)
+
+	def send_state(self, r):
+		# TODO: also try to set bottom if we currently have bottom
+		self._play_on_turn(r)
+
+	def player_set_bottom(self, r, player, cards):
+		self._play_on_turn(r)
+
+	def player_played(self, r, player, cards):
+		self._play_on_turn(r)

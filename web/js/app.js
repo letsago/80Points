@@ -100,6 +100,7 @@ var app = new Vue({
 		errorMsg: '',
 		playerPoints: [],
 		attackingPlayers: [],
+		bottomPlayer: -1
 	},
 	computed: {
 		selectedCards: function() {
@@ -108,7 +109,7 @@ var app = new Vue({
 			});
 		},
 		canSetBottom: function () {
-			return this.status == 'bottom' && this.player == this.declaration.player;
+			return this.status == 'bottom' && this.player == this.bottomPlayer;
 		},
 		canPlay: function () {
 			return this.status == 'playing' && this.player == this.turn;
@@ -161,7 +162,10 @@ var app = new Vue({
 			this.performCardsAction('round_play');
 		},
 		getSuggestedPlay: function () {
-			socket.emit('round_suggest');
+			socket.emit('round_suggest_play');
+		},
+		getSuggestedBottom: function () {
+			socket.emit('round_suggest_bottom');
 		},
 		playerPosition: function(index) {
 			// This function assigns the right CSS class so that the person who
@@ -263,12 +267,13 @@ socket.on('state', function(data) {
 	app.errorMsg = '';
 	app.playerPoints = data.player_points;
 	app.attackingPlayers = data.attacking_players;
+	app.bottomPlayer = data.bottom_player;
 
 	app.cards = mergeCards(app.cards, data.hand);
 });
 
-// suggested play response
-socket.on('suggest', function(data) {
+// handle suggestion responses
+var selectSuggestedCards = function(data) {
 	var remove = function(x) {
 		var index = null;
 		for(var i = 0; i < data.length; i++) {
@@ -287,7 +292,9 @@ socket.on('suggest', function(data) {
 	app.cards.forEach(function(el) {
 		el.selected = remove(el);
 	});
-});
+};
+socket.on('suggest_play', selectSuggestedCards);
+socket.on('suggest_bottom', selectSuggestedCards);
 
 socket.on('error', function(text) {
 	app.isError = true;

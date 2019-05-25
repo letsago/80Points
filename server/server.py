@@ -30,6 +30,7 @@ class GamePlayer(object):
 		self.idx = idx
 		self.ready = False
 		self.listener = None
+		self.ai = False
 
 		# we record name of self.user as an additional field so that we can display the names
 		#  of users who left the game while the game was in progress
@@ -43,7 +44,12 @@ class GamePlayer(object):
 		self.user = user
 
 		if user is not None:
+			self.ai = False
 			self.name = user.name
+
+	def enable_ai(self):
+		self.ai = True
+		self.name = 'AI Player {}'.format(self.idx+1)
 
 	@property
 	def empty(self):
@@ -66,6 +72,14 @@ class GamePlayer(object):
 			'left': self.left,
 		}
 
+	def get_listener(self):
+		if self.listener is None:
+			if self.ai:
+				self.listener = ai.AIListener(self.idx)
+			else:
+				self.listener = server_utils.ForwardToGamePlayer(sio, self)
+		return self.listener
+
 STATUS_LOBBY = 'lobby'
 STATUS_ROUND = 'round'
 STATUS_SCORE = 'score'
@@ -77,6 +91,9 @@ class Game(model.RoundListener):
 		self.name = name
 		self.status = STATUS_LOBBY
 		self.players = [GamePlayer(self, idx=idx) for idx in range(num_players)]
+		self.player_ranks = ['2'] * num_players
+		self.bottom_player = 0
+		self.round_rank = self.player_ranks[self.bottom_player]
 		self.round = None
 
 		# players observing this game, sid->GamePlayer
@@ -107,10 +124,9 @@ class Game(model.RoundListener):
 			return
 		elif player.listener is not None:
 			return
-
-		player.listener = server_utils.ForwardToGamePlayer(sio, player)
-		self.round.add_listener(player.listener)
-		player.listener.send_state(self.round)
+		listener = player.get_listener()
+		self.round.add_listener(listener)
+		listener.send_state(self.round)
 
 	# Join while game is in lobby (before game starts) in the first empty slot.
 	def join(self, user):
@@ -119,21 +135,42 @@ class Game(model.RoundListener):
 			raise GameException('this game is full')
 		self.join_as(user, empty_slot_idx)
 
-	# Join the game at a specific player index.
-	def join_as(self, user, player_idx):
+	def _update_empty_slot(self, player_idx, f):
+		# Update the specified slot, which must be unoccupied
+		# Used by join_as and add_ai
 		if player_idx < 0 or player_idx >= len(self.players):
 			raise GameException('slot {} is not valid'.format(player_idx))
 		player = self.players[player_idx]
 		if player.user is not None:
 			raise GameException('slot {} is neither empty nor left'.format(player_idx))
-		self._log('user {} joining in slot {}'.format(user.name, player_idx))
-		player.set_user(user)
-		user.game_player = player
-		self._ensure_listener(player)
-		self._broadcast_lobby()
 
+		# cleanup player listener, should only be needed if it was AI
+		if player.listener is not None:
+			if self.round is not None:
+				self.round.remove_listener(player.listener)
+			player.listener = None
+
+		f(player)
+
+		self._broadcast_lobby()
 		if self.status == STATUS_LOBBY and self.is_full():
 			self.start_round(self.sio)
+
+	# Join the game at a specific player index.
+	def join_as(self, user, player_idx):
+		def join_as(player):
+			self._log('user {} joining in slot {}'.format(user.name, player_idx))
+			player.set_user(user)
+			user.game_player = player
+			self._ensure_listener(player)
+		self._update_empty_slot(player_idx, join_as)
+
+	def add_ai(self, player_idx):
+		def add_ai(player):
+			self._log('adding ai at slot {}'.format(player_idx))
+			player.enable_ai()
+			self._ensure_listener(player)
+		self._update_empty_slot(player_idx, add_ai)
 
 	def add_observer(self, user):
 		self._log('user {} joining as an observer'.format(user.name))
@@ -164,9 +201,9 @@ class Game(model.RoundListener):
 		self.status = STATUS_ROUND
 		listeners = []
 		for player in self.players + list(self.observers.values()):
-			player.listener = server_utils.ForwardToGamePlayer(sio, player)
-			listeners.append(player.listener)
-		self.round = model.Round(len(self.players),
+			listeners.append(player.get_listener())
+		round_rank = self.player_ranks[self.bottom_player]
+		self.round = model.Round(len(self.players), round_rank, self.bottom_player, True,
 		                         listeners=[self, server_utils.TimedActionListener(args.speed)] + listeners,
 								 deck_name=args.deck_name)
 
@@ -176,6 +213,9 @@ class Game(model.RoundListener):
 			player.listener = None
 		self.round = None
 		self.status = STATUS_SCORE
+		for i in range(len(player_scores)):
+			self.player_ranks[i] = model.CARD_VALUES[(model.CARD_VALUES.index(self.player_ranks[i]) + player_scores[i]) % len(model.CARD_VALUES)]
+		self.reset_round(self.player_ranks, next_player)
 
 	def player_left(self, player):
 		if player.observer:
@@ -186,7 +226,21 @@ class Game(model.RoundListener):
 		player.user = None
 		if self.status == STATUS_LOBBY:
 			player.name = None
+		elif player.idx is not None:
+			self.add_ai(player.idx)
 		self._broadcast_lobby()
+
+	def reset_round(self, player_ranks, bottom_player):
+		self.player_ranks = player_ranks
+		self.bottom_player = bottom_player
+		round_rank = self.player_ranks[self.bottom_player]
+		self.status = STATUS_ROUND
+		listeners = []
+		for player in self.players + list(self.observers.values()):
+			listeners.append(player.get_listener())
+		self.round = model.Round(len(self.players), round_rank, self.bottom_player, False,
+		                         listeners=[self, server_utils.TimedActionListener(args.speed)] + listeners,
+								 deck_name=args.deck_name)
 
 	@property
 	def list_dict(self):
@@ -352,12 +406,19 @@ def round_play(user, r, player, cards):
 	print('player {} playing {}'.format(player, cards))
 	r.play(player, cards)
 
-@sio.on('round_suggest')
+@sio.on('round_suggest_play')
 @process_user_round
-def round_suggest(user, r, player):
+def round_suggest_play(user, r, player):
 	cards = ai.get_ai_move(r.state, player)
 	cards = [card.dict for card in cards]
-	sio.emit('suggest', cards, room=user.sid)
+	sio.emit('suggest_play', cards, room=user.sid)
+
+@sio.on('round_suggest_bottom')
+@process_user_round
+def round_suggest_bottom(user, r, player):
+	cards = ai.get_ai_bottom(r.state, player)
+	cards = [card.dict for card in cards]
+	sio.emit('suggest_bottom', cards, room=user.sid)
 
 @sio.on('disconnect')
 def on_disconnect(sid):

@@ -25,9 +25,11 @@
 
 <body>
 	<div id="app">
+		<a href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank">Game Rules</a>
 		<div id="modeRegister" v-if="mode == 'register'">
+			<h2 class="title">Welcome to 80 Points</h2>
 			<span class="heading">Login: </span>&nbsp;
-			<input v-model="playerName" placeholder="player name">
+			<input v-model="playerName" placeholder="player name" @keyup.enter="register(playerName)">
 			<button v-on:click="register(playerName)">Login</button>
 			<template v-if="debug">
 				<li v-for="index in 4" >
@@ -38,7 +40,7 @@
 		<div id="modeList" v-if="mode == 'list'">
 			<div>
 				<span class="heading">Create game: </span>&nbsp;
-				<input v-model="createGameOptions.name" placeholder="game name">
+				<input v-model="createGameOptions.name" placeholder="game name" @keyup.enter="createGame(createGameOptions.name, createGameOptions.numPlayers)">
 				<select v-model="createGameOptions.numPlayers">
 					<option>4</option>
 				</select>
@@ -61,7 +63,7 @@
 			</div>
 			<div class="gameInfo">
 				<div>
-					<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }} 
+					<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }}
 				</div>
 				<div class="points">
 					<b>Points: </b>{{ attackingPoints }}
@@ -111,6 +113,9 @@
 						</template>
 						<template v-if="canSetBottom">
 							<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
+						</template>
+						<template v-if="canSetBottom">
+							<button v-on:click="getSuggestedBottom">Suggest</button>
 						</template>
 						<template v-if="canPlay">
 							<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>

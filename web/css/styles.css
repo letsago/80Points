@@ -1,12 +1,27 @@
 body {
-	margin: 40px auto;
-	max-width: 650px;
+	margin: 0;
 	line-height: 1.6;
 	font-size: 18px;
 	color: #444;
-	padding: 0 10px;
 	font-family: 'Roboto', sans-serif;
 	background-color: #033301;
+}
+
+html,
+body,
+#app,
+#modeGame {
+  height: 100%; /* needed for proper layout */
+}
+
+#modeRegister,
+#modeList {
+	padding: 30px;
+    border-radius: 10px;
+}
+
+.playingCards ul.hand {
+	margin: 0 auto;
 }
 
 .fade-enter-active {
@@ -24,15 +39,50 @@ body {
 .list-enter-active, .list-leave-active {
 	transition: all 0.5s;
 }
-.list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
-	opacity: 0.8;
-	transform: translateY(-60px);
+
+.list-enter {
+	opacity: 0.9;
+	transform: translateY(-75px);
+}
+
+.list-leave-to /* .list-leave-active below version 2.1.8 */ {
+	opacity: 0;
+	transform: translateY(-75px);
 }
 
 #app {
 	background-color: #eee;
-    padding: 30px;
-    border-radius: 10px;
+}
+
+#modeGame {
+	display: flex;
+	flex-direction: column;
+}
+
+.game-header {
+	flex: 0 0 auto;
+	padding-left: 30px;
+	padding-right: 30px;
+	padding-top: 30px;
+}
+
+.game-body {
+	flex: 1 1 auto;
+	position: relative;
+	overflow-y: auto;
+	padding-left: 30px;
+	padding-right: 30px;
+	padding-top: 30px;
+}
+.game-footer {
+	flex: 0 0 auto;
+	background-color: #ffdede;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+	padding-left: 30px;
+	padding-right: 30px;
+	padding-top: 15px;
+	padding-bottom: 10px;
 }
 
 h1, h2, h3 {
@@ -48,10 +98,12 @@ h1, h2, h3 {
 }
 
 .inHand .card:hover {
+	cursor: pointer;
 	transform: translateY(-0.4em);
 }
 
 .playingCards .card.selected {
+	cursor: pointer;
 	transform: translateY(-1em);
 }
 
@@ -88,11 +140,29 @@ h1, h2, h3 {
 }
 
 .gameInfo {
-	display: flex;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+	grid-template-areas:
+	". trump-info . points-info leave-game"
 }
 
-.gameInfo div {
-	flex: 0 1 50%;
+.trump-info {
+	grid-area: trump-info;
+	text-align: center;
+}
+
+.points-info {
+	grid-area: points-info;
+	text-align: center;
+}
+
+.leave-game {
+	grid-area: leave-game;
+	text-align: right;
+}
+
+.playerButtons {
+	text-align: center;
 }
 
 .points {

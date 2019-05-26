@@ -22,7 +22,7 @@ def get_ai_move(state, player_idx):
 		raise Exception("get_ai_move only supports num_players=4")
 
 	# use separate logic if we're starting a new trick
-	if state.is_board_full() or state.is_board_empty():
+	if state.is_starting_trick():
 		return get_ai_first_move(state, player_idx)
 
 	board, first_player = state.board, state.trick_first_player
@@ -278,7 +278,12 @@ class AIListener(model.RoundListener):
 		def play():
 			cards = get_ai_move(r.state, self.player_idx)
 			r.play(self.player_idx, cards)
-		eventlet.spawn_after(0.1, play)
+
+		if r.state.is_starting_trick():
+			delay = 2.0
+		else:
+			delay = 0.3
+		eventlet.spawn_after(delay, play)
 
 	def player_given_bottom(self, r, player, cards):
 		if player != self.player_idx:

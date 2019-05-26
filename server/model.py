@@ -390,6 +390,15 @@ class RoundState(object):
 	def is_board_empty(self):
 		return all([len(cards) == 0 for cards in self.board])
 
+	def is_starting_trick(self):
+		'''
+		Returns whether we're waiting for the first player in a trick to play.
+		'''
+		# on first trick of the round, board will be empty
+		# on second trick and onwards, it'll be full since we don't clear trick until
+		#  after the first play of the following trick
+		return self.status == STATUS_PLAYING and (self.is_board_full() or self.is_board_empty())
+
 	def clear_board(self):
 		for i in range(len(self.board)):
 			self.board[i] = []

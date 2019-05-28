@@ -172,6 +172,7 @@ h1, h2, h3 {
 
 .playerButtons {
 	text-align: center;
+	margin-bottom: 10px;
 }
 
 .points {

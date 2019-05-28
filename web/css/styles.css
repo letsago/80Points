@@ -95,6 +95,10 @@ h1, h2, h3 {
     transition: 0.2s;
 }
 
+.inHand li {
+    transition: 0.2s;
+}
+
 .inHand .card:hover {
 	cursor: pointer;
 	transform: translateY(-0.4em);

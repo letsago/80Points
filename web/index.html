@@ -17,45 +17,44 @@
 
 	<title>80 Points</title>
 	<meta name="description" content="80 Points">
-	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Roboto|Oswald:700|Open+Sans" rel="stylesheet">
 	<link rel="stylesheet" href="css/cards.css?v=1.0">
 	<link rel="stylesheet" href="css/styles.css?v=1.0">
 </head>
 
 <body>
 	<div id="app">
-		<div id="modeRegister" v-if="mode == 'register'">
+		<div id="modeRegisterAndList" v-if="mode == 'register' || mode == 'list'">
+			<h2 class="title">80 POINTZ</h2>
 			<a href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank">Game Rules</a>
-			<h2 class="title">Welcome to 80 Points</h2>
-			<span class="heading">Login: </span>&nbsp;
-			<input v-model="playerName" placeholder="player name" @keyup.enter="register(playerName)">
-			<button v-on:click="register(playerName)">Login</button>
-			<template v-if="debug">
-				<li v-for="index in 4" >
-					<a href="#" v-on:click="register('player' + index)">player{{ index }}</a>
-				</li>
-			</template>
-		</div>
-		<div id="modeList" v-if="mode == 'list'">
-			<div>
-				<span class="heading">Create game: </span>&nbsp;
-				<input v-model="createGameOptions.name" placeholder="game name" @keyup.enter="createGame(createGameOptions.name, createGameOptions.numPlayers)">
-				<select v-model="createGameOptions.numPlayers">
-					<option>4</option>
-				</select>
-				<button v-on:click="createGame(createGameOptions.name, createGameOptions.numPlayers)">Create</button>
+			<div v-if="mode == 'register'">
+				<span class="heading">Login: </span>&nbsp;
+				<input v-model="playerName" placeholder="player name" @keyup.enter="register(playerName)">
+				<button v-on:click="register(playerName)">Login</button>
+				<template v-if="debug">
+					<li v-for="index in 4" >
+						<a href="#" v-on:click="register('player' + index)">player{{ index }}</a>
+					</li>
+				</template>
 			</div>
-			<div>
-				<button v-on:click="refreshGameList()">Refresh Game List</button>
-			</div>
-			<ul>
-				<li v-for="game in gameList" >
+			<div v-if="mode == 'list'">
+				<div>
+					<span class="heading">Create game: </span>&nbsp;
+					<input v-model="createGameOptions.name" placeholder="game name" @keyup.enter="createGame(createGameOptions.name, createGameOptions.numPlayers)">
+					<select v-model="createGameOptions.numPlayers">
+						<option>4</option>
+					</select>
+					<button v-on:click="createGame(createGameOptions.name, createGameOptions.numPlayers)">Create</button>
+				</div>
+				<div>
+					<button v-on:click="refreshGameList()">Refresh Game List</button>
+				</div>
+				<div v-for="game in gameList" >
 					<a href="#" v-on:click="joinGame(game.id)">
 						{{ game.name }} ({{ game.occupied }}/{{ game.total }})
 					</a>
-				</li>
-			</ul>
+				</div>
+			</div>
 		</div>
 		<div id="modeGame" v-if="mode == 'game'">
 			<div class="game-header">
@@ -114,15 +113,11 @@
 							</template>
 							<template v-if="canSetBottom">
 								<button v-on:click="setBottom" :disabled="selectedCards.length != bottomSize">Set Bottom</button>
-							</template>
-							<template v-if="canSetBottom">
 								<button v-on:click="getSuggestedBottom">Suggest</button>
 							</template>
-							<template v-if="canPlay">
-								<button v-on:click="play" :disabled="selectedCards.length == 0">Play</button>
-							</template>
-							<template v-if="canPlay">
-								<button v-on:click="getSuggestedPlay">Suggest</button>
+							<template v-if="status == 'playing'">
+								<button v-on:click="play" :disabled="!canPlay || selectedCards.length == 0">Play</button>
+								<button v-on:click="getSuggestedPlay" :disabled="!canPlay">Suggest</button>
 							</template>
 						</span>
 					</div>

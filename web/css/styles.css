@@ -14,10 +14,10 @@ body,
   height: 100%; /* needed for proper layout */
 }
 
-#modeRegister,
-#modeList {
+#modeRegisterAndList {
 	padding: 30px;
-    border-radius: 10px;
+	border-radius: 10px;
+	text-align: center;
 }
 
 .playingCards ul.hand {
@@ -70,9 +70,7 @@ body,
 	flex: 1 1 auto;
 	position: relative;
 	overflow-y: auto;
-	padding-left: 30px;
-	padding-right: 30px;
-	padding-top: 30px;
+	padding: 30px;
 }
 .game-footer {
 	flex: 0 0 auto;
@@ -97,6 +95,10 @@ h1, h2, h3 {
     transition: 0.2s;
 }
 
+.inHand li {
+    transition: 0.2s;
+}
+
 .inHand .card:hover {
 	cursor: pointer;
 	transform: translateY(-0.4em);
@@ -110,13 +112,20 @@ h1, h2, h3 {
 .playerInfoContainer {
 	margin: 0 auto;
 	display: grid;
-	grid-template-columns: 1fr 1fr 1fr;
-	grid-template-rows: 1fr 1fr 1fr 1fr;
+	height: 100%;
+	max-width: 70%;
+	grid-template-columns: auto;
+	grid-template-rows: auto;
 	grid-template-areas:
+	    ". . ."
+    	". top ."
     	". top ."
     	"left top right"
+    	"left . right"
     	"left bottom right"
     	". bottom ."
+    	". bottom ."
+	    ". . ."
 }
 
 .topPlayer {
@@ -163,6 +172,7 @@ h1, h2, h3 {
 
 .playerButtons {
 	text-align: center;
+	margin-bottom: 10px;
 }
 
 .points {
@@ -184,6 +194,7 @@ h1, h2, h3 {
 
 .title {
 	text-align: center;
-	font-weight: bold;
+	font-size: 80px;
+	font-family: 'Oswald', sans-serif;
 	margin: 0px;
 }

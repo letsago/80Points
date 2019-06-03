@@ -49,13 +49,11 @@
 				<div>
 					<button v-on:click="refreshGameList()">Refresh Game List</button>
 				</div>
-				<ul>
-					<li v-for="game in gameList" >
-						<a href="#" v-on:click="joinGame(game.id)">
-							{{ game.name }} ({{ game.occupied }}/{{ game.total }})
-						</a>
-					</li>
-				</ul>
+				<div v-for="game in gameList" >
+					<a href="#" v-on:click="joinGame(game.id)">
+						{{ game.name }} ({{ game.occupied }}/{{ game.total }})
+					</a>
+				</div>
 			</div>
 		</div>
 		<div id="modeGame" v-if="mode == 'game'">

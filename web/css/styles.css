@@ -51,7 +51,7 @@ body,
 }
 
 #app {
-	background-color: #eee;
+	background-color: #f5f5f5;
 }
 
 #modeGame {
@@ -74,7 +74,7 @@ body,
 }
 .game-footer {
 	flex: 0 0 auto;
-	background-color: #ffdede;
+	background-color: #2d3467;
 	border-top-left-radius: 10px;
 	border-top-right-radius: 10px;
 	padding-left: 30px;
@@ -88,7 +88,7 @@ h1, h2, h3 {
 }
 
 .playingCards .card.trump {
-	background-color: #fff4ac;
+	background-color: #ffec72;
 }
 
 .inHand .card {
@@ -197,4 +197,74 @@ h1, h2, h3 {
 	font-size: 80px;
 	font-family: 'Oswald', sans-serif;
 	margin: 0px;
+}
+
+.retroshadow {
+	font-size: 92px;
+	padding-top: 20px;
+	padding-bottom: 40px;
+	text-align: center;
+	text-transform: uppercase;
+	text-rendering: optimizeLegibility;
+	color: #546cca;
+	letter-spacing: .05em;
+	text-shadow: 
+	  4px 4px 0px #d5d5d5, 
+	  7px 7px 0px rgba(0, 0, 0, 0.2);
+	-webkit-mask-image: -webkit-gradient(linear, left 55%, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)));
+}
+
+a {
+	color: #27abec;
+	text-decoration: none;
+}
+
+a:hover {
+	color: #066594;
+}
+
+a:visited {
+	color: #27abec;
+}
+
+.gameInList {
+	margin-top: 20px;
+}
+  
+/* Style the input fields */
+input, select {
+	vertical-align: middle;
+	margin: 5px 3px 5px 0;
+	padding: 10px;
+	background-color: #fff;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+}
+
+/* Style the submit button */
+button {
+	padding: 10px 15px;
+	background-color: dodgerblue;
+	border: 1px solid #ddd;
+	color: white;
+	border-radius: 3px;
+}
+
+button:disabled {
+	padding: 10px 15px;
+	background-color: #a6d3ff;
+	border: 1px solid #ddd;
+	color: #eaeaea;
+	border-radius: 3px;
+}
+
+button:hover {
+	cursor: pointer;
+}
+
+.gameRules {
+	margin-bottom: 20px;
+}
+.refreshGameList {
+	margin-top: 15px;
 }

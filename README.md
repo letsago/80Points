@@ -7,6 +7,9 @@ Rules: https://en.wikipedia.org/wiki/Sheng_ji
 ## Setup 
 
 ```bash
+# Clones project directory
+git clone https://github.com/letsago/80Points.git
+
 # Creates a directory to hold dependencies
 python3 -m venv venv
 

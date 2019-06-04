@@ -7,7 +7,7 @@ Rules: https://en.wikipedia.org/wiki/Sheng_ji
 ## Setup 
 
 ```bash
-# Clones project directory
+# Clone the project directory
 git clone https://github.com/letsago/80Points.git
 
 # Creates a directory to hold dependencies

@@ -25,7 +25,7 @@
 <body>
 	<div id="app">
 		<div id="modeRegisterAndList" v-if="mode == 'register' || mode == 'list'">
-			<h2 class="title">80 POINTZ</h2>
+			<h2 class="title">80 POINTS</h2>
 			<a href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank">Game Rules</a>
 			<div v-if="mode == 'register'">
 				<span class="heading">Login: </span>&nbsp;
@@ -59,6 +59,7 @@
 		<div id="modeGame" v-if="mode == 'game'">
 			<div class="game-header">
 				<div class="gameInfo">
+					<a href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank">Game Rules</a>
 					<div class="trump-info">
 						<b>Trump: </b>{{ trumpRank }} {{ suits[trumpSuit] }}
 					</div>

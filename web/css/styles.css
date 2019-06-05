@@ -268,3 +268,8 @@ button:hover {
 .refreshGameList {
 	margin-top: 15px;
 }
+
+p.message {
+	text-align: center;
+	color: white;
+}

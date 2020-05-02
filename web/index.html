@@ -24,6 +24,15 @@
 
 <body>
 	<div id="app">
+		<!-- Sponsor div is at the top to make it hide behind the cards when they overlap. -->
+		<div class="sponsor">
+			<a href="https://lunanode.com" target="_blank">
+				<div class="powered-by" v-bind:class="{ 'powered-by-light': mode == 'game' }">POWERED BY</div>
+				<div>
+					<img :src="mode == 'game' ? 'images/lunanode-light.png' : 'images/lunanode.png'" class="logo"></img>
+				</div>
+			</a>
+		</div>
 		<div id="modeRegisterAndList" v-if="mode == 'register' || mode == 'list'">
 			<h2 class="title retroshadow">80 POINTS</h2>
 			<div class="gameRules">
@@ -140,14 +149,6 @@
 					</ul>
 				</div>
 			</div>
-		</div>
-		<div class="sponsor">
-			<a href="https://lunanode.com" target="_blank">
-				<div class="powered-by" v-bind:class="{ 'powered-by-light': mode == 'game' }">POWERED BY</div>
-				<div>
-					<img :src="mode == 'game' ? 'images/lunanode-light.png' : 'images/lunanode.png'" class="logo"></img>
-				</div>
-			</a>
 		</div>
 	</div>
 

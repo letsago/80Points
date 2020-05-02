@@ -59,6 +59,29 @@ body,
 	flex-direction: column;
 }
 
+.sponsor {
+    position: absolute;
+    bottom: 10px;
+	right: 20px;
+	display: flex;
+	flex-direction: column;
+	text-align: right;
+}
+
+.powered-by {
+	color: #004581;
+	font-weight: bold;
+	transform: translateY(5px);
+}
+
+.powered-by-light {
+	color: #ffffff;
+}
+
+.logo {
+	width: 150px;
+}
+
 .game-header {
 	flex: 0 0 auto;
 	padding-left: 30px;

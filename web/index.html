@@ -141,6 +141,14 @@
 				</div>
 			</div>
 		</div>
+		<div class="sponsor">
+			<a href="https://lunanode.com" target="_blank">
+				<div class="powered-by" v-bind:class="{ 'powered-by-light': mode == 'game' }">POWERED BY</div>
+				<div>
+					<img :src="mode == 'game' ? 'images/lunanode-light.png' : 'images/lunanode.png'" class="logo"></img>
+				</div>
+			</a>
+		</div>
 	</div>
 
 	<script src="js/socket.io.js"></script>

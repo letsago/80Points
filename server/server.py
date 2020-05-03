@@ -291,10 +291,13 @@ def on_connect(sid, environ):
 @sio.on('register')
 def register(sid, name):
 	if sid in users:
-		sio.emit('error', 'you are already registered', room=sid)
-		return
-	print('[server] user {} registered as {}'.format(sid, name))
-	users[sid] = User(sid, name)
+		# If the user already exists, just update the name.
+		old_name = users[sid].name
+		users[sid].name = name
+		print('[server] user {} changed name from {} to {}'.format(sid, old_name, name))
+	else:
+		print('[server] user {} registered as {}'.format(sid, name))
+		users[sid] = User(sid, name)
 	sio.emit('register', name, sid)
 	if args.debug and len(users) > 4:
 		join(sid, list(games.keys())[0])

@@ -48,12 +48,17 @@
 				</template>
 			</div>
 			<div v-if="mode == 'list'">
+				<div v-if="editingName">
+					<input v-model="playerName" placeholder="Player Name" @keyup.enter="register(playerName)">
+					<button v-on:click="register(playerName)">Change Name</button>
+				</div>
+				<div v-else>
+					<strong>{{ playerName }}</strong>
+					<a href="#" v-on:click="editingName=true">edit</a>
+				</div>
 				<div>
 					<input v-model="createGameOptions.name" placeholder="Game Name" @keyup.enter="createGame(createGameOptions.name, createGameOptions.numPlayers)">
-					<select v-model="createGameOptions.numPlayers">
-						<option>4</option>
-					</select>
-					<button v-on:click="createGame(createGameOptions.name, createGameOptions.numPlayers)">Create Game</button>
+					<button v-on:click="createGame(createGameOptions.name, 4)">Create Game</button>
 				</div>
 				<div class="refreshGameList">
 					<button v-on:click="refreshGameList()">Refresh Game List</button>

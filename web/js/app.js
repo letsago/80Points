@@ -69,6 +69,7 @@ var app = new Vue({
 		mode: 'register',
 
 		playerName: '',
+		editingName: false,
 
 		gameList: [],
 		createGameOptions: {
@@ -247,6 +248,7 @@ socket.on('debug', function(data) {
 socket.on('register', function(name) {
 	app.playerName = name;
 	app.mode = 'list';
+	app.editingName = false;
 	app.refreshGameList();
 });
 

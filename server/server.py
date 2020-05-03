@@ -12,7 +12,6 @@ import server_utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--speed', default=5)
-parser.add_argument('--debug', action='store_true')
 parser.add_argument('--deck_name')
 
 args = parser.parse_args()
@@ -85,9 +84,9 @@ STATUS_ROUND = 'round'
 STATUS_SCORE = 'score'
 
 class Game(model.RoundListener):
-	def __init__(self, sio, id, name, num_players):
+	def __init__(self, sio, name, num_players):
 		self.sio = sio
-		self.id = id
+		self.id = str(uuid.uuid4())
 		self.name = name
 		self.status = STATUS_LOBBY
 		self.players = [GamePlayer(self, idx=idx) for idx in range(num_players)]
@@ -154,7 +153,7 @@ class Game(model.RoundListener):
 
 		self._broadcast_lobby()
 		if self.status == STATUS_LOBBY and self.is_full():
-			self.start_round(self.sio)
+			self.start_round()
 
 	# Join the game at a specific player index.
 	def join_as(self, user, player_idx):
@@ -186,7 +185,7 @@ class Game(model.RoundListener):
 		if self.status != STATUS_LOBBY:
 			return True
 		for player in self.players:
-			if player.user is None:
+			if player.user is None and not player.ai:
 				return False
 		return True
 
@@ -195,7 +194,7 @@ class Game(model.RoundListener):
 			raise GameException('the game is not in scoring')
 		player.ready = True
 
-	def start_round(self, sio):
+	def start_round(self):
 		if self.status == STATUS_ROUND:
 			raise GameException('this game already started')
 		self.status = STATUS_ROUND
@@ -279,14 +278,6 @@ def index(path):
 @sio.on('connect')
 def on_connect(sid, environ):
 	print('[server] user {} connected'.format(sid))
-	if args.debug:
-		sio.emit('debug')
-		if len(users) < 4:
-			register(sid, 'player{}'.format(len(users)+1))
-			if len(games) > 0:
-				join(sid, list(games.keys())[0])
-			else:
-				create(sid, 'debug game', 4)
 
 @sio.on('register')
 def register(sid, name):
@@ -299,8 +290,6 @@ def register(sid, name):
 		print('[server] user {} registered as {}'.format(sid, name))
 		users[sid] = User(sid, name)
 	sio.emit('register', name, sid)
-	if args.debug and len(users) > 4:
-		join(sid, list(games.keys())[0])
 
 @sio.on('game_list')
 def game_list(sid):
@@ -317,12 +306,21 @@ def process_user(func):
 		func(users[sid], *args)
 	return func_wrapper
 
+def create_game(name, num_players):
+	game = Game(sio, name, num_players)
+	games[game.id] = game
+	return game
+
+def create_ai_game(name, num_players):
+	game = create_game(name, num_players)
+	for i in range(num_players):
+		game.add_ai(i)
+	return game
+
 @sio.on('create')
 @process_user
 def create(user, name, num_players):
-	game_id = str(uuid.uuid4())
-	game = Game(sio, game_id, name, num_players)
-	games[game_id] = game
+	game = create_game(name, num_players)
 	game.join(user)
 
 def do_join(user, game_id, player_idx=None):
@@ -341,8 +339,8 @@ def do_join(user, game_id, player_idx=None):
 		else:
 			game.join(user)
 	except GameException as e:
-		print('[server] user {} join error: {}'.format(user.sid, e.message))
-		sio.emit('error', e.message, room=user.sid)
+		print('[server] user {} join error: {}'.format(user.sid, e))
+		sio.emit('error', str(e), room=user.sid)
 
 @sio.on('join')
 @process_user
@@ -435,4 +433,5 @@ def on_disconnect(sid):
 
 if __name__ == '__main__':
 	app = socketio.Middleware(sio, app)
+	create_ai_game('AI Game', 4)
 	eventlet.wsgi.server(eventlet.listen(('', 8000)), app)

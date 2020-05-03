@@ -54,14 +54,11 @@
 				</div>
 				<div v-else>
 					<strong>{{ playerName }}</strong>
-					<a href="#" v-on:click="editingName=true">edit</a>
+					<a href="#" v-on:click="editingName = true">edit</a>
 				</div>
 				<div>
 					<input v-model="createGameOptions.name" placeholder="Game Name" @keyup.enter="createGame(createGameOptions.name, createGameOptions.numPlayers)">
 					<button v-on:click="createGame(createGameOptions.name, 4)">Create Game</button>
-				</div>
-				<div class="refreshGameList">
-					<button v-on:click="refreshGameList()">Refresh Game List</button>
 				</div>
 				<div class="gameInList" v-for="game in gameList" >
 					<a href="#" v-on:click="joinGame(game.id)">

@@ -103,6 +103,16 @@ var app = new Vue({
 		attackingPlayers: [],
 		bottomPlayer: -1
 	},
+	created: function() {
+		const name = localStorage.getItem('tractor_player_name');
+		if (name === null) {
+			return;
+		}
+		this.playerName = name;
+		this.mode = 'list';
+		this.register(name);
+		this.refreshGameList();
+	},
 	computed: {
 		selectedCards: function() {
 			return this.cards.filter(card => {
@@ -246,6 +256,7 @@ socket.on('debug', function(data) {
 });
 
 socket.on('register', function(name) {
+	localStorage.setItem('tractor_player_name', name);
 	app.playerName = name;
 	app.mode = 'list';
 	app.editingName = false;
@@ -253,7 +264,6 @@ socket.on('register', function(name) {
 });
 
 socket.on('game_list', function(data) {
-	console.log('received ' + data);
 	app.gameList = data;
 });
 

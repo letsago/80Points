@@ -14,7 +14,7 @@ body,
   height: 100%; /* needed for proper layout */
 }
 
-#modeRegisterAndList {
+#modeList {
 	padding: 30px;
 	border-radius: 10px;
 	text-align: center;

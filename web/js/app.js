@@ -1,5 +1,25 @@
 var socket = io();
 
+const ADJECTIVES = [
+	'ambitious', 'amiable', 'brave', 'charming', 'courageous', 'creative',
+	'decisive', 'diplomatic', 'easygoing', 'energetic', 'fearless', 'gregarious',
+	'honest', 'imaginative', 'inventive', 'loyal', 'modest', 'philosophical', 
+	'polite', 'sociable', 'thoughtful', 'warmhearted'
+];
+
+const ANIMALS = [
+	'giraffe', 'chameleon', 'elephant', 'crocodile', 'duckling', 'deer', 'hippo', 
+	'hedgehog', 'kitten', 'dolphin', 'anteater', 'panda', 'octopus', 'lamb',
+	'owl', 'sloth', 'seal', 'pufferfish', 'bunny', 'piglet', 'fox', 'hamster',
+	'walrus', 'skunk', 'chinchilla', 'hippo', 'penguin'
+];
+
+function generateName() {
+	const adjectiveIndex = Math.floor((Math.random() * ADJECTIVES.length));
+	const animalIndex = Math.floor((Math.random() * ANIMALS.length));
+	return ADJECTIVES[adjectiveIndex] + '_' + ANIMALS[animalIndex];
+}
+
 // A card component
 Vue.component('card', {
 	props: ['suit', 'rank', 'selected', 'selectable', 'trumpSuit', 'trumpRank'],
@@ -65,8 +85,7 @@ Vue.component('card', {
 var app = new Vue({
 	el: '#app',
 	data: {
-		debug: false,
-		mode: 'register',
+		mode: 'list',
 
 		playerName: '',
 		editingName: false,
@@ -104,12 +123,11 @@ var app = new Vue({
 		bottomPlayer: -1
 	},
 	created: function() {
-		const name = localStorage.getItem('tractor_player_name');
+		let name = localStorage.getItem('tractor_player_name');
 		if (name === null) {
-			return;
+			name = generateName();
 		}
 		this.playerName = name;
-		this.mode = 'list';
 		this.register(name);
 		this.refreshGameList();
 	},
@@ -250,10 +268,6 @@ function mergeCards(oldCards, newCards) {
 	}
 	return merged;
 }
-
-socket.on('debug', function(data) {
-	app.debug = true;
-});
 
 socket.on('register', function(name) {
 	localStorage.setItem('tractor_player_name', name);

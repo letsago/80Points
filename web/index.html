@@ -33,38 +33,27 @@
 				</div>
 			</a>
 		</div>
-		<div id="modeRegisterAndList" v-if="mode == 'register' || mode == 'list'">
+		<div id="modeList" v-if="mode == 'list'">
 			<h2 class="title retroshadow">80 POINTS</h2>
 			<div class="gameRules">
 				<a href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank">Game Rules</a>
 			</div>
-			<div v-if="mode == 'register'">
+			<div v-if="editingName">
 				<input v-model="playerName" placeholder="Player Name" @keyup.enter="register(playerName)">
-				<button v-on:click="register(playerName)">Login</button>
-				<template v-if="debug">
-					<li v-for="index in 4" >
-						<a href="#" v-on:click="register('player' + index)">player{{ index }}</a>
-					</li>
-				</template>
+				<button v-on:click="register(playerName)">Change Name</button>
 			</div>
-			<div v-if="mode == 'list'">
-				<div v-if="editingName">
-					<input v-model="playerName" placeholder="Player Name" @keyup.enter="register(playerName)">
-					<button v-on:click="register(playerName)">Change Name</button>
-				</div>
-				<div v-else>
-					<strong>{{ playerName }}</strong>
-					<a href="#" v-on:click="editingName = true">edit</a>
-				</div>
-				<div>
-					<input v-model="createGameOptions.name" placeholder="Game Name" @keyup.enter="createGame(createGameOptions.name, createGameOptions.numPlayers)">
-					<button v-on:click="createGame(createGameOptions.name, 4)">Create Game</button>
-				</div>
-				<div class="gameInList" v-for="game in gameList" >
-					<a href="#" v-on:click="joinGame(game.id)">
-						{{ game.name }} ({{ game.occupied }}/{{ game.total }})
-					</a>
-				</div>
+			<div v-else>
+				<strong>{{ playerName }}</strong>
+				<a href="#" v-on:click="editingName = true">edit</a>
+			</div>
+			<div>
+				<input v-model="createGameOptions.name" placeholder="Game Name" @keyup.enter="createGame(createGameOptions.name, createGameOptions.numPlayers)">
+				<button v-on:click="createGame(createGameOptions.name, 4)">Create Game</button>
+			</div>
+			<div class="gameInList" v-for="game in gameList" >
+				<a href="#" v-on:click="joinGame(game.id)">
+					{{ game.name }} ({{ game.occupied }}/{{ game.total }})
+				</a>
 			</div>
 		</div>
 		<div id="modeGame" v-if="mode == 'game'">

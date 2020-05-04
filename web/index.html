@@ -38,23 +38,34 @@
 			<div class="gameRules">
 				<a href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank">Game Rules</a>
 			</div>
-			<div v-if="editingName">
-				<input v-model="playerName" placeholder="Player Name" @keyup.enter="register(playerName)">
-				<button v-on:click="register(playerName)">Change Name</button>
-			</div>
-			<div v-else>
-				<strong>{{ playerName }}</strong>
-				<a href="#" v-on:click="editingName = true">edit</a>
+			<div class="nameBox">
+				<div v-if="editingName">
+					<input v-model="playerName" placeholder="Player Name" @keyup.enter="register(playerName)">
+					<button v-on:click="register(playerName)">Change Name</button>
+				</div>
+				<div v-else>
+					<strong>{{ playerName }}</strong>
+					<a href="#" v-on:click="editingName = true">edit</a>
+				</div>
 			</div>
 			<div>
 				<input v-model="createGameOptions.name" placeholder="Game Name" @keyup.enter="createGame(createGameOptions.name, createGameOptions.numPlayers)">
 				<button v-on:click="createGame(createGameOptions.name, 4)">Create Game</button>
 			</div>
-			<div class="gameInList" v-for="game in gameList" >
-				<a href="#" v-on:click="joinGame(game.id)">
-					{{ game.name }} ({{ game.occupied }}/{{ game.total }})
-				</a>
-			</div>
+			<table class="gameTable">
+				<tr>
+					<th class="gameName">Game</th>
+					<th class="occupied">Players</th>
+				</tr>
+				<tr v-for="game in gameList">
+					<td class="gameName">
+						<a href="#" v-on:click="joinGame(game.id)">{{ game.name }}</a>
+					</td>
+					<td class="occupied">
+						{{ game.occupied }}/{{ game.total }}
+					</td>		
+				</tr>
+			</table>
 		</div>
 		<div id="modeGame" v-if="mode == 'game'">
 			<div class="game-header">

@@ -158,6 +158,8 @@ var app = new Vue({
 			socket.emit('register', name);
 		},
 		createGame: function(name, numPlayers) {
+			this.createGameOptions.name = '';
+			this.editingName = false;
 			socket.emit('create', name, numPlayers);
 		},
 		refreshGameList: function() {

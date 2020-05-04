@@ -250,8 +250,44 @@ a:visited {
 	color: #27abec;
 }
 
-.gameInList {
+.gameTable {
+	border-collapse: collapse;
+    margin-left: auto; 
+	margin-right: auto;
 	margin-top: 20px;
+	width: 50%;
+	min-width: 500px;
+	max-width: 700px;
+}
+
+.gameTable th {
+	border-bottom: 1px solid #777;
+}
+
+.gameTable td, th {
+	padding: 6px;
+}
+
+.gameTable .occupied {
+	text-align: right;
+	padding-right: 20px;
+}
+
+.gameTable .gameName {
+	text-align: left;
+	padding-left: 20px;
+}
+
+.gameTable tr {
+	background-color: #fff;
+}
+
+.gameTable tr:nth-child(even) {
+	background-color: #ddd;
+}
+
+.nameBox {
+	margin-bottom: 15px;
 }
   
 /* Style the input fields */

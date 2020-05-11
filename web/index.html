@@ -116,6 +116,29 @@
 					</div>
 				</div>
 			</div>
+			<div v-if="roundEnded" class="game-round-end">
+				<div v-if="roundEndAttackingWon">
+					<h2>Attackers Win</h2>
+				</div>
+				<div v-else>
+					<h2>Defenders Win</h2>
+				</div>
+				<div>
+					Next bottom player: {{ players[roundEndNextPlayer].name }}
+				</div>
+				<div style="margin-top: 35px">
+					Bottom
+				</div>
+				<div class="playingCards fourColours">
+					<ul class="hand" :style="handStyle(roundEndBottom)">
+						<li v-for="card in roundEndBottom" v-bind:key="card.key">
+							<card :suit="card.suit" :rank="card.value"
+								:trump-suit="trumpSuit" :trump-rank="trumpRank">
+							</card>
+						</li>
+					</ul>
+				</div>	
+			</div>
 			<div class="game-footer">
 				<template v-if="cards.length > 0">
 					<div class="playerButtons">

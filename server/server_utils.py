@@ -65,15 +65,12 @@ class ForwardToGamePlayer(model.RoundListener):
 		view = r.get_state().get_player_view(self.player)
 		self.sio.emit('state', view, room=self.sid)
 
-	def card_dealt(self, r, player, card):
-		data = {
-			'player': player,
-		}
-		if player == self.player:
-			data['card'] = card.dict
-		self.sio.emit('card_dealt', data, room=self.sid)
-		self.send_state(r)
+	def round_started(self, r):
+		self.sio.emit('round_started')
 
+	def card_dealt(self, r, player, card):
+		self.send_state(r)
+		
 	def player_declared(self, r, player, cards):
 		data = {
 			'player': player,
@@ -106,4 +103,13 @@ class ForwardToGamePlayer(model.RoundListener):
 			'cards': [card.dict for card in cards],
 		}
 		self.sio.emit('player_played', data, room=self.sid)
+		self.send_state(r)
+
+	def ended(self, r, player_scores, next_player, attacking_won, bottom):
+		data = {
+			'next_player': next_player,
+			'attacking_won': attacking_won,
+			'bottom': [card.dict for card in bottom],
+		}
+		self.sio.emit('round_ended', data, room=self.sid)
 		self.send_state(r)

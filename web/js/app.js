@@ -120,7 +120,13 @@ var app = new Vue({
 		errorMsg: '',
 		playerPoints: [],
 		attackingPlayers: [],
-		bottomPlayer: -1
+		bottomPlayer: -1,
+
+		// Data for round end screen.
+		roundEnded: false,
+		roundEndAttackingWon: false,
+		roundEndNextPlayer: 0,
+		roundEndBottom: [],
 	},
 	created: function() {
 		let name = localStorage.getItem('tractor_player_name');
@@ -311,6 +317,17 @@ socket.on('state', function(data) {
 	app.bottomPlayer = data.bottom_player;
 
 	app.cards = mergeCards(app.cards, data.hand);
+});
+
+socket.on('round_started', function(data) {
+	app.roundEnded = false;
+});
+
+socket.on('round_ended', function(data) {
+	app.roundEnded = true;
+	app.roundEndAttackingWon = data.attacking_won;
+	app.roundEndNextPlayer = data.next_player;
+	app.roundEndBottom = mergeCards([], data.bottom);
 });
 
 // handle suggestion responses

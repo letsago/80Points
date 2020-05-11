@@ -369,6 +369,9 @@ class RoundState(object):
 		self.player_hands[self.bottom_player].extend(bottom_cards)
 		return bottom_cards
 
+	def set_round_end_bottom(self, cards):
+		self.bottom = cards
+
 	def set_attacking_players(self):
 		# TODO(workitem0055): insert logic for odd number player games
 		# once odd number player games are supported, assert will be removed
@@ -595,12 +598,14 @@ class RoundListener(object):
 		'''
 		pass
 
-	def ended(self, r, player_scores, next_player):
+	def ended(self, r, player_scores, next_player, attacking_won, bottom):
 		'''
 		The round ended.
 
 		player_scores is a list of integers indicating how many levels each player gained.
 		next_player is the player who should start the next round.
+		attacking_won is a boolean that indicates whether the attacking players won.
+		bottom is the list of cards that were set on the bottom.
 		'''
 		pass
 
@@ -737,6 +742,7 @@ class Round(object):
 		if not is_cards_contained_in(cards, player_hand):
 			raise RoundException("Invalid cards")
 
+		self.state.set_round_end_bottom(cards)
 		self.state.remove_cards_from_hand(player, cards)
 		# Clear board to remove any declared cards from the board.
 		self.state.clear_board()
@@ -773,7 +779,7 @@ class Round(object):
 		player_scores = [0] * self.state.num_players
 
 		if player_score >= 0:
-			# attacking players won
+			attacking_won = True
 			for player in self.state.attacking_players:
 				player_scores[player] = player_score
 			if self.state.bottom_player in self.state.attacking_players:
@@ -781,7 +787,7 @@ class Round(object):
 			else:
 				next_round_first_player = (next_round_first_player + 1) % self.state.num_players
 		else:
-			# defending players won
+			attacking_won = False
 			for player in self.state.attacking_players:
 				player_scores[(player + 1) % self.state.num_players] = abs(player_score)
 			if self.state.bottom_player in self.state.attacking_players:
@@ -789,7 +795,8 @@ class Round(object):
 			else:
 				next_round_first_player = (next_round_first_player + 2) % self.state.num_players
 
-		self._fire(lambda listener: listener.ended(self, player_scores, next_round_first_player))
+		bottom_sorted = display_sorted(self.state.bottom, self.state.trump_card)
+		self._fire(lambda listener: listener.ended(self, player_scores, next_round_first_player, attacking_won, bottom_sorted))
 
 class RoundException(Exception):
 	pass

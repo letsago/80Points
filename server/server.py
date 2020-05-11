@@ -206,7 +206,7 @@ class Game(model.RoundListener):
 		                         listeners=[self, server_utils.TimedActionListener(args.speed)] + listeners,
 								 deck_name=args.deck_name)
 
-	def ended(self, r, player_scores, next_player):
+	def ended(self, r, player_scores, next_player, attacking_won, bottom):
 		for player in self.players + list(self.observers.values()):
 			player.ready = False
 			player.listener = None
@@ -214,7 +214,8 @@ class Game(model.RoundListener):
 		self.status = STATUS_SCORE
 		for i in range(len(player_scores)):
 			self.player_ranks[i] = model.CARD_VALUES[(model.CARD_VALUES.index(self.player_ranks[i]) + player_scores[i]) % len(model.CARD_VALUES)]
-		self.reset_round(self.player_ranks, next_player)
+
+		eventlet.spawn_after(10.0, self.reset_round, self.player_ranks, next_player)
 
 	def player_left(self, player):
 		if player.observer:

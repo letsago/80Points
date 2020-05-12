@@ -14,6 +14,10 @@ body,
   height: 100%; /* needed for proper layout */
 }
 
+[v-cloak] {
+	display: none
+}
+
 #modeList {
 	padding: 30px;
 	border-radius: 10px;

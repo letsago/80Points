@@ -26,10 +26,9 @@
 	<div v-cloak id="app">
 		<!-- Sponsor div is at the top to make it hide behind the cards when they overlap. -->
 		<div class="sponsor">
-			<a href="https://lunanode.com" target="_blank">
-				<div class="powered-by" v-bind:class="{ 'powered-by-light': mode == 'game' }">POWERED BY</div>
+			<a href="https://github.com/letsago/80points" target="_blank">
 				<div>
-					<img :src="mode == 'game' ? 'images/lunanode-light.png' : 'images/lunanode.png'" class="logo"></img>
+					<img :src="mode == 'game' ? 'images/github-light.png' : 'images/github.png'" class="logo"></img>
 				</div>
 			</a>
 		</div>
@@ -63,7 +62,7 @@
 					</td>
 					<td class="occupied">
 						{{ game.occupied }}/{{ game.total }}
-					</td>		
+					</td>
 				</tr>
 			</table>
 		</div>
@@ -137,7 +136,7 @@
 							</card>
 						</li>
 					</ul>
-				</div>	
+				</div>
 			</div>
 			<div class="game-footer">
 				<template v-if="cards.length > 0">

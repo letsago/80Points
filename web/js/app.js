@@ -3,12 +3,12 @@ var socket = io();
 const ADJECTIVES = [
 	'ambitious', 'amiable', 'brave', 'charming', 'courageous', 'creative',
 	'decisive', 'diplomatic', 'easygoing', 'energetic', 'fearless', 'gregarious',
-	'honest', 'imaginative', 'inventive', 'loyal', 'modest', 'philosophical', 
+	'honest', 'imaginative', 'inventive', 'loyal', 'modest', 'philosophical',
 	'polite', 'sociable', 'thoughtful', 'warmhearted'
 ];
 
 const ANIMALS = [
-	'giraffe', 'chameleon', 'elephant', 'crocodile', 'duckling', 'deer', 'hippo', 
+	'giraffe', 'chameleon', 'elephant', 'crocodile', 'duckling', 'deer', 'hippo',
 	'hedgehog', 'kitten', 'dolphin', 'anteater', 'panda', 'octopus', 'lamb',
 	'owl', 'sloth', 'seal', 'pufferfish', 'bunny', 'piglet', 'fox', 'hamster',
 	'walrus', 'skunk', 'chinchilla', 'hippo', 'penguin'

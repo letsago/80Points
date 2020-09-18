@@ -11,7 +11,7 @@ import model
 import server_utils
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--speed', default=5)
+parser.add_argument('--speed', type=int, default=5)
 parser.add_argument('--deck_name')
 
 args = parser.parse_args()

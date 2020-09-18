@@ -72,16 +72,6 @@ body,
 	text-align: right;
 }
 
-.powered-by {
-	color: #004581;
-	font-weight: bold;
-	transform: translateY(5px);
-}
-
-.powered-by-light {
-	color: #ffffff;
-}
-
 .logo {
 	width: 150px;
 }
@@ -249,8 +239,8 @@ h1, h2, h3 {
 	text-rendering: optimizeLegibility;
 	color: #546cca;
 	letter-spacing: .05em;
-	text-shadow: 
-	  4px 4px 0px #d5d5d5, 
+	text-shadow:
+	  4px 4px 0px #d5d5d5,
 	  7px 7px 0px rgba(0, 0, 0, 0.2);
 	-webkit-mask-image: -webkit-gradient(linear, left 55%, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)));
 }
@@ -270,7 +260,7 @@ a:visited {
 
 .gameTable {
 	border-collapse: collapse;
-    margin-left: auto; 
+    margin-left: auto;
 	margin-right: auto;
 	margin-top: 20px;
 	width: 50%;
@@ -308,7 +298,7 @@ a:visited {
 .nameBox {
 	margin-bottom: 15px;
 }
-  
+
 /* Style the input fields */
 input, select {
 	vertical-align: middle;

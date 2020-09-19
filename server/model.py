@@ -454,6 +454,7 @@ class RoundState(object):
 			'player_points': self.player_points,
 			'attacking_players': self.attacking_players,
 			'bottom_player': self.bottom_player,
+			'trick_first_player': self.trick_first_player,
 			'failed_flush': [card.dict for card in self.failed_flush],
 		}
 

@@ -63,7 +63,7 @@
 					</td>
 					<td class="occupied">
 						{{ game.occupied }}/{{ game.total }}
-					</td>		
+					</td>
 				</tr>
 			</table>
 		</div>
@@ -100,18 +100,38 @@
 								{{ player.name }}
 							</template>
 						</p>
-						<div class="playingCards fourColours">
-							<ul class="hand" :style="handStyle(board[index])">
-								<transition name="fade">
-									<div v-if="board[index] && board[index].length > 0">
-										<li v-for="card in board[index]">
-											<card :suit="card.suit" :rank="card.value"
-												:trump-suit="trumpSuit" :trump-rank="trumpRank">
-											</card>
-										</li>
-									</div>
-								</transition>
-							</ul>
+						<div class="playerCards">
+							<template v-if="trickFirstPlayer == index && failedFlush && failedFlush.length > 0">
+								<div class="annotationLabel">(</div>
+								<div class="playingCards fourColours">
+									<ul class="hand" :style="handStyle(failedFlush)">
+										<transition name="fade">
+											<div>
+												<li v-for="card in failedFlush">
+													<card :suit="card.suit" :rank="card.value"
+														:trump-suit="trumpSuit" :trump-rank="trumpRank"
+														:annotation="true">
+													</card>
+												</li>
+											</div>
+										</transition>
+									</ul>
+								</div>
+								<div class="annotationLabel">)</div>
+							</template>
+							<div class="playingCards fourColours">
+								<ul class="hand" :style="handStyle(board[index])">
+									<transition name="fade">
+										<div v-if="board[index] && board[index].length > 0">
+											<li v-for="card in board[index]">
+												<card :suit="card.suit" :rank="card.value"
+													:trump-suit="trumpSuit" :trump-rank="trumpRank">
+												</card>
+											</li>
+										</div>
+									</transition>
+								</ul>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -137,7 +157,7 @@
 							</card>
 						</li>
 					</ul>
-				</div>	
+				</div>
 			</div>
 			<div class="game-footer">
 				<template v-if="cards.length > 0">

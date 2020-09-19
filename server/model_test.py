@@ -130,7 +130,7 @@ class TestRound(unittest.TestCase):
 				trick_player = (trick_player + 1) % self.num_players
 
 		self.assertEqual(round.state.status, STATUS_ENDED)
-		
+
 	def testFirstPlayerSetToBottomPlayer(self):
 		# Mock model.create_random_deck to use a deterministic deck.
 		with mock.patch('model.create_random_deck', return_value=create_deck(self.num_decks)):
@@ -475,20 +475,25 @@ class TestRoundState(unittest.TestCase):
 			self.assertTrue(self.round_state.is_play_valid(self.third_player, valid_play)[1])
 
 	@parameterized.expand([
-		['two singles neither beaten', [Card('h', 'Q'), Card('h', 'A')], None],
+		['two singles neither beaten', 'Qh Ah', None],
 
-		['two singles one beaten', [Card('s', 'Q'), Card('s', 'A')], [Card('s', 'Q')]],
+		['two singles one beaten', 'Qs As', 'Qs'],
 
-		['two doubles neither beaten', [Card('s', 'Q'), Card('s', 'Q'), Card('s', 'A'), Card('s', 'A')], None],
+		['two doubles neither beaten', 'Qs Qs As As', None],
+
+		['three singles, two beaten, lowest played', 'Js Qs As', 'Js'],
+
+		['three tractors, two beaten, lowest order played', '4s 4s Qs As', 'Qs'],
 	])
 
 	def testFlushValidity(self, name, play, expect):
+		play = test_utils.cards_from_str(play)
 		cards, valid = self.round_state.is_play_valid(self.first_player, play)
 		self.assertTrue(valid)
 		if expect is None:
 			self.assertEqual(cards, play)
 		else:
-			self.assertEqual(cards, expect)
+			self.assertEqual(cards, test_utils.cards_from_str(expect))
 
 	@parameterized.expand([
 		['no play', [], []],

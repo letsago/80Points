@@ -22,7 +22,7 @@ function generateName() {
 
 // A card component
 Vue.component('card', {
-	props: ['suit', 'rank', 'selected', 'selectable', 'trumpSuit', 'trumpRank'],
+	props: ['suit', 'rank', 'selected', 'selectable', 'trumpSuit', 'trumpRank', 'annotation'],
 	template: '#card-template',
 	computed: {
 		isTrump: function() {
@@ -63,6 +63,7 @@ Vue.component('card', {
 			let c = {
 				card: true,
 				trump: this.isTrump,
+				annotation: this.annotation,
 				selected: this.selected,
 			};
 			c[this.rankClass] = true;
@@ -121,6 +122,8 @@ var app = new Vue({
 		playerPoints: [],
 		attackingPlayers: [],
 		bottomPlayer: -1,
+		trickFirstPlayer: -1,
+		failedFlush: null,
 
 		// Data for round end screen.
 		roundEnded: false,
@@ -315,6 +318,8 @@ socket.on('state', function(data) {
 	app.playerPoints = data.player_points;
 	app.attackingPlayers = data.attacking_players;
 	app.bottomPlayer = data.bottom_player;
+	app.trickFirstPlayer = data.trick_first_player;
+	app.failedFlush = data.failed_flush;
 
 	app.cards = mergeCards(app.cards, data.hand);
 });

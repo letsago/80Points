@@ -246,6 +246,9 @@ class RoundState(object):
 		# list of cards that each player has placed on the board for the current trick
 		self.board = [[] for i in range(num_players)]
 
+		# the full list of cards in a failed flush for the current trick, if any
+		self.failed_flush = []
+
 		# history of all declarations
 		# to get the most recent declaration, use self.declaration
 		self.declarations = []
@@ -405,6 +408,7 @@ class RoundState(object):
 	def clear_board(self):
 		for i in range(len(self.board)):
 			self.board[i] = []
+		self.failed_flush = []
 
 	def get_trick_points(self):
 		points = 0
@@ -449,7 +453,9 @@ class RoundState(object):
 			'bottom_size': BOTTOM_SIZE[self.num_players],
 			'player_points': self.player_points,
 			'attacking_players': self.attacking_players,
-			'bottom_player': self.bottom_player
+			'bottom_player': self.bottom_player,
+			'trick_first_player': self.trick_first_player,
+			'failed_flush': [card.dict for card in self.failed_flush],
 		}
 
 		if player is not None:
@@ -487,35 +493,75 @@ class RoundState(object):
 		suit_tractors = cards_to_tractors(suit_cards, trick_suit, self.trump_card)
 		return suit_tractors
 
+	def is_flush_tractor_beaten(self, player, trick_suit, tractor):
+		'''
+		Determines whether another player has cards in their hand matching the tractor's suit
+		that form a tractor beating the provided tractor.
+		'''
+		for i, hand in enumerate(self.player_hands):
+			if i == player:
+				continue
+			hand_suit_tractors = self.get_suit_tractors_from_cards(self.player_hands[i], trick_suit)
+			for t in hand_suit_tractors:
+				# to beat tractor, t must have at least the same rank/length, while having higher power (card value)
+				if t.rank < tractor.rank or t.length < tractor.length:
+					continue
+				if t.power <= tractor.power:
+					continue
+				return True
+
+		return False
+
 	def is_play_valid(self, player, cards):
 		'''
 		This function checks if player's cards, aka play, is valid. In order for a play to be valid, the play
 		must follow suit and form of the trick's first play. Otherwise, the appropriate form is calculated
 		and used to determine whether or not the play is valid given the trick's first play.
 
+		It returns a tuple (out_cards, valid). If the play is valid, out_cards is the list of played cards,
+		and valid=True; out_cards may not match cards for a flush, in the case that some tractor in the
+		flush was not high enough. If the play is not valid, out_cards=None and valid=False.
+
 		Args:
 			player: int
 			cards: Card []
 		Returns:
-			bool
+			(Card [], bool)
 		'''
 		play_card_count = len(cards)
 		# number of cards must be nonzero
 		if play_card_count == 0:
-			return False
+			return None, False
 
-		# TODO(workitem0028): once flushing feature is added, then multiple tractors is allowed if player wants to flush
-		# for now, first play must be one tractor
 		if player == self.trick_first_player:
 			# need the first card's suit in order to accurately transform cards to tractors if board is empty
-			return len(cards_to_tractors(cards, cards[0].suit, self.trump_card)) == 1
+			trick_suit = cards[0].get_normalized_suit(self.trump_card)
+			tractors = cards_to_tractors(cards, trick_suit, self.trump_card)
+			# first, all tractors must be the same suit
+			for tractor in tractors[1:]:
+				if tractor.suit_type != tractors[0].suit_type:
+					return None, False
+			# if there is only one tractor, then at this point it's valid
+			if len(tractors) == 1:
+				return cards, True
+			# otherwise, this is a flush
+			# for flush plays, other players must not have tractors in their hand in the suit that
+			#   beat any components of the flush.
+			# otherwise, the player is forced to play the weakest tractor that was beaten.
+			# in both cases, the play is valid
+			beaten_tractors = [tractor for tractor in tractors if self.is_flush_tractor_beaten(player, trick_suit, tractor)]
+			if len(beaten_tractors) == 0:
+				return cards, True
+			smallest_beaten_tractor = min(beaten_tractors)
+			cards = [card for l in smallest_beaten_tractor.orig_cards for card in l]
+			return cards, True
 
 		first_play = self.board[self.trick_first_player]
 		trick_card_count = len(first_play)
 
 		# number of cards played must match number of cards in trick
 		if play_card_count != trick_card_count:
-			return False
+			return None, False
 
 		# grab trick tractor and player hand trick suit tractor rank and length data
 		trick_card = first_play[0]
@@ -526,7 +572,7 @@ class RoundState(object):
 		# if hand doesn't have any trick suit cards then player can play cards of any suit as long as
 		# play_card_count equals trick_card_count (case already handled above)
 		if not hand_suit_tractors:
-			return True
+			return cards, True
 
 		play_suit_cards = [card for card in cards if card.get_normalized_suit(self.trump_card) == trick_suit]
 		play_suit_tractors = cards_to_tractors(play_suit_cards, trick_suit, self.trump_card)
@@ -543,17 +589,17 @@ class RoundState(object):
 
 			play_idx = find_matching_data_index(play_data_array, trick_data_array[0])
 			if play_idx is None:
-				return False
+				return None, False
 
 			play_min_data = get_min_data(trick_data_array[0], play_data_array[play_idx])
 			if play_min_data < hand_min_data:
-				return False
+				return None, False
 
 			trick_data_array = update_data_array(trick_data_array, hand_min_data)
 			hand_data_array = update_data_array(hand_data_array, hand_min_data)
 			play_data_array = update_data_array(play_data_array, hand_min_data)
 
-		return True
+		return cards, True
 
 class RoundListener(object):
 	def round_started(self, r):
@@ -709,11 +755,14 @@ class Round(object):
 			self.state.trick_first_player = player
 
 		# checks if play is invalid
-		if not self.state.is_play_valid(player, cards):
+		play_cards, valid = self.state.is_play_valid(player, cards)
+		if not valid:
 			raise RoundException("Invalid play")
 
-		self.state.board[player] = cards
-		self.state.remove_cards_from_hand(player, cards)
+		if len(play_cards) != len(cards):
+			self.state.failed_flush = cards
+		self.state.board[player] = play_cards
+		self.state.remove_cards_from_hand(player, play_cards)
 
 		# if all players have played, then we need to figure out who won to update the turn
 		# otherwise, we can just increment it
@@ -725,7 +774,7 @@ class Round(object):
 		else:
 			self.state.increment_turn()
 
-		self._fire(lambda listener: listener.player_played(self, player, cards))
+		self._fire(lambda listener: listener.player_played(self, player, play_cards))
 
 	def set_bottom(self, player, cards):
 		'''

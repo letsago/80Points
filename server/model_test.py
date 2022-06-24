@@ -130,7 +130,7 @@ class TestRound(unittest.TestCase):
 				trick_player = (trick_player + 1) % self.num_players
 
 		self.assertEqual(round.state.status, STATUS_ENDED)
-		
+
 	def testFirstPlayerSetToBottomPlayer(self):
 		# Mock model.create_random_deck to use a deterministic deck.
 		with mock.patch('model.create_random_deck', return_value=create_deck(self.num_decks)):
@@ -422,8 +422,6 @@ class TestRoundState(unittest.TestCase):
 
 		['different suits 1 pair + 1 single', [Card('d', '2'), Card('d', '2'), Card('s', '5')]],
 
-		['same suits 2 nonconsecutive pairs', [Card('h', '2'), Card('h', '2'), Card('h', '6'), Card('h', '6')]],
-
 		['different suits 2 consecutive pairs + single',
 			[Card('d', '4'), Card('d', '4'), Card('d', '5'), Card('d', '5'), Card('c', '5')]],
 
@@ -435,7 +433,7 @@ class TestRoundState(unittest.TestCase):
 	])
 
 	def testInvalidFirstPlays(self, name, play):
-		self.assertFalse(self.round_state.is_play_valid(self.first_player, play))
+		self.assertFalse(self.round_state.is_play_valid(self.first_player, play)[1])
 
 	@parameterized.expand([
 		['1 single', [Card('h', '2')]],
@@ -462,8 +460,8 @@ class TestRoundState(unittest.TestCase):
 
 	def testFollowSuitValidity(self, name, first_play, invalid_play, valid_play):
 		self.round_state.board[0] = first_play
-		self.assertFalse(self.round_state.is_play_valid(self.second_player, invalid_play))
-		self.assertTrue(self.round_state.is_play_valid(self.second_player, valid_play))
+		self.assertFalse(self.round_state.is_play_valid(self.second_player, invalid_play)[1])
+		self.assertTrue(self.round_state.is_play_valid(self.second_player, valid_play)[1])
 
 	@parameterized.expand(model_test_data.follow_suit_validity_custom_hand_test_data)
 
@@ -472,9 +470,30 @@ class TestRoundState(unittest.TestCase):
 		self.round_state.board[0] = first_play
 		self.round_state.player_hands[self.third_player] = hand
 		if invalid_play is not None:
-			self.assertFalse(self.round_state.is_play_valid(self.third_player, invalid_play))
+			self.assertFalse(self.round_state.is_play_valid(self.third_player, invalid_play)[1])
 		if valid_play is not None:
-			self.assertTrue(self.round_state.is_play_valid(self.third_player, valid_play))
+			self.assertTrue(self.round_state.is_play_valid(self.third_player, valid_play)[1])
+
+	@parameterized.expand([
+		['two singles neither beaten', 'Qh Ah', None],
+
+		['two singles one beaten', 'Qs As', 'Qs'],
+
+		['two doubles neither beaten', 'Qs Qs As As', None],
+
+		['three singles, two beaten, lowest played', 'Js Qs As', 'Js'],
+
+		['three tractors, two beaten, lowest order played', '4s 4s Qs As', 'Qs'],
+	])
+
+	def testFlushValidity(self, name, play, expect):
+		play = test_utils.cards_from_str(play)
+		cards, valid = self.round_state.is_play_valid(self.first_player, play)
+		self.assertTrue(valid)
+		if expect is None:
+			self.assertEqual(cards, play)
+		else:
+			self.assertEqual(cards, test_utils.cards_from_str(expect))
 
 	@parameterized.expand([
 		['no play', [], []],

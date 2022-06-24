@@ -118,8 +118,25 @@ h1, h2, h3 {
 	line-height: 1.2;
 }
 
+.playerCards {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+}
+
+.playerCards .annotationLabel {
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
 .playingCards .card.trump {
 	background-color: #ffec72;
+}
+
+.playingCards .card.annotation {
+	background-color: lightgray;
 }
 
 .inHand .card {
